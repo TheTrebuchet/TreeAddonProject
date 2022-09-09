@@ -3,7 +3,7 @@ import bpy
 
 
 
-verts = s
+verts =
 
 mesh = bpy.data.meshes.new("tree")
 object = bpy.data.objects.new("tree", mesh)
