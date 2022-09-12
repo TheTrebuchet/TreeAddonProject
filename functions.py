@@ -1,5 +1,4 @@
 import math
-import mathutils
 
 # number of sides, radius
 def circle(n,r):
@@ -15,23 +14,22 @@ def circle(n,r):
 def spine(n, l):
     spine = [(0, 0, l*i) for i in range(n)]
     return spine
-# vertices, number of sides, number of circles
-def bark(verts, s, n):
-    faces =[]
-    for x in range(0,n):
-        for x in range(s):
-                faces.append(tuple())
+#number of sides, number of vertices
+def bark(s, n):
+    faces = []
+    for i in range(n-1):
+        for j in range(s):
+            if j != s-1:
+                faces.append(tuple([j+s*i, j+1+s*i, j+1+(i+1)*s, j+(i+1)*s]))
+            else:
+                faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
-
 
 
 if __name__ == "__main__":
 #place for testing
-    n = 4
+    s = 6
     r = 1
     l = 1
-    tree = []
-    for x in spine(n, l):
-        for y in circle(n,r):
-            tree.append(tuple(mathutils.vector(x) + mathutils.vector(y)))
-    print(tree)
+    n = 5
+    print(bark(s, n))
