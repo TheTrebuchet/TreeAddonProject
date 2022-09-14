@@ -18,26 +18,27 @@ imp.reload(functions)
 from functions import *
 
 # MAIN PARAMETERS
-res = 1
-length = 5
-radius = 1
-scale = 0.5
-# ADDITIONAL PARAMETERS
-n = length*res
-s=6*res
-r=res
-l=r*2
-tree = []
+sides = 12
+length = 100
+radius = 6
+scale = 0.1
+m_p = [sides, length, radius, scale]
+# SIDE PARAMETERS
+height = length
+base = radius
+angle = 4.7
+d = 5
+s_p = [height, base, angle, d]
 
-for x in spine(n, l):
-    for y in circle(s,r):
-        tree.append((mathutils.Vector(x) + mathutils.Vector(y))*scale)
+# GENERATING VERTS
+verts, n = treegen(m_p, s_p)
 
-faces = bark(s, n)
+# GENERATING FACES
+faces = bark(sides, n)
 
 mesh = bpy.data.meshes.new("tree")
 object = bpy.data.objects.new("tree", mesh)
 
 bpy.context.collection.objects.link(object)
 
-mesh.from_pydata(tree,[], faces)
+mesh.from_pydata(verts ,[], faces)
