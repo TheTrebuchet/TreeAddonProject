@@ -11,11 +11,29 @@ def circle(n,r):
     return circle
 
 # number of vertices, length
-def spine(n, l):
-    spine = [(0, 0, l*i) for i in range(n)]
+def spine_gen(n, length, l, p_a, p_s, p_seed):
+    f1 = lambda z : p_a*(mathutils.noise.noise(mathutils.Vector([0, p_seed, p_s*z]))-0.5)
+    f2 = lambda z : p_a*(mathutils.noise.noise(mathutils.Vector([0, p_seed, p_s*(z+length)]))-0.5)
+    spine = [mathutils.Vector((f1(l*i), f2(l*i), l*i)) for i in range(n)]
     return spine
 
-#number of sides, number of vertices
+# def spine_bend(spine, r_p)
+def spine_bend(spine, r_p, length, l):
+    b_a, b_s, b_seed = r_p[3:6]
+
+    for i in range(len(spine)):
+        rotz = mathutils.noise.noise((0, b_seed, i*l*b_s))
+        rotx = b_a*(mathutils.noise.noise((0, b_seed+1, i*l*b_s)))**1.7
+        print(rotx)
+        mat_trans1 = mathutils.Matrix.Translation(-1*spine[i])
+        mat_trans2 = mathutils.Matrix.Translation(spine[i])
+        mat_rotz1 = mathutils.Matrix.Rotation(2*math.pi*rotz, 4, 'Z')
+        mat_rotz2 = mathutils.Matrix.Rotation(-2*math.pi*rotz, 4, 'Z')
+        mat_rotx = mathutils.Matrix.Rotation(2*math.pi*rotx, 4, 'X')
+        mat = mat_trans1 @mat_rotz1 @ mat_rotx @ mat_rotz2 @ mat_trans2
+        spine[i:] = [vec@mat for vec in spine[i:]]
+    return spine
+#number of sides, number of vertices, generates faces
 def bark(s, n):
     faces = []
     for i in range(n-1):
@@ -26,16 +44,37 @@ def bark(s, n):
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
 
-#verts of the whole tree and scaling
-def treegen(m_p, s_p):
-    h, b, a, d = s_p
+
+
+'''
+verts of the whole tree, combines multiple functions
+1. makes a spine
+2. modify spine to account for a bend
+3.. for each 'n' create a circle
+'''
+
+def treegen(m_p, s_p, r_p):
+    #parameters
     sides, length, radius, scale = m_p
-    f = lambda x : a*(1/(d+x)-(d+h-x)/(d*(d+h)))+b*(1-x/h)
-    n=int(length//(4*math.tan(2*math.pi/(2*sides))*radius))
+    a, d = s_p
+    p_a, p_s, p_seed = r_p[0:3]
+
+    #number of circles in the tree
+    n=int(length//(2*math.tan(2*math.pi/(2*sides))*radius))
+    l = length/n
+
+    #function for general shape
+    f = lambda x : a*(1/(d+x)-(d+length-x)/(d*(d+length)))+radius*(1-x/length)
+    scale_list = [f(h*l) for h in range(n)]
+
+    #spine gen
+    spine = spine_gen(n, length, l, p_a, p_s, p_seed)
+    spine = spine_bend(spine, r_p, length, l)
+
     tree = []
-    for x in spine(n, length/n):
-        for y in circle(sides,f(x[2])):
-            tree.append((mathutils.Vector(x) + mathutils.Vector(y))*scale)
+    for x in range(n):
+        for y in circle(sides,scale_list[x]):
+            tree.append((mathutils.Vector(spine[x]) + mathutils.Vector(y))*scale)
     return tree, n
 
 if __name__ == "__main__":

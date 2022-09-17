@@ -20,18 +20,32 @@ from functions import *
 # MAIN PARAMETERS
 sides = 12
 length = 100
-radius = 6
-scale = 0.1
-m_p = [sides, length, radius, scale]
+radius = 4
+scale = 0.05
+
+#RANDOM PARAMETERS
+perlin = True
+perlin_amount = 1
+perlin_scale = 0.05
+perlin_seed = 3
+
+
+bends = True
+bends_amount = 0.05
+bends_scale = 0.1
+bends_seed = 2
+
 # SIDE PARAMETERS
-height = length
-base = radius
 angle = 4.7
 d = 5
-s_p = [height, base, angle, d]
+
+#-----------------------------------
+m_p = [sides, length, radius, scale]
+s_p = [angle, d]
+r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_scale, bends_seed]
 
 # GENERATING VERTS
-verts, n = treegen(m_p, s_p)
+verts, n = treegen(m_p, s_p, r_p)
 
 # GENERATING FACES
 faces = bark(sides, n)
