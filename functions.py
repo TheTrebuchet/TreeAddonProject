@@ -24,7 +24,6 @@ def spine_bend(spine, r_p, length, l):
     for i in range(len(spine)):
         rotz = mathutils.noise.noise((0, b_seed, i*l*b_s))
         rotx = b_a*(mathutils.noise.noise((0, b_seed+1, i*l*b_s)))
-        print(rotx)
         mat_trans1 = mathutils.Matrix.Translation(-1*spine[i])
         mat_trans2 = mathutils.Matrix.Translation(spine[i])
         mat_rotz1 = mathutils.Matrix.Rotation(2*math.pi*rotz, 4, 'Z')
