@@ -1,5 +1,5 @@
 import bpy
-import mathutils
+import mathutils as mu
 import math
 import sys
 import os
