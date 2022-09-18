@@ -1,13 +1,67 @@
 import math
-import mathutils as mu
+import mathutils
 
 #rotate around medium point, towards vector, with starting vector being (0,0,1)
-#def rotate(verts, vector):
+'''
+def m_vector(spine):
+    result = []
+    for x in range(1, len(spine)-1):
+        result.append(((spine[x-1]-spine[x+1])/2).normalized())
+    return result
+def rotate(verts, vector):
+    for x in range(len(verts)):
+'''
+
+# number of vertices, length
+def spine_init(n, length, l, p_a, p_s, p_seed):
+    f1 = lambda z : p_a*(mathutils.noise.noise(mathutils.Vector([0, p_seed, p_s*z]))-0.5)
+    f2 = lambda z : p_a*(mathutils.noise.noise(mathutils.Vector([0, p_seed, p_s*(z+length)]))-0.5)
+    spine = [mathutils.Vector((f1(l*i), f2(l*i), l*i)) for i in range(n)]
+    return spine
+
+# bends the spine in a more meaningful way
+def spine_bend(spine, b_a, b_s, b_seed, l):
+    for i in range(1, len(spine)):
+        rotz = mathutils.noise.noise((0, b_seed, i*l*b_s))
+        rotx = b_a*(mathutils.noise.noise((0, b_seed+1, i*l*b_s)))
+        
+        #rotz correction for absurd angles
+        vec = spine[i]- spine[i-1]
+        x = vec.angle((0.0,0.0,1.0),0.0)/(2*math.pi)
+        a = mathutils.Vector((-vec[0], -vec[1], 0.0)).angle((1.0,0.0,0.0),0.0)/(2*math.pi)
+        print(x, a, rotz)
+        rotz = (1-x)*rotz + x*(a)
+        mat = mathutils.Matrix.Translation(-1*spine[i])
+        print(rotz)
+        mat = mat @ mathutils.Matrix.Translation(spine[i])
+        mat = mat @ mathutils.Matrix.Rotation(2*math.pi*rotz, 4, 'Z')
+        mat = mat @ mathutils.Matrix.Rotation(2*math.pi*rotx, 4, 'X')
+        mat = mat @ mathutils.Matrix.Rotation(-2*math.pi*rotz, 4, 'Z')
+        spine[i:] = [vec@mat for vec in spine[i:]]
+    return spine
+
+def spine_gen(m_p, r_p):
+    #parameters
+    sides, length, radius = m_p[:-1]
+    p_a, p_s, p_seed, b_a, b_s, b_seed = r_p
+
+    #number of circles in the tree
+    n=int(length//(2*math.tan(2*math.pi/(2*sides))*radius))
+    l = length/n
+
+    #spine gen
+    spine = spine_init(n, length, l, p_a, p_s, p_seed)
+    spine = spine_bend(spine, b_a, b_s, b_seed, l)
     
+    return spine, l, n
 
 
-
-
+'''
+verts of the whole tree, combines multiple functions
+1. makes a spine
+2. modify spine to account for a bend
+3.. for each 'n' create a circle
+'''
 # number of sides, radius
 def circle(n,r):
     circle = []
@@ -18,31 +72,24 @@ def circle(n,r):
             circle.append((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0))
     return circle
 
-# number of vertices, length
-def spine_gen(n, length, l, p_a, p_s, p_seed):
-    f1 = lambda z : p_a*(mu.noise.noise(mu.Vector([0, p_seed, p_s*z]))-0.5)
-    f2 = lambda z : p_a*(mu.noise.noise(mu.Vector([0, p_seed, p_s*(z+length)]))-0.5)
-    spine = [mu.Vector((f1(l*i), f2(l*i), l*i)) for i in range(n)]
-    return spine
+def bark_gen(spine, l, n, m_p, s_p):
+    
+    #parameters
+    sides, length, radius, scale = m_p
+    a, d = s_p
 
-# def spine_bend(spine, r_p)
-def spine_bend(spine, r_p, length, l):
-    b_a, b_s, b_seed = r_p[3:6]
+    #function for general shape
+    f = lambda x : a*(1/(d+x)-(d+length-x)/(d*(d+length)))+radius*(1-x/length)
+    scale_list = [f(h*l) for h in range(n)]
 
-    for i in range(len(spine)):
-        rotz = mu.noise.noise((0, b_seed, i*l*b_s))
-        rotx = b_a*(mu.noise.noise((0, b_seed+1, i*l*b_s)))
-        mat_trans1 = mu.Matrix.Translation(-1*spine[i])
-        mat_trans2 = mu.Matrix.Translation(spine[i])
-        mat_rotz1 = mu.Matrix.Rotation(2*math.pi*rotz, 4, 'Z')
-        mat_rotz2 = mu.Matrix.Rotation(-2*math.pi*rotz, 4, 'Z')
-        mat_rotx = mu.Matrix.Rotation(2*math.pi*rotx, 4, 'X')
-        mat = mat_trans1 @mat_rotz1 @ mat_rotx @ mat_rotz2 @ mat_trans2
-        spine[i:] = [vec@mat for vec in spine[i:]]
-    return spine
+    bark = []
+    for x in range(n):
+        for y in circle(sides,scale_list[x]):
+            bark.append((mathutils.Vector(spine[x]) + mathutils.Vector(y))*scale)
+    return bark
 
 #number of sides, number of vertices, generates faces
-def bark(s, n):
+def bark_faces(s, n):
     faces = []
     for i in range(n-1):
         for j in range(s):
@@ -52,44 +99,10 @@ def bark(s, n):
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
 
-
-
-'''
-verts of the whole tree, combines multiple functions
-1. makes a spine
-2. modify spine to account for a bend
-3.. for each 'n' create a circle
-'''
-
-def treegen(m_p, s_p, r_p):
-    #parameters
-    sides, length, radius, scale = m_p
-    a, d = s_p
-    p_a, p_s, p_seed = r_p[0:3]
-
-    #number of circles in the tree
-    n=int(length//(2*math.tan(2*math.pi/(2*sides))*radius))
-    l = length/n
-
-    #function for general shape
-    f = lambda x : a*(1/(d+x)-(d+length-x)/(d*(d+length)))+radius*(1-x/length)
-    scale_list = [f(h*l) for h in range(n)]
-
-    #spine gen
-    spine = spine_gen(n, length, l, p_a, p_s, p_seed)
-    spine = spine_bend(spine, r_p, length, l)
-
-    tree = []
-    for x in range(n):
-        for y in circle(sides,scale_list[x]):
-            tree.append((mu.Vector(spine[x]) + mu.Vector(y))*scale)
-    return tree, n
-
-
 if __name__ == "__main__":
 #place for testing
     s = 6
     r = 1
     l = 1
     n = 5
-    print(bark(s, n))
+    print(bark_faces(s, n))
