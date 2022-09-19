@@ -69,7 +69,7 @@ def circle(n,r):
         return []
     else:
         for i in range(n):
-            circle.append((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0))
+            circle.append(mathutils.Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
 def bark_gen(spine, l, n, m_p, s_p):
@@ -78,13 +78,17 @@ def bark_gen(spine, l, n, m_p, s_p):
     sides, length, radius, scale = m_p
     a, d = s_p
 
-    #function for general shape
+    #function for scaling of individual circles, scale_list
     f = lambda x : a*(1/(d+x)-(d+length-x)/(d*(d+length)))+radius*(1-x/length)
     scale_list = [f(h*l) for h in range(n)]
 
-    bark = []
-    for x in range(n):
-        for y in circle(sides,scale_list[x]):
+    #generating bark with scaling and rotation based on parameters and supplied spine
+    bark = [i*scale for i in circle(sides,scale_list[0])]
+    for x in range(1, n):
+        vec = spine[x] - spine[x-1]
+        quat = mathutils.Vector((0,0,1)).rotation_difference(vec)
+        new_circle = [quat @ i for i in circle(sides,scale_list[x])]
+        for y in new_circle:
             bark.append((mathutils.Vector(spine[x]) + mathutils.Vector(y))*scale)
     return bark
 
