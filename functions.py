@@ -103,6 +103,10 @@ def bark_faces(s, n):
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
 
+
+
+
+
 if __name__ == "__main__":
 #place for testing
     s = 6
