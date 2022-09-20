@@ -34,12 +34,19 @@ bends_amount = 0.01
 bends_scale = 0.05
 bends_seed = 2
 
+#BRANCHES
+n_branch = 3
+a_branch = 45
+var_branch = 0.5
+
+
 # SIDE PARAMETERS
 angle = 4.7
 d = 5
 
 #-----------------------------------
 m_p = [sides, length, radius, scale]
+b_p = [n_branch, a_branch, var_branch]
 s_p = [angle, d]
 r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_scale, bends_seed]
 
