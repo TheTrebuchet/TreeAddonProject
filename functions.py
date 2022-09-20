@@ -1,4 +1,5 @@
 import math
+import random
 import mathutils
 
 #rotate around medium point, towards vector, with starting vector being (0,0,1)
@@ -102,6 +103,19 @@ def bark_faces(s, n):
             else:
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
+
+def branch_vectors(spine, verts, m_p, n, b_p):
+    sides = m_p[0]
+    n_br, a_br, h_br, var_br = b_p
+    vectors = []
+    for i in range(n_br):
+        s_i = random.randint(math.floor(n*h_br), n)
+        pick = s_i*sides+random.randint(1, sides)
+        mat = mathutils.Matrix.Translation(verts[pick])
+        quat = mathutils.Vector((0,0,1)).rotation_difference(verts[pick]-spine[s_i])
+
+    return vectors
+
 
 
 

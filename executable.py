@@ -9,7 +9,7 @@ if not dir in sys.path:
     sys.path.append(dir )
 
 import functions
-
+import random
 # this next part forces a reload in case you edit the source after you first start the blender session
 import imp
 imp.reload(functions)
@@ -37,7 +37,9 @@ bends_seed = 2
 #BRANCHES
 n_branch = 3
 a_branch = 45
+h_branch = 0.2
 var_branch = 0.5
+
 
 
 # SIDE PARAMETERS
@@ -46,7 +48,7 @@ d = 5
 
 #-----------------------------------
 m_p = [sides, length, radius, scale]
-b_p = [n_branch, a_branch, var_branch]
+b_p = [n_branch, a_branch, h_branch, var_branch]
 s_p = [angle, d]
 r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_scale, bends_seed]
 
