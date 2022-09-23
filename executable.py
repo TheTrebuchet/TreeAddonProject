@@ -60,16 +60,8 @@ verts = bark_gen(spine, l, n, m_p, s_p)
 # GENERATING FACES
 faces = bark_faces(sides, n)
 
+verts += branch_guides(spine, verts, m_p, n, b_p)
 
-
-'''
-vectors = branch_guides(spine, verts, m_p, n, b_p)
-# TESTS
-test_vector = [mathutils.Vector((0,0,0)), mathutils.Vector((0,0,0.1))]
-for x in range(n_branch):
-    for i in test_vector:
-        verts.append(vectors[x][0] + (vectors[x][1] @ i))
-'''
 mesh = bpy.data.meshes.new("tree")
 object = bpy.data.objects.new("tree", mesh)
 
