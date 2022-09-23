@@ -30,10 +30,8 @@ def spine_bend(spine, b_a, b_s, b_seed, l):
         vec = spine[i]- spine[i-1]
         x = vec.angle((0.0,0.0,1.0),0.0)/(2*math.pi)
         a = mathutils.Vector((-vec[0], -vec[1], 0.0)).angle((1.0,0.0,0.0),0.0)/(2*math.pi)
-        print(x, a, rotz)
         rotz = (1-x)*rotz + x*(a)
         mat = mathutils.Matrix.Translation(-1*spine[i])
-        print(rotz)
         mat = mat @ mathutils.Matrix.Translation(spine[i])
         mat = mat @ mathutils.Matrix.Rotation(2*math.pi*rotz, 4, 'Z')
         mat = mat @ mathutils.Matrix.Rotation(2*math.pi*rotx, 4, 'X')
@@ -79,6 +77,7 @@ def bark_gen(spine, l, n, m_p, s_p):
     sides, length, radius, scale = m_p
     a, d = s_p
 
+    #tree-scale function, should be accessible from interface
     #function for scaling of individual circles, scale_list
     f = lambda x : a*(1/(d+x)-(d+length-x)/(d*(d+length)))+radius*(1-x/length)
     scale_list = [f(h*l) for h in range(n)]
@@ -103,18 +102,29 @@ def bark_faces(s, n):
             else:
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
-
-def branch_vectors(spine, verts, m_p, n, b_p):
-    sides = m_p[0]
+'''
+def branch_guides(spine, verts, m_p, n, b_p):
+    #parameters
+    sides, scale = m_p[0], m_p[3]
     n_br, a_br, h_br, var_br = b_p
     trans = []
+    guides = []
+    guide_rel = [mathutils.Vector((0,0,0)), mathutils.Vector((0,0,0.1))]
+
+
+    #guide_scale function, should be accessible from interface
+    guide_scale = lambda: x
+
+    #guide instructions
     for i in range(n_br):
         s_i = random.randint(math.floor(n*h_br), n)
-        pick = s_i*sides+random.randint(1, sides)
-        mat = mathutils.Matrix.Translation(verts[pick])
-        quat = mathutils.Vector((0,0,1)).rotation_difference(verts[pick]-spine[s_i])
-        trans.append((mat,quat))
-    return trans
+        pick = s_i*sides+random.randint(0, sides-1)
+        trans_vec = verts[pick]
+        quat = (mathutils.Vector((0,0,1))).rotation_difference(verts[pick]-spine[s_i]*scale)
+        for i in guide_rel:
+            guides.append(trans_vec + (quat @ i)*guide_scale(s_i/n))
+    return guides
+'''
 
 
 

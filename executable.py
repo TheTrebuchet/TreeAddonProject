@@ -1,5 +1,4 @@
 import bpy
-import mathutils
 import math
 import sys
 import os
@@ -18,7 +17,7 @@ imp.reload(functions)
 from functions import *
 
 # MAIN PARAMETERS
-sides = 20
+sides = 4
 length = 100
 radius = 4
 scale = 0.05
@@ -61,9 +60,20 @@ verts = bark_gen(spine, l, n, m_p, s_p)
 # GENERATING FACES
 faces = bark_faces(sides, n)
 
+
+
+'''
+vectors = branch_guides(spine, verts, m_p, n, b_p)
+# TESTS
+test_vector = [mathutils.Vector((0,0,0)), mathutils.Vector((0,0,0.1))]
+for x in range(n_branch):
+    for i in test_vector:
+        verts.append(vectors[x][0] + (vectors[x][1] @ i))
+'''
 mesh = bpy.data.meshes.new("tree")
 object = bpy.data.objects.new("tree", mesh)
 
 bpy.context.collection.objects.link(object)
 
 mesh.from_pydata(verts ,[], faces)
+
