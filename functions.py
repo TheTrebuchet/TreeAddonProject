@@ -2,17 +2,6 @@ import math
 import random
 import mathutils
 
-#rotate around medium point, towards vector, with starting vector being (0,0,1)
-'''
-def m_vector(spine):
-    result = []
-    for x in range(1, len(spine)-1):
-        result.append(((spine[x-1]-spine[x+1])/2).normalized())
-    return result
-def rotate(verts, vector):
-    for x in range(len(verts)):
-'''
-
 # number of vertices, length
 def spine_init(n, length, l, p_a, p_s, p_seed):
     f1 = lambda z : p_a*(mathutils.noise.noise(mathutils.Vector([0, p_seed, p_s*z]))-0.5)
@@ -102,7 +91,7 @@ def bark_faces(s, n):
             else:
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
-'''
+
 def branch_guides(spine, verts, m_p, n, b_p):
     #parameters
     sides, scale = m_p[0], m_p[3]
@@ -110,11 +99,9 @@ def branch_guides(spine, verts, m_p, n, b_p):
     trans = []
     guides = []
     guide_rel = [mathutils.Vector((0,0,0)), mathutils.Vector((0,0,0.1))]
-
-
+    
     #guide_scale function, should be accessible from interface
-    guide_scale = lambda: x
-
+    guide_f = lambda x : x
     #guide instructions
     for i in range(n_br):
         s_i = random.randint(math.floor(n*h_br), n)
@@ -122,9 +109,8 @@ def branch_guides(spine, verts, m_p, n, b_p):
         trans_vec = verts[pick]
         quat = (mathutils.Vector((0,0,1))).rotation_difference(verts[pick]-spine[s_i]*scale)
         for i in guide_rel:
-            guides.append(trans_vec + (quat @ i)*guide_scale(s_i/n))
+            guides.append(tuple(trans_vec + (quat @ i)*guide_f(s_i/n)))
     return guides
-'''
 
 
 
