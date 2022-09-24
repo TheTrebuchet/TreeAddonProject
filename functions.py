@@ -57,16 +57,15 @@ def bark_circle(n,r):
             circle.append(mathutils.Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
-def bark_gen(spine, l, n, m_p, s_p):
+def bark_gen(spine, l, n, m_p, t_p):
     
     #parameters
     sides, length, radius, scale = m_p
-    a, d = s_p
+    s_fun, f_a = t_p[:2]
 
     #tree-scale function, should be accessible from interface
     #function for scaling of individual circles, scale_list
-    f = lambda x : a*(1/(d+x)-(d+length-x)/(d*(d+length)))+radius*(1-x/length)
-    scale_list = [f(h*l) for h in range(n)]
+    scale_list = [s_fun(h*l, length, radius, f_a) for h in range(n)]
 
     #generating bark with scaling and rotation based on parameters and supplied spine
     bark = [i*scale for i in bark_circle(sides,scale_list[0])]
@@ -92,16 +91,14 @@ def bark_faces(s, n):
 
 # BRANCHES
 
-def branch_guides(spine, verts, m_p, n, b_p):
+def branch_guides(spine, verts, m_p, n, b_p, t_p):
     #parameters
     sides, scale = m_p[0], m_p[3]
     n_br, a_br, h_br, var_br = b_p
-    trans = []
+    scale_f, br_w, br_f = t_p[2:]
     guides = []
     guide_rel = [mathutils.Vector((0,0,0)), mathutils.Vector((0,0,0.1))]
     
-    #guide_scale function, should be accessible from interface
-    guide_f = lambda x : x
     #guide instructions
     for i in range(n_br):
         s_pick = random.randint(math.floor(n*h_br), n-1)
@@ -110,7 +107,7 @@ def branch_guides(spine, verts, m_p, n, b_p):
         trans_vec = verts[v_pick]
         quat = (mathutils.Vector((0,0,1))).rotation_difference(verts[v_pick]-spine[s_pick]*scale)
         for i in guide_rel:
-            guides.append(tuple(trans_vec + (quat @ i)*guide_f(s_pick/n)))
+            guides.append(tuple(trans_vec + (quat @ i)*scale_f(s_pick/n, br_f, br_w)))
     return guides
 
 
