@@ -11,7 +11,7 @@ let's start from the beginning
 `spine_bend` actually displaces the spine, takes spine, perlin noise attributes and length. It works as follows:
 
 - generates random `xrot` and `zrot`, uses many matrices to bend the whole tree above a certain point by an `xrot` angle along an axis determined by `zrot`
-- if the angle is such that a tree starts bending too much towards earth, a correction to `zrot` is applied. 
+- if the angle is such that a tree starts bending too much towards earth, a correction to `zrot` is applied.
 
 The angle should be adjustable in the future, and it doesn't seem to work with large bends
 then it returns spine

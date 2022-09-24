@@ -2,6 +2,8 @@ import math
 import random
 import mathutils
 
+# SPINE
+
 # number of vertices, length
 def spine_init(n, length, l, p_a, p_s, p_seed):
     f1 = lambda z : p_a*(mathutils.noise.noise(mathutils.Vector([0, p_seed, p_s*z]))-0.5)
@@ -43,15 +45,10 @@ def spine_gen(m_p, r_p):
     
     return spine, l, n
 
+# BARK
 
-'''
-verts of the whole tree, combines multiple functions
-1. makes a spine
-2. modify spine to account for a bend
-3.. for each 'n' create a circle
-'''
 # number of sides, radius
-def circle(n,r):
+def bark_circle(n,r):
     circle = []
     if n<3 or r==0:
         return []
@@ -72,14 +69,14 @@ def bark_gen(spine, l, n, m_p, s_p):
     scale_list = [f(h*l) for h in range(n)]
 
     #generating bark with scaling and rotation based on parameters and supplied spine
-    bark = [i*scale for i in circle(sides,scale_list[0])]
+    bark = [i*scale for i in bark_circle(sides,scale_list[0])]
     for x in range(1, n-1):
         vec = spine[x+1] - spine[x-1]
         quat = mathutils.Vector((0,0,1)).rotation_difference(vec)
-        new_circle = [quat @ i for i in circle(sides,scale_list[x])]
+        new_circle = [quat @ i for i in bark_circle(sides,scale_list[x])]
         for y in new_circle:
             bark.append((mathutils.Vector(spine[x]) + mathutils.Vector(y))*scale)
-    bark += [(i + mathutils.Vector(spine[-1]))*scale for i in circle(sides,scale_list[-1])]
+    bark += [(i + mathutils.Vector(spine[-1]))*scale for i in bark_circle(sides,scale_list[-1])]
     return bark
 
 #number of sides, number of vertices, generates faces
@@ -92,6 +89,8 @@ def bark_faces(s, n):
             else:
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
+
+# BRANCHES
 
 def branch_guides(spine, verts, m_p, n, b_p):
     #parameters
