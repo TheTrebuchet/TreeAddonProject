@@ -1,5 +1,4 @@
 import bpy
-import math
 import sys
 import os
 
@@ -8,11 +7,9 @@ if not dir in sys.path:
     sys.path.append(dir )
 
 import functions
-import random
 # this next part forces a reload in case you edit the source after you first start the blender session
 import imp
 imp.reload(functions)
-
 # this is optional and allows you to call the functions without specifying the package name
 from functions import *
 

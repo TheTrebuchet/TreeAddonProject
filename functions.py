@@ -73,12 +73,13 @@ def bark_gen(spine, l, n, m_p, s_p):
 
     #generating bark with scaling and rotation based on parameters and supplied spine
     bark = [i*scale for i in circle(sides,scale_list[0])]
-    for x in range(1, n):
-        vec = spine[x] - spine[x-1]
+    for x in range(1, n-1):
+        vec = spine[x+1] - spine[x-1]
         quat = mathutils.Vector((0,0,1)).rotation_difference(vec)
         new_circle = [quat @ i for i in circle(sides,scale_list[x])]
         for y in new_circle:
             bark.append((mathutils.Vector(spine[x]) + mathutils.Vector(y))*scale)
+    bark += [(i + mathutils.Vector(spine[-1]))*scale for i in circle(sides,scale_list[-1])]
     return bark
 
 #number of sides, number of vertices, generates faces
@@ -104,12 +105,13 @@ def branch_guides(spine, verts, m_p, n, b_p):
     guide_f = lambda x : x
     #guide instructions
     for i in range(n_br):
-        s_i = random.randint(math.floor(n*h_br), n)
-        pick = s_i*sides+random.randint(0, sides-1)
-        trans_vec = verts[pick]
-        quat = (mathutils.Vector((0,0,1))).rotation_difference(verts[pick]-spine[s_i]*scale)
+        s_pick = random.randint(math.floor(n*h_br), n-1)
+        v_pick = s_pick*sides+random.randint(0, sides-1)
+        print(v_pick)
+        trans_vec = verts[v_pick]
+        quat = (mathutils.Vector((0,0,1))).rotation_difference(verts[v_pick]-spine[s_pick]*scale)
         for i in guide_rel:
-            guides.append(tuple(trans_vec + (quat @ i)*guide_f(s_i/n)))
+            guides.append(tuple(trans_vec + (quat @ i)*guide_f(s_pick/n)))
     return guides
 
 
