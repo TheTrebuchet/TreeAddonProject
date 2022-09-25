@@ -22,12 +22,13 @@ def spine_bend(spine, b_a, b_s, b_seed, l):
         x = vec.angle((0.0,0.0,1.0),0.0)/(2*math.pi)
         a = mathutils.Vector((-vec[0], -vec[1], 0.0)).angle((1.0,0.0,0.0),0.0)/(2*math.pi)
         rotz = (1-x)*rotz + x*(a)
-        mat = mathutils.Matrix.Translation(-1*spine[i])
-        mat = mat @ mathutils.Matrix.Translation(spine[i])
-        mat = mat @ mathutils.Matrix.Rotation(2*math.pi*rotz, 4, 'Z')
-        mat = mat @ mathutils.Matrix.Rotation(2*math.pi*rotx, 4, 'X')
-        mat = mat @ mathutils.Matrix.Rotation(-2*math.pi*rotz, 4, 'Z')
-        spine[i:] = [vec@mat for vec in spine[i:]]
+        
+        #transformation itself
+        trans1 = mathutils.Matrix.Translation(-1*spine[i])
+        trans2 = mathutils.Matrix.Translation(spine[i])
+        print(mathutils.Vector((math.cos(2*math.pi*rotz), math.sin(2*math.pi*rotz), 0)))
+        quat = mathutils.Quaternion(mathutils.Vector((math.cos(2*math.pi*rotz), math.sin(2*math.pi*rotz), 0)), 2*math.pi*rotx)
+        spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
     return spine
 
 def spine_gen(m_p, r_p):
@@ -105,7 +106,7 @@ def branch_guides(spine, verts, m_p, n, b_p, t_p):
         v_pick = s_pick*sides+random.randint(0, sides-1)
         print(v_pick)
         trans_vec = verts[v_pick]
-        quat = (mathutils.Vector((0,0,1))).rotation_difference(verts[v_pick]-spine[s_pick]*scale)
+        quat = mathutils.Quaternion(((mathutils.Vector((0,0,1))).cross(verts[v_pick]-spine[s_pick]*scale)).normalized(), math.radians(45))
         for i in guide_rel:
             guides.append(tuple(trans_vec + (quat @ i)*scale_f(s_pick/n, br_f, br_w)))
     return guides
