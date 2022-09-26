@@ -24,7 +24,7 @@ perlin_seed = 3
 
 bends = True
 bends_amount = 2
-bends_maxangle = 45
+bends_angle = 10
 bends_scale = 1
 bends_seed = 4
 
@@ -47,7 +47,7 @@ scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*
 m_p = [sides, length, radius, scale]
 b_p = [branch_number, branch_angle, branch_height, branch_variety]
 t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
-r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_maxangle, bends_scale, bends_seed]
+r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_scale, bends_seed]
 
 def tree_gen(m_p, b_p, t_p, r_p):
     # GENERATING SPINE
