@@ -17,13 +17,12 @@ def spine_bend(spine, b_a, b_ang, b_s, b_seed, l):
     for i in range(1, len(spine)):
         noise = lambda b_a, b_seed, i, l, b_s: b_a*mathutils.noise.noise((0, b_seed, i*l*b_s))
         bend_vec = mathutils.Vector((noise(b_a, b_seed, i, l, b_s), noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
-        print(bend_vec)
-        vec = spine[i] - spine[i-1]
+        
         #correction for absurd angles
+        vec = spine[i] - spine[i-1]
         x = bl_math.clamp(vec.angle((0.0,0.0,1.0),0.0)/math.radians(b_ang))
         bend_vec = bend_vec*(1-x) + mathutils.Vector((-vec[0],-vec[1], vec[2])).normalized()*x
-        print(bend_vec, x)
-        print('-')
+        
         #transformation itself
         trans1 = mathutils.Matrix.Translation(-1*spine[i])
         trans2 = mathutils.Matrix.Translation(spine[i])
