@@ -1,6 +1,7 @@
 import math
 import random
 import mathutils
+import bl_math
 
 # SPINE
 
@@ -12,29 +13,28 @@ def spine_init(n, length, l, p_a, p_s, p_seed):
     return spine
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, b_a, b_s, b_seed, l):
+def spine_bend(spine, b_a, b_m, b_s, b_seed, l):
     for i in range(1, len(spine)):
         rotz = mathutils.noise.noise((0, b_seed, i*l*b_s))
-        rotx = b_a*(mathutils.noise.noise((0, b_seed+1, i*l*b_s)))
-        
+        rotx = b_a*(mathutils.noise.noise((0, b_seed+1, i*l*b_s)))**2
+
         #rotz correction for absurd angles
         vec = spine[i]- spine[i-1]
-        x = vec.angle((0.0,0.0,1.0),0.0)/(2*math.pi)
-        a = mathutils.Vector((-vec[0], -vec[1], 0.0)).angle((1.0,0.0,0.0),0.0)/(2*math.pi)
+        x = bl_math.clamp(vec.angle((0.0,0.0,1.0),0.0)/math.radians(b_m))
+        a = (-(math.atan2(vec[0], vec[1])/(2*math.pi) + 0.5)+2.25)%1
         rotz = (1-x)*rotz + x*(a)
-        
+        print(rotz)
         #transformation itself
         trans1 = mathutils.Matrix.Translation(-1*spine[i])
         trans2 = mathutils.Matrix.Translation(spine[i])
-        print(mathutils.Vector((math.cos(2*math.pi*rotz), math.sin(2*math.pi*rotz), 0)))
-        quat = mathutils.Quaternion(mathutils.Vector((math.cos(2*math.pi*rotz), math.sin(2*math.pi*rotz), 0)), 2*math.pi*rotx)
+        quat = mathutils.Quaternion(mathutils.Vector((math.cos(2*math.pi*rotz+math.pi/2), math.sin(2*math.pi*rotz+math.pi/2), 0)), rotx)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
     return spine
 
 def spine_gen(m_p, r_p):
     #parameters
     sides, length, radius = m_p[:-1]
-    p_a, p_s, p_seed, b_a, b_s, b_seed = r_p
+    p_a, p_s, p_seed, b_a, b_m, b_s, b_seed = r_p
 
     #number of circles in the tree
     n=int(length//(2*math.tan(2*math.pi/(2*sides))*radius))
@@ -42,7 +42,7 @@ def spine_gen(m_p, r_p):
 
     #spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed)
-    spine = spine_bend(spine, b_a, b_s, b_seed, l)
+    spine = spine_bend(spine, b_a, b_m, b_s, b_seed, l)
     
     return spine, l, n
 
@@ -104,7 +104,6 @@ def branch_guides(spine, verts, m_p, n, b_p, t_p):
     for i in range(n_br):
         s_pick = random.randint(math.floor(n*h_br), n-1)
         v_pick = s_pick*sides+random.randint(0, sides-1)
-        print(v_pick)
         trans_vec = verts[v_pick]
         quat = mathutils.Quaternion(((mathutils.Vector((0,0,1))).cross(verts[v_pick]-spine[s_pick]*scale)).normalized(), math.radians(45))
         for i in guide_rel:

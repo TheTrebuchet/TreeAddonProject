@@ -23,13 +23,14 @@ perlin_scale = 0.05
 perlin_seed = 3
 
 bends = True
-bends_amount = 0.01
-bends_scale = 0.05
-bends_seed = 2
+bends_amount = 2
+bends_maxangle = 45
+bends_scale = 1
+bends_seed = 4
 
 # BRANCH PARAMETERS
 branch_number = 4
-branch_angle = 45
+branch_angle = 90
 branch_height = 0.5
 branch_weight = 0.2
 branch_variety = 0.1
@@ -46,7 +47,7 @@ scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*
 m_p = [sides, length, radius, scale]
 b_p = [branch_number, branch_angle, branch_height, branch_variety]
 t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
-r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_scale, bends_seed]
+r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_maxangle, bends_scale, bends_seed]
 
 def tree_gen(m_p, b_p, t_p, r_p):
     # GENERATING SPINE
@@ -59,10 +60,9 @@ def tree_gen(m_p, b_p, t_p, r_p):
     faces = bark_faces(sides, n)
 
     guides = branch_guides(spine, verts, m_p, n, b_p, t_p)
-    print(guides)
     return verts, faces
 verts, faces = tree_gen(m_p, b_p, t_p, r_p)
-
+print('-------------------------')
 mesh = bpy.data.meshes.new("tree")
 object = bpy.data.objects.new("tree", mesh)
 
