@@ -11,7 +11,7 @@ imp.reload(functions)
 from functions import *
 
 # MAIN PARAMETERS
-sides = 20
+sides = 10
 length = 100
 radius = 4
 scale = 0.1
@@ -29,10 +29,10 @@ bends_scale = 0.1
 bends_seed = 8
 
 # BRANCH PARAMETERS
-branch_number = 4
+branch_number = 20
 branch_angle = 90
-branch_height = 0.5
-branch_weight = 0.2
+branch_height = 0.3
+branch_weight = 0.5
 branch_variety = 0.1
 branch_seed = 1
 
@@ -51,25 +51,33 @@ r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bend
 
 def tree_gen(m_p, b_p, t_p, r_p, guide):
     # GENERATING SPINE
-    spine, l, n = spine_gen(m_p, r_p)
+    spine, l, n = spine_gen(m_p, r_p, guide)
 
     # GENERATING VERTS
-    verts = bark_gen(spine, l, n, m_p, t_p)
+    verts = bark_gen(spine, l, n, m_p, t_p, guide)
 
     # GENERATING FACES
-    faces = bark_faces(sides, n)
+    faces = bark_faces(m_p[0], n)
 
     guides = branch_guides(spine, verts, m_p, n, b_p, t_p)
     return verts, faces, guides
 
 verts, faces, guides = tree_gen(m_p, b_p, t_p, r_p, mathutils.Vector((0,0,1)))
-'''
-for i in guides:
-    m_p[1] = i.length()
-    newverts, newfaces = tree_gen(m_p, b_p, t_p, r_p, i)
-'''
 
+for pack in guides:
+    m_p[1] = pack[1].length
+    print(m_p[1])
+    m_p[2] = pack[-1]*0.6
+    m_p[0] = sides//2
 
+    print(pack[1])
+    newverts, newfaces = tree_gen(m_p, b_p, t_p, r_p, pack[1])[:-1]
+    newverts = [vec+pack[0] for vec in newverts]
+    newfaces = [tuple(i + len(verts) for i in j) for j in newfaces]
+    verts += newverts
+    faces += newfaces
+
+verts = [vec*m_p[-1] for vec in verts]
 
 print('-------------------------')
 mesh = bpy.data.meshes.new("tree")
