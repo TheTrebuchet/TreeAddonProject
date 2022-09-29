@@ -13,19 +13,20 @@ def spine_init(n, length, l, p_a, p_s, p_seed):
     return spine
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, b_a, b_ang, b_s, b_seed, l):
+def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l):
     for i in range(1, len(spine)):
         noise = lambda b_a, b_seed, i, l, b_s: b_a*mathutils.noise.noise((0, b_seed, i*l*b_s))
         bend_vec = mathutils.Vector((noise(b_a, b_seed, i, l, b_s), noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
         
         #correction for absurd angles
         vec = spine[i] - spine[i-1]
-        x = bl_math.clamp(vec.angle((0.0,0.0,1.0),0.0)/math.radians(b_ang))
+        x = bl_math.clamp(vec.angle((0.0,0.0,1.0),0.0)/math.radians(b_ang))**b_c**b_c
         bend_vec = bend_vec*(1-x) + mathutils.Vector((-vec[0],-vec[1], vec[2])).normalized()*x
         
         #transformation itself
         trans1 = mathutils.Matrix.Translation(-1*spine[i])
         trans2 = mathutils.Matrix.Translation(spine[i])
+        print(bend_vec)
         quat = mathutils.Vector(((0,0,1))).rotation_difference(bend_vec)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
 
@@ -40,7 +41,7 @@ def spine_bend(spine, b_a, b_ang, b_s, b_seed, l):
 def spine_gen(m_p, r_p):
     #parameters
     sides, length, radius = m_p[:-1]
-    p_a, p_s, p_seed, b_a, b_ang, b_s, b_seed = r_p
+    p_a, p_s, p_seed, b_a, b_ang, b_c, b_s, b_seed = r_p
 
     #number of circles in the tree
     n=int(length//(2*math.tan(2*math.pi/(2*sides))*radius))
@@ -48,7 +49,7 @@ def spine_gen(m_p, r_p):
 
     #spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed)
-    spine = spine_bend(spine, b_a, b_ang, b_s, b_seed, l)
+    spine = spine_bend(spine, b_a, b_ang, bl_math.clamp(b_c)*3.3, b_s, b_seed, l)
     
     return spine, l, n
 

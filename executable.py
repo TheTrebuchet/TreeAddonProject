@@ -11,22 +11,22 @@ imp.reload(functions)
 from functions import *
 
 # MAIN PARAMETERS
-sides = 10
+sides = 20
 length = 100
 radius = 4
-scale = 0.05
+scale = 0.1
 
 # RANDOM PARAMETERS
 perlin = True
-perlin_amount = 0.1
+perlin_amount = 0.01
 perlin_scale = 0.05
 perlin_seed = 3
 
-bends = True
-bends_amount = 2
-bends_angle = 10
-bends_scale = 1
-bends_seed = 4
+bends_amount = 0.5
+bends_angle = 90
+bends_correction = 0.2
+bends_scale = 0.1
+bends_seed = 8
 
 # BRANCH PARAMETERS
 branch_number = 4
@@ -47,9 +47,9 @@ scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*
 m_p = [sides, length, radius, scale]
 b_p = [branch_number, branch_angle, branch_height, branch_variety]
 t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
-r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_scale, bends_seed]
+r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_correction, bends_scale, bends_seed]
 
-def tree_gen(m_p, b_p, t_p, r_p):
+def tree_gen(m_p, b_p, t_p, r_p, guide):
     # GENERATING SPINE
     spine, l, n = spine_gen(m_p, r_p)
 
@@ -60,8 +60,17 @@ def tree_gen(m_p, b_p, t_p, r_p):
     faces = bark_faces(sides, n)
 
     guides = branch_guides(spine, verts, m_p, n, b_p, t_p)
-    return verts, faces
-verts, faces = tree_gen(m_p, b_p, t_p, r_p)
+    return verts, faces, guides
+
+verts, faces, guides = tree_gen(m_p, b_p, t_p, r_p, mathutils.Vector((0,0,1)))
+'''
+for i in guides:
+    m_p[1] = i.length()
+    newverts, newfaces = tree_gen(m_p, b_p, t_p, r_p, i)
+'''
+
+
+
 print('-------------------------')
 mesh = bpy.data.meshes.new("tree")
 object = bpy.data.objects.new("tree", mesh)
