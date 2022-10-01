@@ -49,35 +49,15 @@ b_p = [branch_number, branch_angle, branch_height, branch_variety]
 t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
 r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_correction, bends_scale, bends_seed]
 
-def tree_gen(m_p, b_p, t_p, r_p, guide):
-    # GENERATING SPINE
-    spine, l, n = spine_gen(m_p, r_p, guide)
 
-    # GENERATING VERTS
-    verts = bark_gen(spine, l, n, m_p, t_p, guide)
-
-    # GENERATING FACES
-    faces = bark_faces(m_p[0], n)
-
-    guides = branch_guides(spine, verts, m_p, n, b_p, t_p)
-    return verts, faces, guides
-
+#generates the trunk
 verts, faces, guides = tree_gen(m_p, b_p, t_p, r_p, mathutils.Vector((0,0,1)))
 
-for pack in guides:
-    m_p[1] = pack[1].length
-    print(m_p[1])
-    m_p[2] = pack[-1]*0.6
-    m_p[0] = sides//2
+#generates branches on that trunk
+branch_gen(verts, faces, guides, m_p, b_p, t_p, r_p)
+branch_gen(verts, faces, guides, m_p, b_p, t_p, r_p)
 
-    print(pack[1])
-    newverts, newfaces = tree_gen(m_p, b_p, t_p, r_p, pack[1])[:-1]
-    newverts = [vec+pack[0] for vec in newverts]
-    newfaces = [tuple(i + len(verts) for i in j) for j in newfaces]
-    verts += newverts
-    faces += newfaces
-
-verts = [vec*m_p[-1] for vec in verts]
+verts = [vec*m_p[-1] for vec in verts] #scales the tree
 
 print('-------------------------')
 mesh = bpy.data.meshes.new("tree")

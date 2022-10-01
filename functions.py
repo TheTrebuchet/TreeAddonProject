@@ -47,6 +47,8 @@ def spine_gen(m_p, r_p, guide):
 
     ### number of circles in the tree
     n=int(length//(2*math.tan(2*math.pi/(2*sides))*radius))
+    print(length, sides, radius)
+    print(n)
     l = length/n
 
     ### spine gen
@@ -112,19 +114,46 @@ def branch_guides(spine, verts, m_p, n, b_p, t_p):
     n_br, a_br, h_br, var_br = b_p
     scale_f, br_w, br_f = t_p[2:]
     guides = []
-    guide_rel = [mathutils.Vector((0,0,0)), mathutils.Vector((0,0,0.1))]
     
     ### guide instructions
     for i in range(n_br):
         s_pick = random.randint(math.floor(n*h_br), n-1)
         v_pick = s_pick*sides+random.randint(0, sides-1)
         trans_vec = spine[s_pick]
-        quat = mathutils.Quaternion(((mathutils.Vector((0,0,1))).cross(verts[v_pick]-spine[s_pick])).normalized(), math.radians(70))
+        quat = mathutils.Quaternion(((mathutils.Vector((0,0,1))).cross(verts[v_pick]-spine[s_pick])).normalized(), math.radians(a_br))
         guide_vec = (quat @ mathutils.Vector((0,0,1)))*scale_f(s_pick/n, br_f, br_w)
         radius = (verts[v_pick]-spine[s_pick]).length
         guides.append([trans_vec, guide_vec, radius])
     return guides
 
+def tree_gen(m_p, b_p, t_p, r_p, guide):
+    # GENERATING SPINE
+    spine, l, n = spine_gen(m_p, r_p, guide)
+
+    # GENERATING VERTS
+    verts = bark_gen(spine, l, n, m_p, t_p, guide)
+
+    # GENERATING FACES
+    faces = bark_faces(m_p[0], n)
+
+    guides = branch_guides(spine, verts, m_p, n, b_p, t_p)
+    return verts, faces, guides
+
+def branch_gen(verts, faces, guides, m_p, b_p, t_p, r_p):
+    m_p[0] = -(m_p[0]//-2) #updating sides
+    if m_p[0]<3:m_p[0]=3
+    for pack in guides:
+        m_p[1] = pack[1].length #updating length
+        m_p[2] = pack[-1]*0.6 #updating radius
+        r_p[2]+=1 #updating seeds
+        r_p[-1]+=1
+        
+        newverts, newfaces, newguides = tree_gen(m_p, b_p, t_p, r_p, pack[1])
+        newverts = [vec+pack[0] for vec in newverts]
+        newfaces = [tuple(i + len(verts) for i in j) for j in newfaces]
+        verts += newverts
+        faces += newfaces
+    guides = newguides
 
 
 
