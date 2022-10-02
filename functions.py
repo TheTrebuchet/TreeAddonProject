@@ -5,34 +5,34 @@ import bl_math
 
 # SPINE
 
-## number of vertices, length
+# number of vertices, length
 def spine_init(n, length, l, p_a, p_s, p_seed, guide):
-    ### quat rotates the spine, f1 and f2 jiggle the spine
+    # quat rotates the spine, f1 and f2 jiggle the spine
     quat = mathutils.Vector((0,0,1)).rotation_difference(guide)
     f1 = lambda z : p_a*(mathutils.noise.noise(mathutils.Vector([0, p_seed, p_s*z]))-0.5)
     f2 = lambda z : p_a*(mathutils.noise.noise(mathutils.Vector([0, p_seed, p_s*(z+length)]))-0.5)
     spine = [quat@mathutils.Vector((f1(l*i), f2(l*i), l*i)) for i in range(n)]
     return spine
 
-## bends the spine in a more meaningful way
+# bends the spine in a more meaningful way
 def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
     for i in range(1, len(spine)):
         noise = lambda b_a, b_seed, i, l, b_s: b_a*mathutils.noise.noise((0, b_seed, i*l*b_s))
         bend_vec = mathutils.Vector((noise(b_a, b_seed, i, l, b_s), noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
         
-        ### correction for absurd angles
+        # correction for absurd angles
         vec = spine[i] - spine[i-1]
         x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))**b_c**b_c
         vec = (guide.rotation_difference((0,0,1)))@vec
         bend_vec = bend_vec*(1-x) + mathutils.Vector((-vec[0],-vec[1], vec[2])).normalized()*x
         
-        ### transformation itself
+        # transformation itself
         trans1 = mathutils.Matrix.Translation(-1*spine[i])
         trans2 = mathutils.Matrix.Translation(spine[i])
         quat = mathutils.Vector(((0,0,1))).rotation_difference(bend_vec)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
 
-        ### correction for tree being completely sideways
+        # correction for tree being completely sideways
     ''' 
     vec_c = spine[-1] - spine[0]
     quat = vec_c.rotation_difference(mathutils.Vector((0.0,0.0,1.0)))
@@ -41,17 +41,14 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
     return spine
 
 def spine_gen(m_p, r_p, guide):
-    ### parameters
+    # parameters
     sides, length, radius = m_p[:-1]
     p_a, p_s, p_seed, b_a, b_ang, b_c, b_s, b_seed = r_p
 
-    ### number of circles in the tree
+    # number of circles in the tree
     n=int(length//(2*math.tan(2*math.pi/(2*sides))*radius))
-    print(length, sides, radius)
-    print(n)
     l = length/n
-
-    ### spine gen
+    # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
     spine = spine_bend(spine, b_a, b_ang, bl_math.clamp(b_c)*3.3, b_s, b_seed, l, guide)
     
@@ -60,7 +57,7 @@ def spine_gen(m_p, r_p, guide):
 
 # BARK
 
-## number of sides, radius
+# number of sides, radius
 def bark_circle(n,r):
     circle = []
     if n<3 or r==0:
@@ -71,16 +68,16 @@ def bark_circle(n,r):
     return circle
 
 def bark_gen(spine, l, n, m_p, t_p, guide):
-    ### generating quat to adjust first and last circle, matters for the branch only
+    # generating quat to adjust first and last circle, matters for the branch only
     quat = mathutils.Vector((0,0,1)).rotation_difference(guide)
-    ### parameters
+    # parameters
     sides, length, radius = m_p[:-1]
     s_fun, f_a = t_p[:2]
 
-    ### s_fun function, should be accessible from interface, scales the circles
+    # s_fun function, should be accessible from interface, scales the circles
     scale_list = [s_fun(h*l, length, radius, f_a) for h in range(n)]
 
-    ### generating bark with scaling and rotation based on parameters and spine
+    # generating bark with scaling and rotation based on parameters and spine
     bark = [quat@i for i in bark_circle(sides,scale_list[0])]
     
     for x in range(1, n-1):
@@ -93,7 +90,7 @@ def bark_gen(spine, l, n, m_p, t_p, guide):
     bark += [(quat@i + mathutils.Vector(spine[-1])) for i in bark_circle(sides,scale_list[-1])]
     return bark
 
-##number of sides, number of vertices, generates faces
+#number of sides, number of vertices, generates faces
 def bark_faces(s, n):
     faces = []
     for i in range(n-1):
@@ -107,15 +104,16 @@ def bark_faces(s, n):
 
 # BRANCHES
 
-## outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
-def branch_guides(spine, verts, m_p, n, b_p, t_p):
-    ### parameters
+# outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
+def branch_guides(spine, verts, m_p, b_p, t_p):
+    # parameters
+    n = len(spine)
     sides = m_p[0]
     n_br, a_br, h_br, var_br = b_p
     scale_f, br_w, br_f = t_p[2:]
     guides = []
     
-    ### guide instructions
+    # guide instructions
     for i in range(n_br):
         s_pick = random.randint(math.floor(n*h_br), n-1)
         v_pick = s_pick*sides+random.randint(0, sides-1)
@@ -126,41 +124,51 @@ def branch_guides(spine, verts, m_p, n, b_p, t_p):
         guides.append([trans_vec, guide_vec, radius])
     return guides
 
-def tree_gen(m_p, b_p, t_p, r_p, guide):
-    # GENERATING SPINE
+#generates a single trunk, whether it will be branch or the main trunk
+def tree_gen(m_p, t_p, r_p, guide):
     spine, l, n = spine_gen(m_p, r_p, guide)
-
-    # GENERATING VERTS
     verts = bark_gen(spine, l, n, m_p, t_p, guide)
-
-    # GENERATING FACES
     faces = bark_faces(m_p[0], n)
+    
+    return verts, faces, spine
 
-    guides = branch_guides(spine, verts, m_p, n, b_p, t_p)
-    return verts, faces, guides
+#this function updates facelist of all trunks and branches
+#returns newspinelist and newfacelist of the new branches
+def branch_gen(vertslist, faceslist, spinelist, m_p, b_p, t_p, r_p):
+    newspinelist = []
+    newvertslist = []
+    
+    sides = m_p[0]
+    t_sides = m_p[0]//2 #updating sides
+    if t_sides<4:
+        t_sides=4
 
-def branch_gen(verts, faces, guides, m_p, b_p, t_p, r_p):
-    m_p[0] = -(m_p[0]//-2) #updating sides
-    if m_p[0]<3:m_p[0]=3
-    for pack in guides:
-        m_p[1] = pack[1].length #updating length
-        m_p[2] = pack[-1]*0.6 #updating radius
-        r_p[2]+=1 #updating seeds
-        r_p[-1]+=1
+    for i in range(len(spinelist)):
+        guides = branch_guides(spinelist[i], vertslist[i], m_p, b_p, t_p)
+        m_p[0] = t_sides
+        for pack in guides:
+            m_p[1] = pack[1].length #updating length
+            m_p[2] = pack[-1]*0.6 #updating radius
+            r_p[2]+=1 #updating seeds
+            r_p[-1]+=1
+            
+            newverts, newfaces, newspine = tree_gen(m_p, t_p, r_p, pack[1])
+            newverts = [vec+pack[0] for vec in newverts]
+            newspine = [vec+pack[0] for vec in newspine]
+            newspinelist.append(newspine)
+            newvertslist.append(newverts)
+            faceslist.append(newfaces)
+        m_p[0] = sides
+    m_p[0] = t_sides
+    return newvertslist, newspinelist
         
-        newverts, newfaces, newguides = tree_gen(m_p, b_p, t_p, r_p, pack[1])
-        newverts = [vec+pack[0] for vec in newverts]
-        newfaces = [tuple(i + len(verts) for i in j) for j in newfaces]
-        verts += newverts
-        faces += newfaces
-    guides = newguides
 
 
 
 
 
 if __name__ == "__main__":
-### place for testing
+# place for testing
     s = 6
     r = 1
     l = 1
