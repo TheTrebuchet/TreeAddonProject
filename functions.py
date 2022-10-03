@@ -101,7 +101,7 @@ def face_gen(s, n):
     return faces
 
 
-# BRANCHES
+# BRANCHES AND TREE GENERATION
 
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
 def branch_guides(spine, verts, m_p, b_p, t_p):
@@ -119,12 +119,12 @@ def branch_guides(spine, verts, m_p, b_p, t_p):
         trans_vec = spine[s_pick]
         quat = mathutils.Quaternion(((mathutils.Vector((0,0,1))).cross(verts[v_pick]-spine[s_pick])).normalized(), math.radians(a_br))
         guide_vec = (quat @ mathutils.Vector((0,0,1)))*scale_f(s_pick/n, br_f, br_w)
-        radius = (verts[v_pick]-spine[s_pick]).length
+        radius = (verts[v_pick]-spine[s_pick]).length*1.6
         guides.append([trans_vec, guide_vec, radius])
     return guides
 
 #generates a single trunk, whether it will be branch or the main trunk
-def tree_gen(m_p, t_p, r_p, guide):
+def trunk_gen(m_p, t_p, r_p, guide):
     spine, l, n = spine_gen(m_p, r_p, guide)
     verts = bark_gen(spine, l, n, m_p, t_p, guide)
     faces = face_gen(m_p[0], n)
@@ -151,7 +151,7 @@ def branch_gen(vertslist, faceslist, spinelist, m_p, b_p, t_p, r_p):
             r_p[2]+=1 #updating seeds
             r_p[-1]+=1
             
-            newverts, newfaces, newspine = tree_gen(m_p, t_p, r_p, pack[1])
+            newverts, newfaces, newspine = trunk_gen(m_p, t_p, r_p, pack[1])
             newverts = [vec+pack[0] for vec in newverts]
             newspine = [vec+pack[0] for vec in newspine]
             newspinelist.append(newspine)
@@ -160,8 +160,40 @@ def branch_gen(vertslist, faceslist, spinelist, m_p, b_p, t_p, r_p):
         m_p[0] = sides
     m_p[0] = t_sides
     return newvertslist, newspinelist
-        
 
+
+# THE MIGHTY TREE GENERATION
+
+def tree_gen(m_p, b_p, t_p, r_p):
+    #initial trunk
+    verts, faces, spine = trunk_gen(m_p, t_p, r_p, mathutils.Vector((0,0,1)))
+    newvertslist = [verts]
+    vertslist = [verts]
+    faceslist = [faces]
+    newspinelist = [spine]
+    #adjusting parameters for branch functions
+    branch_seq = b_p[1:4]
+    b_p = [b_p[1]]+b_p[4:]
+    #generates branches on that trunk stored in new_ lists temporarily
+    if b_p[0] != 0:
+        for i in branch_seq:
+            b_p[0] = i
+            newvertslist, newspinelist = branch_gen(newvertslist, faceslist, newspinelist, m_p, b_p, t_p, r_p)
+            vertslist += newvertslist #newlists are added to old lists
+
+    #faces are created from the list of lists, I am adding corrections to make it into a whole new list
+    adds = 0
+    for i in range(1, len(vertslist)):
+        adds += len(vertslist[i-1])
+        faces += [tuple([i+adds for i in j]) for j in faceslist[i]]
+
+    #verts are created from the list of lists, so I am just joining them together
+    verts = []
+    for i in vertslist:
+        verts += i
+    
+    verts = [vec*m_p[3] for vec in verts] #scales the tree
+    return verts, faces
 
 
 
