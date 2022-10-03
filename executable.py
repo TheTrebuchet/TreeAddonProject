@@ -15,6 +15,7 @@ sides = 10
 length = 100
 radius = 4
 scale = 0.1
+ratio = 2
 
 # RANDOM PARAMETERS
 perlin = True
@@ -44,7 +45,8 @@ branch_flare = 1.2
 scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*b #this one is for branches scale
 
 #parameter lists
-m_p = [sides, length, radius, scale]
+l=length/(length//(ratio*math.tan(2*math.pi/(2*sides))*radius))
+m_p = [sides, length, radius, scale, l]
 b_p = [branch_number, branch_angle, branch_height, branch_variety]
 t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
 r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_correction, bends_scale, bends_seed]
@@ -81,7 +83,7 @@ for i in range(1, len(vertslist)):
 verts = []
 for i in vertslist:
     verts += i
-verts = [vec*m_p[-1] for vec in verts] #scales the tree
+verts = [vec*m_p[3] for vec in verts] #scales the tree
 
 print('-------------------------')
 mesh = bpy.data.meshes.new("tree")

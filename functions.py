@@ -42,12 +42,11 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
 
 def spine_gen(m_p, r_p, guide):
     # parameters
-    sides, length, radius = m_p[:-1]
+    length = m_p[1]
+    l = m_p[4]
+    n = round(length/l)
     p_a, p_s, p_seed, b_a, b_ang, b_c, b_s, b_seed = r_p
 
-    # number of circles in the tree
-    n=int(length//(2*math.tan(2*math.pi/(2*sides))*radius))
-    l = length/n
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
     spine = spine_bend(spine, b_a, b_ang, bl_math.clamp(b_c)*3.3, b_s, b_seed, l, guide)
@@ -71,7 +70,7 @@ def bark_gen(spine, l, n, m_p, t_p, guide):
     # generating quat to adjust first and last circle, matters for the branch only
     quat = mathutils.Vector((0,0,1)).rotation_difference(guide)
     # parameters
-    sides, length, radius = m_p[:-1]
+    sides, length, radius = m_p[:3]
     s_fun, f_a = t_p[:2]
 
     # s_fun function, should be accessible from interface, scales the circles
@@ -91,7 +90,7 @@ def bark_gen(spine, l, n, m_p, t_p, guide):
     return bark
 
 #number of sides, number of vertices, generates faces
-def bark_faces(s, n):
+def face_gen(s, n):
     faces = []
     for i in range(n-1):
         for j in range(s):
@@ -128,7 +127,7 @@ def branch_guides(spine, verts, m_p, b_p, t_p):
 def tree_gen(m_p, t_p, r_p, guide):
     spine, l, n = spine_gen(m_p, r_p, guide)
     verts = bark_gen(spine, l, n, m_p, t_p, guide)
-    faces = bark_faces(m_p[0], n)
+    faces = face_gen(m_p[0], n)
     
     return verts, faces, spine
 
@@ -173,4 +172,4 @@ if __name__ == "__main__":
     r = 1
     l = 1
     n = 5
-    print(bark_faces(s, n))
+    print(face_gen(s, n))
