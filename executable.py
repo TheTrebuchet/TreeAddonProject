@@ -51,7 +51,7 @@ scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*
 #parameter lists
 l=length/(length//(ratio*math.tan(2*math.pi/(2*sides))*radius))
 m_p = [sides, length, radius, scale, l]
-b_p = [branch_levels, branch_number1, branch_number2, branch_number3, branch_angle, branch_height, branch_variety]
+b_p = [branch_levels, branch_number1, branch_number2, branch_number3, branch_angle, branch_height, branch_variety, branch_seed]
 t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
 r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_correction, bends_scale, bends_seed]
 
