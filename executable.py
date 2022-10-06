@@ -51,7 +51,8 @@ scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*
 #parameter lists
 l=length/(length//(ratio*math.tan(2*math.pi/(2*sides))*radius))
 m_p = [sides, length, radius, scale, l]
-b_p = [branch_levels, branch_number1, branch_number2, branch_number3, branch_angle, branch_height, branch_variety, branch_seed]
+b_p = [branch_levels, branch_angle, branch_height, branch_variety, branch_seed]
+bn_p = [branch_number1, branch_number2, branch_number3]
 t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
 r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_correction, bends_scale, bends_seed]
 
@@ -64,7 +65,7 @@ newspinelist is just what branch function needs for a new set of branches
 '''
 #generates the trunk and lists of lists of stuff
 
-verts, faces = tree_gen(m_p, b_p, t_p, r_p)
+verts, faces = tree_gen(m_p, b_p, bn_p, t_p, r_p)
 
 print('-------------------------')
 mesh = bpy.data.meshes.new("tree")

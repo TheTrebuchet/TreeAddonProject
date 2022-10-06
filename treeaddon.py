@@ -11,7 +11,7 @@ bl_info = {
     "version": (0, 0, 1),
     "blender": (3, 3, 1),
     "location": "View3D > Sidebar > Tree Generator (Create Tab)",
-    "description": "Adds generated tree at cursor"
+    "description": "Adds a generated tree at cursor",
     "warning": "",
     "doc_url": "",
     "category": "Add Object",
@@ -114,17 +114,17 @@ def face_gen(s, n):
 
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
-def branch_guides(spine, verts, m_p, b_p, t_p):
+def branch_guides(spine, verts, number, m_p, b_p, t_p):
     # parameters
     n = len(spine)
     sides = m_p[0]
-    n_br, a_br, h_br, var_br, s_br = b_p
+    a_br, h_br, var_br, s_br = b_p[1:]
     scale_f, br_w, br_f = t_p[2:]
     guides = []
     
     # guide instructions
-    for i in range(n_br):
-        s_br+=n_br
+    for i in range(number):
+        s_br+=number
         random.seed(s_br)
         s_pick = random.randint(round(h_br*n), n-1)
         random.seed(s_br+1)
@@ -146,7 +146,7 @@ def trunk_gen(m_p, t_p, r_p, guide):
 
 #this function updates facelist of all trunks and branches
 #returns newspinelist and newfacelist of the new branches
-def branch_gen(vertslist, faceslist, spinelist, m_p, b_p, t_p, r_p):
+def branch_gen(vertslist, faceslist, spinelist, m_p, b_p, number, t_p, r_p):
     newspinelist = []
     newvertslist = []
     
@@ -156,7 +156,7 @@ def branch_gen(vertslist, faceslist, spinelist, m_p, b_p, t_p, r_p):
         t_sides=4
 
     for i in range(len(spinelist)):
-        guides = branch_guides(spinelist[i], vertslist[i], m_p, b_p, t_p)
+        guides = branch_guides(spinelist[i], vertslist[i], number, m_p, b_p, t_p)
         m_p[0] = t_sides
         for pack in guides:
             m_p[1] = pack[1].length #updating length
@@ -176,21 +176,17 @@ def branch_gen(vertslist, faceslist, spinelist, m_p, b_p, t_p, r_p):
 
 
 # THE MIGHTY TREE GENERATION
-def tree_gen(m_p, b_p, t_p, r_p):
+def tree_gen(m_p, b_p, bn_p, t_p, r_p):
     #initial trunk
     verts, faces, spine = trunk_gen(m_p, t_p, r_p, mathutils.Vector((0,0,1)))
     newvertslist = [verts]
     vertslist = [verts]
     faceslist = [faces]
     newspinelist = [spine]
-    #adjusting parameters for branch functions
-    branch_seq = b_p[1:4]
-    b_p = [b_p[1]]+b_p[4:]
-    #generates branches on that trunk stored in new_ lists temporarily
+    #generates branches on that trunk stored in new_lists temporarily
     if b_p[0] != 0:
-        for i in branch_seq:
-            b_p[0] = i
-            newvertslist, newspinelist = branch_gen(newvertslist, faceslist, newspinelist, m_p, b_p, t_p, r_p)
+        for i in range(b_p[0]):
+            newvertslist, newspinelist = branch_gen(newvertslist, faceslist, newspinelist, m_p, b_p, bn_p[i], t_p, r_p)
             vertslist += newvertslist #newlists are added to old lists
 
     #faces are created from the list of lists, I am adding corrections to make it into a whole new list
@@ -253,26 +249,26 @@ class TreeGen(bpy.types.Operator):
     #parameter lists
     l=length/(length//(ratio*math.tan(2*math.pi/(2*sides))*radius))
     m_p = [sides, length, radius, scale, l]
-    b_p = [branch_levels, branch_number1, branch_number2, branch_number3, branch_angle, branch_height, branch_variety, branch_seed]
+    b_p = [branch_levels, branch_angle, branch_height, branch_variety, branch_seed]
+    bn_p = [branch_number1, branch_number2, branch_number3]
     t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
     r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_correction, bends_scale, bends_seed]
 
     def execute(self, context):
-
         #generates the trunk and lists of lists of stuff
+        verts, faces = tree_gen(self.m_p, self.b_p, self.bn_p, self.t_p, self.r_p)
 
-        verts, faces = tree_gen(self.m_p, self.b_p, self.t_p, self.r_p)
-
-        print('-------------------------')
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
 
         bpy.context.collection.objects.link(object)
 
         mesh.from_pydata(verts ,[], faces)
+        verts = []
+        faces = []
         return {'FINISHED'}
 
-class TreeGenerator(bpy.types.Panel):
+class Object_PT_TreeGenerator(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
     bl_label = "Tree_Gen"
     bl_space_type = "VIEW_3D"  
@@ -287,16 +283,91 @@ class TreeGenerator(bpy.types.Panel):
 
         row = layout.row()
         row.operator(TreeGen.bl_idname)
-        layout.separator()    
+        layout.separator()
+class TreeGen_Properties(bpy.types.PropertyGroup):
+    # MAIN PARAMETERS
+    sides: bpy.types.IntProperty(
+        name="sides",
+        description="number of sides on a trunk",
+        default=6,
+        min=1,
+        soft_max=32,
+    )
+    length: bpy.types.FloatProperty(
+        name="length",
+        description="length of the main trunk",
+        default=100,
+        min=0.0,
+        soft_max=200,
+    )
+    radius: bpy.types.FloatProperty(
+        name="radius",
+        description="number of sides on a trunk",
+        default=4,
+        min=0.0,
+        soft_max=32,
+    )
+    scale: bpy.types.FloatProperty(
+        name="scale",
+        description="",
+        default=0.1,
+        min=0.0,
+        soft_max=32,
+    )
+    ratio: bpy.types.FloatProperty(
+        name="ratio",
+        description="",
+        default=2,
+        min=0.0,
+        soft_max=4,
+    )
+
+    # RANDOM PARAMETERS
+    perlin: bpy.types.FloatProperty(
+        name="perlin",
+        description="",
+        default=4,
+        min=0.0,
+        soft_max=32,
+    )
+    perlin_amount: bpy.types.FloatProperty(
+        name="perlin_amount",
+        description="",
+        default=4,
+        min=0.0,
+        soft_max=32,
+    )
+    perlin = True
+    perlin_amount = 0.01
+    perlin_scale = 0.05
+    perlin_seed = 3
+
+    bends_amount = 0.5
+    bends_angle = 90
+    bends_correction = 0.2
+    bends_scale = 0.1
+    bends_seed = 8
+
+    # BRANCH PARAMETERS
+    branch_levels = 2
+    branch_number1 = 30
+    branch_number2 = 5
+    branch_number3 = 2
+    branch_angle = 70
+    branch_height = 0.3
+    branch_weight = 0.5
+    branch_variety = 0.1
+    branch_seed = 1
 
 def register():
     bpy.utils.register_class(TreeGen)
-    bpy.utils.register_class(TreeGenerator)
+    bpy.utils.register_class(Object_PT_TreeGenerator)
+    bpy.utils.register_class(TreeGen_Properties)
 
 
 def unregister():
     bpy.utils.unregister_class(TreeGen)
-    bpy.utils.unregister_class(TreeGenerator)
-
+    bpy.utils.unregister_class(Object_PT_TreeGenerator)
+    bpy.utils.unregister_class(TreeGen_Properties)
 if __name__ == '__main__':
     register()
