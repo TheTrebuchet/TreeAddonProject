@@ -115,8 +115,10 @@ def branch_guides(spine, verts, m_p, b_p, t_p):
     # guide instructions
     for i in range(n_br):
         s_br+=n_br
-        s_pick = round((random.seed(s_br)*(1-h_br)+h_br)*(n-1))
-        v_pick = s_pick*sides+round(random.seed(s_br)*(sides-1))
+        random.seed(s_br)
+        s_pick = random.randint(round(h_br*n), n-1)
+        random.seed(s_br+1)
+        v_pick = s_pick*sides+random.randint(0, sides-1)
         trans_vec = spine[s_pick]
         quat = mathutils.Quaternion(((mathutils.Vector((0,0,1))).cross(verts[v_pick]-spine[s_pick])).normalized(), math.radians(a_br))
         guide_vec = (quat @ mathutils.Vector((0,0,1)))*scale_f(s_pick/n, br_f, br_w)
