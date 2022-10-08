@@ -268,6 +268,160 @@ class TreeGen(bpy.types.Operator):
         faces = []
         return {'FINISHED'}
 
+class TreeGen_PG(bpy.types.PropertyGroup):
+    Msides: bpy.props.IntProperty(
+        name="Number of trunk sides",
+        default=10,
+        min=4,
+        soft_max=32
+    )
+    Mlength: bpy.props.FloatProperty(
+        name="Trunk length",
+        default=100.0,
+        min=0.1,
+        soft_max=200.0
+    )
+    Mradius: bpy.props.FloatProperty(
+        name="Tree radius",
+        default=4,
+        min=0.1,
+        soft_max=32
+    )
+    Mscale: bpy.props.FloatProperty(
+        name="Tree scale",
+        default=0.1,
+        min=0.01,
+        soft_max=10
+    )
+
+    Mratio: bpy.props.FloatProperty(
+        name="Ratio of faces",
+        default=2,
+        min=0.2,
+        soft_max=5
+    )
+
+    Rperlin: bpy.props.BoolProperty(
+        name="turns on the jiggles",
+        default=False,
+    )
+
+    Rperlin_amount: bpy.props.FloatProperty(
+        name="jiggle amount",
+        default=0.01,
+        min=0.0,
+        soft_max=1
+    )
+
+    Rperlin_scale: bpy.props.FloatProperty(
+        name="jiggle scale",
+        default=0.05,
+        min=4,
+        soft_max=32
+    )
+
+    Rperlin_seed: bpy.props.IntProperty(
+        name="jiggle seed",
+        default=1,
+        min=1,
+    )
+
+    Rbends_amount: bpy.props.FloatProperty(
+        name="bending amount",
+        default=0.5,
+        min=0.0,
+        soft_max=10
+    )
+
+    Rbends_angle: bpy.props.FloatProperty(
+        name="Bends max angle",
+        default=90,
+        min=15,
+        soft_max=120
+    )
+
+    Rbends_correction: bpy.props.FloatProperty(
+        name="bending correction",
+        default=0.2,
+        min=0.0,
+        soft_max=1
+    )
+
+    Rbends_scale: bpy.props.FloatProperty(
+        name="Bending scale",
+        default=0.1,
+        min=0.01,
+        soft_max=10
+    )
+
+    Rbends_seed: bpy.props.IntProperty(
+        name="bends seed",
+        default=1,
+        min = 1
+    )
+
+    branch_levels: bpy.props.IntProperty(
+        name="branching levels",
+        default=2,
+        min=1,
+        soft_max=4
+    )
+
+    branch_number1: bpy.props.IntProperty(
+        name="branches number1",
+        default=30,
+        min=1,
+        soft_max=100
+    )
+
+    branch_number2: bpy.props.IntProperty(
+        name="branches number2",
+        default=5,
+        min=1,
+        soft_max=20
+    )
+
+    branch_number3: bpy.props.IntProperty(
+        name="branches number3",
+        default=2,
+        min=1,
+        soft_max=10
+    )
+
+    branch_angle: bpy.props.FloatProperty(
+        name="branching angle",
+        default=70,
+        min=15,
+        soft_max=90
+    )
+
+    branch_height: bpy.props.FloatProperty(
+        name="branching height",
+        default=0.3,
+        min=0.0,
+        soft_max=0.9
+    )
+
+    branch_weight: bpy.props.FloatProperty(
+        name="branch weight",
+        default=0.5,
+        min=0.0,
+        soft_max=1
+    )
+
+    branch_variety: bpy.props.FloatProperty(
+        name="branching variety",
+        default=0.1,
+        min=0.0,
+        soft_max=1
+    )
+
+    branch_seed: bpy.props.IntProperty(
+        name="branching seed",
+        default=1,
+        min=1,
+    )
+
 class Object_PT_TreeGenerator(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
     bl_label = "Tree_Gen"
@@ -278,96 +432,68 @@ class Object_PT_TreeGenerator(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        wm = context.window_manager
+        col = layout.column(align=True)
         
         layout.label(text="Aight lad, lob that tree over there would ya?")
 
-        row = layout.row()
-        row.operator(TreeGen.bl_idname)
+        col.operator('object.create_tree',
+        text = 'Create a Tree')
         layout.separator()
-class TreeGen_Properties(bpy.types.PropertyGroup):
-    # MAIN PARAMETERS
-    sides: bpy.types.IntProperty(
-        name="sides",
-        description="number of sides on a trunk",
-        default=6,
-        min=1,
-        soft_max=32,
-    )
-    length: bpy.types.FloatProperty(
-        name="length",
-        description="length of the main trunk",
-        default=100,
-        min=0.0,
-        soft_max=200,
-    )
-    radius: bpy.types.FloatProperty(
-        name="radius",
-        description="number of sides on a trunk",
-        default=4,
-        min=0.0,
-        soft_max=32,
-    )
-    scale: bpy.types.FloatProperty(
-        name="scale",
-        description="",
-        default=0.1,
-        min=0.0,
-        soft_max=32,
-    )
-    ratio: bpy.types.FloatProperty(
-        name="ratio",
-        description="",
-        default=2,
-        min=0.0,
-        soft_max=4,
-    )
+        col = layout.column(align=True)
+        col.label(text="Main Parameters:")
+        col.prop(wm.treegen_props, "Msides")
+        col.prop(wm.treegen_props, "Mlength")
+        col.prop(wm.treegen_props, "Mradius")
+        col.prop(wm.treegen_props, "Mscale")
+        col.prop(wm.treegen_props, "Mratio")
 
-    # RANDOM PARAMETERS
-    perlin: bpy.types.FloatProperty(
-        name="perlin",
-        description="",
-        default=4,
-        min=0.0,
-        soft_max=32,
-    )
-    perlin_amount: bpy.types.FloatProperty(
-        name="perlin_amount",
-        description="",
-        default=4,
-        min=0.0,
-        soft_max=32,
-    )
-    perlin = True
-    perlin_amount = 0.01
-    perlin_scale = 0.05
-    perlin_seed = 3
+        col = layout.column(align=True)
+        col.label(text="Random Parameters:")
+        col.prop(wm.treegen_props, "Rperlin")
+        col.prop(wm.treegen_props, "Rperlin_amount")
+        col.prop(wm.treegen_props, "Rperlin_scale")
+        col.prop(wm.treegen_props, "Rperlin_seed")
+        col.prop(wm.treegen_props, "Rbends_amount")
+        col.prop(wm.treegen_props, "Rbends_angle")
+        col.prop(wm.treegen_props, "Rbends_correction")
+        col.prop(wm.treegen_props, "Rbends_scale")
+        col.prop(wm.treegen_props, "Rbends_seed")
 
-    bends_amount = 0.5
-    bends_angle = 90
-    bends_correction = 0.2
-    bends_scale = 0.1
-    bends_seed = 8
+        col = layout.column(align=True)
+        col.label(text="Branch Parameters:")
+        col.prop(wm.treegen_props, "branch_levels")
+        col.prop(wm.treegen_props, "branch_number1")
+        col.prop(wm.treegen_props, "branch_number2")
+        col.prop(wm.treegen_props, "branch_number3")
+        col.prop(wm.treegen_props, "branch_angle")
+        col.prop(wm.treegen_props, "branch_height")
+        col.prop(wm.treegen_props, "branch_weight")
+        col.prop(wm.treegen_props, "branch_variety")
+        col.prop(wm.treegen_props, "branch_seed")
 
-    # BRANCH PARAMETERS
-    branch_levels = 2
-    branch_number1 = 30
-    branch_number2 = 5
-    branch_number3 = 2
-    branch_angle = 70
-    branch_height = 0.3
-    branch_weight = 0.5
-    branch_variety = 0.1
-    branch_seed = 1
+        col = layout.column(align=True)
+        col.label(text="Branch Settings:")
+        col.prop(wm.treegen_props, "branchingProbability")
+        col.prop(wm.treegen_props, "ivyBranchSize")
+
+        col = layout.column(align=True)
+        col.prop(wm.treegen_props, "growLeaves")
+
+classes = [TreeGen, TreeGen_PG, Object_PT_TreeGenerator]
 
 def register():
-    bpy.utils.register_class(TreeGen)
-    bpy.utils.register_class(Object_PT_TreeGenerator)
-    bpy.utils.register_class(TreeGen_Properties)
+    for i in classes:
+        bpy.utils.register_class(i)
+
+    bpy.types.WindowManager.treegen_props = bpy.props.PointerProperty(
+        type=TreeGen_PG)
 
 
 def unregister():
-    bpy.utils.unregister_class(TreeGen)
-    bpy.utils.unregister_class(Object_PT_TreeGenerator)
-    bpy.utils.unregister_class(TreeGen_Properties)
+    del bpy.types.WindowManager.treegen_props
+
+    for i in classes:
+        bpy.utils.unregister_class(i)
 if __name__ == '__main__':
     register()
