@@ -4,6 +4,7 @@ import math
 import random
 import mathutils
 import bl_math
+import inspect
 
 bl_info = {
     "name": "TreeGen",
@@ -83,7 +84,6 @@ def bark_gen(spine, l, n, m_p, t_p, guide):
     # parameters
     sides, length, radius = m_p[:3]
     s_fun, f_a = t_p[:2]
-
     # s_fun function, should be accessible from interface, scales the circles
     scale_list = [s_fun(h*l, length, radius, f_a) for h in range(n)]
 
@@ -209,54 +209,27 @@ class TreeGen(bpy.types.Operator):
     bl_label = 'Lob that tree'
     bl_options = {'REGISTER', 'UNDO'}
 
-    # MAIN PARAMETERS
-    sides = 10
-    length = 100
-    radius = 4
-    scale = 0.1
-    ratio = 2
-
-    # RANDOM PARAMETERS
-    perlin = True
-    perlin_amount = 0.01
-    perlin_scale = 0.05
-    perlin_seed = 3
-
-    bends_amount = 0.5
-    bends_angle = 90
-    bends_correction = 0.2
-    bends_scale = 0.1
-    bends_seed = 8
-
-    # BRANCH PARAMETERS
-    branch_levels = 2
-    branch_number1 = 30
-    branch_number2 = 5
-    branch_number3 = 2
-    branch_angle = 70
-    branch_height = 0.3
-    branch_weight = 0.5
-    branch_variety = 0.1
-    branch_seed = 1
-
-    # temporary parameters
-    flare_amount = 0.1
-    scale_lf1 = lambda x, h, r, a: (-r*x**0.5/h**0.5+r)*(1-a)+(-r*x/h+r)*a #this one is for trunk flare
-    branch_width = 30
-    branch_flare = 1.2
-    scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*b #this one is for branches scale
-
-    #parameter lists
-    l=length/(length//(ratio*math.tan(2*math.pi/(2*sides))*radius))
-    m_p = [sides, length, radius, scale, l]
-    b_p = [branch_levels, branch_angle, branch_height, branch_variety, branch_seed]
-    bn_p = [branch_number1, branch_number2, branch_number3]
-    t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
-    r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_correction, bends_scale, bends_seed]
-
     def execute(self, context):
+        tps = context.window_manager.treegen_props
+
+        # temporary parameters
+        flare_amount = 0.1
+        scale_lf1 = lambda x, h, r, a : (-r*x**0.5/h**0.5+r)*(1-a)+(-r*x/h+r)*a #this one is for trunk flare
+        branch_width = 30
+        branch_flare = 1.2
+        scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*b #this one is for branches scale
+
+        #parameter lists
+        l=tps.Mlength/(tps.Mlength//(tps.Mratio*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
+        m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
+        b_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_seed]
+        bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
+        t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
+        r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed, tps.Rbends_amount, tps.Rbends_angle, tps.Rbends_correction, tps.Rbends_scale, tps.Rbends_seed]
+
+
         #generates the trunk and lists of lists of stuff
-        verts, faces = tree_gen(self.m_p, self.b_p, self.bn_p, self.t_p, self.r_p)
+        verts, faces = tree_gen(m_p, b_p, bn_p, t_p, r_p)
 
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
@@ -472,14 +445,6 @@ class Object_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_variety")
         col.prop(wm.treegen_props, "branch_seed")
 
-        col = layout.column(align=True)
-        col.label(text="Branch Settings:")
-        col.prop(wm.treegen_props, "branchingProbability")
-        col.prop(wm.treegen_props, "ivyBranchSize")
-
-        col = layout.column(align=True)
-        col.prop(wm.treegen_props, "growLeaves")
-
 classes = [TreeGen, TreeGen_PG, Object_PT_TreeGenerator]
 
 def register():
@@ -495,5 +460,6 @@ def unregister():
 
     for i in classes:
         bpy.utils.unregister_class(i)
+
 if __name__ == '__main__':
     register()
