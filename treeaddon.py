@@ -66,7 +66,6 @@ def spine_gen(m_p, r_p, guide):
     
     return spine, l, n
 
-
 # BARK
 # number of sides, radius
 def bark_circle(n,r):
@@ -110,7 +109,6 @@ def face_gen(s, n):
             else:
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
     return faces
-
 
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
@@ -174,7 +172,6 @@ def branch_gen(vertslist, faceslist, spinelist, m_p, b_p, number, t_p, r_p):
     m_p[0] = t_sides
     return newvertslist, newspinelist
 
-
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, b_p, bn_p, t_p, r_p):
     #initial trunk
@@ -226,7 +223,6 @@ class TreeGen(bpy.types.Operator):
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
         t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed, tps.Rbends_amount, tps.Rbends_angle, tps.Rbends_correction, tps.Rbends_scale, tps.Rbends_seed]
-
 
         #generates the trunk and lists of lists of stuff
         verts, faces = tree_gen(m_p, b_p, bn_p, t_p, r_p)
@@ -453,7 +449,6 @@ def register():
 
     bpy.types.WindowManager.treegen_props = bpy.props.PointerProperty(
         type=TreeGen_PG)
-
 
 def unregister():
     del bpy.types.WindowManager.treegen_props
