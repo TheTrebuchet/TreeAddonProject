@@ -12,23 +12,23 @@ imp.reload(functions)
 from functions import *
 
 # MAIN PARAMETERS
-sides = 10
-length = 100
-radius = 4
-scale = 0.1
-ratio = 2
+Msides = 10
+Mlength = 100
+Mradius = 4
+Mscale = 0.1
+Mratio = 2
 
 # RANDOM PARAMETERS
-perlin = True
-perlin_amount = 0.01
-perlin_scale = 0.05
-perlin_seed = 3
+Rperlin = True
+Rperlin_amount = 0.01
+Rperlin_scale = 0.05
+Rperlin_seed = 3
 
-bends_amount = 0.5
-bends_angle = 90
-bends_correction = 0.2
-bends_scale = 0.1
-bends_seed = 8
+Rbends_amount = 0.5
+Rbends_angle = 90
+Rbends_correction = 0.2
+Rbends_scale = 0.1
+Rbends_seed = 8
 
 # BRANCH PARAMETERS
 branch_levels = 2
@@ -40,22 +40,22 @@ branch_height = 0.3
 branch_weight = 0.5
 branch_variety = 0.1
 branch_seed = 1
+flare_amount = 0.8
 
 # temporary parameters
-flare_amount = 0.1
-scale_lf1 = lambda x, h, r, a: (-r*x**0.5/h**0.5+r)*(1-a)+(-r*x/h+r)*a #this one is for trunk flare
-branch_width = 30
-branch_flare = 1.2
-scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*b #this one is for branches scale
+scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
+branch_shift = 0
+scale_lf2 = lambda x, a : ((1-(2*x-1)**2)/(a*(2*x-1)+1))**0.5  #this one is for branches scale
 
+for x in range(100):
+    print(scale_lf2(x/100, branch_shift))
 #parameter lists
-l=length/(length//(ratio*math.tan(2*math.pi/(2*sides))*radius))
-m_p = [sides, length, radius, scale, l]
+l=Mlength/(Mlength//(Mratio*math.tan(2*math.pi/(2*Msides))*Mradius))
+m_p = [Msides, Mlength, Mradius, Mscale, l]
 b_p = [branch_levels, branch_angle, branch_height, branch_variety, branch_seed]
 bn_p = [branch_number1, branch_number2, branch_number3]
-t_p = [scale_lf1, flare_amount, scale_lf2, branch_width, branch_flare]
-r_p = [perlin_amount, perlin_scale, perlin_seed, bends_amount, bends_angle, bends_correction, bends_scale, bends_seed]
-
+t_p = [scale_lf1, flare_amount, scale_lf2, branch_shift]
+r_p = [Rperlin_amount, Rperlin_scale, Rperlin_seed, Rbends_amount, Rbends_angle, bl_math.clamp(Rbends_correction)*3.3, Rbends_scale, Rbends_seed]
 '''
 ok so let me get this straight
 faceslist just gets added to in the branch function and later gets corrected to become faces
