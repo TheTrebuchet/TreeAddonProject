@@ -234,11 +234,15 @@ class TreeGen(bpy.types.Operator):
         #generates the trunk and lists of lists of stuff
         verts, faces = tree_gen(m_p, b_p, bn_p, t_p, r_p)
 
+        
+        if "tree" in bpy.data.meshes:
+            tree = bpy.data.meshes["tree"]
+            bpy.data.meshes.remove(tree)
+
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
-
+        
         bpy.context.collection.objects.link(object)
-
         mesh.from_pydata(verts ,[], faces)
         verts = []
         faces = []
