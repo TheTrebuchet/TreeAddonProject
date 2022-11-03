@@ -1,8 +1,8 @@
 '''
-Copyright (C) CURRENT_YEAR YOUR NAME
-YOUR@MAIL.com
+Copyright (C) 2022 Jan Kulczycki
+jan.kulczycki1@gmail.com
 
-Created by YOUR NAME
+Created by Jan Kulczycki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,16 +19,16 @@ Created by YOUR NAME
 '''
 
 bl_info = {
-    "name": "Your Addon Name",
-    "description": "",
-    "author": "Your Name",
+    "name": "TreeGen",
+    "author": "TheTrebuchet",
     "version": (0, 0, 1),
-    "blender": BLENDER_VERSION,
-    "location": "View3D",
-    "warning": "This addon is still in development.",
-    "wiki_url": "",
-    "category": "Object" }
-
+    "blender": (3, 3, 0),
+    "location": "View3D > Sidebar > Tree Generator (Create Tab)",
+    "description": "Adds a generated tree at cursor",
+    "warning": "still in development",
+    "doc_url": "",
+    "category": "Add Object",
+}
 
 import bpy
 
