@@ -34,11 +34,6 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
 
         # correction for tree being completely sideways
-    ''' 
-    vec_c = spine[-1] - spine[0]
-    quat = vec_c.rotation_difference(mathutils.Vector((0.0,0.0,1.0)))
-    spine = [quat@i for i in spine]
-    '''
     return spine
 
 def spine_gen(m_p, r_p, guide):
@@ -117,7 +112,6 @@ def branch_guides(spine, number, m_p, b_p, t_p):
         a = random.random()*2*math.pi
         quat = mathutils.Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1])
         guide_vec = quat @ mathutils.Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
-        print((s_pick/n-h_br)/(1-h_br))
         guide_vec *= m_p[1]*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)
         guide_r = scale_f1(s_pick/(n), f_a)*radius*0.8
         guides.append([trans_vec, guide_vec, guide_r])
@@ -144,7 +138,6 @@ def branch_gen(faceslist, spinelist, branchdata, b_p, number, t_p, r_p):
             #THIS CREATES THE SUBBRANCHES FOR THIS ONE BRANCH
             tm_p = [branchdata[i][0], pack[1].length, pack[2], branchdata[i][3], branchdata[i][4]]
             newbranchdata.append(tm_p)
-            print(tm_p)
             r_p[2]+=1 #updating perlin seeds
             r_p[-1]+=1
             
@@ -154,7 +147,6 @@ def branch_gen(faceslist, spinelist, branchdata, b_p, number, t_p, r_p):
             newspinelist.append(newspine)
             newvertslist.append(newverts)
             faceslist.append(newfaces)
-    print('--')
     return newvertslist, newspinelist, newbranchdata
 
 # THE MIGHTY TREE GENERATION
