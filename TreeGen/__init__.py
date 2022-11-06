@@ -32,30 +32,23 @@ bl_info = {
 
 import bpy
 
+from . import treegen
+from . import property_group
 
-# load and reload submodules
-##################################
-
-import importlib
-from . import developer_utils
-importlib.reload(developer_utils)
-modules = developer_utils.setup_addon_modules(__path__, __name__, "bpy" in locals())
-
-
-
-# register
-##################################
-
-import traceback
+classes = [treegen.TreeGen, property_group.TreeGen_PG, treegen.Object_PT_TreeGenerator]
 
 def register():
-    try: bpy.utils.register_module(__name__)
-    except: traceback.print_exc()
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
-    print("Registered {} with {} modules".format(bl_info["name"], len(modules)))
+    bpy.types.WindowManager.treegen_props = bpy.props.PointerProperty(
+        type=property_group.TreeGen_PG)
 
 def unregister():
-    try: bpy.utils.unregister_module(__name__)
-    except: traceback.print_exc()
+    del bpy.types.WindowManager.treegen_props
 
-    print("Unregistered {}".format(bl_info["name"]))
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
+
+if __name__ == "__main__":
+    register()
