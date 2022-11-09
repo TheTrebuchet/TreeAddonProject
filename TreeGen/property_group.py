@@ -80,7 +80,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         name="Bends max angle",
         default=90,
         min=15,
-        soft_max=120,
+        soft_max=180,
         update=update_p
     )
 

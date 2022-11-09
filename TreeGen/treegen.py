@@ -17,13 +17,13 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
+    noise = lambda b_a, b_seed, i, l, b_s: b_a*mathutils.noise.noise((0, b_seed, i*l*b_s))
     for i in range(1, len(spine)):
-        noise = lambda b_a, b_seed, i, l, b_s: b_a*mathutils.noise.noise((0, b_seed, i*l*b_s))
         bend_vec = mathutils.Vector((noise(b_a, b_seed, i, l, b_s), noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
         
         # correction for absurd angles
         vec = spine[i] - spine[i-1]
-        x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))**b_c**b_c
+        x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))**(1-b_c)**(1-b_c)
         vec = (guide.rotation_difference((0,0,1)))@vec
         bend_vec = bend_vec*(1-x) + mathutils.Vector((-vec[0],-vec[1], vec[2])).normalized()*x
         
@@ -32,8 +32,6 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
         trans2 = mathutils.Matrix.Translation(spine[i])
         quat = mathutils.Vector(((0,0,1))).rotation_difference(bend_vec)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
-
-        # correction for tree being completely sideways
     return spine
 
 def spine_gen(m_p, r_p, guide):
@@ -59,9 +57,7 @@ def bark_circle(n,r):
             circle.append(mathutils.Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
-def bark_gen(spine, n, m_p, t_p, guide):
-    # generating quat to adjust first and last circle, matters for the branch only
-    quat = mathutils.Vector((0,0,1)).rotation_difference(guide)
+def bark_gen(spine, n, m_p, t_p):
     # parameters
     sides, radius = m_p[0], m_p[2]
     s_fun, f_a = t_p[:2]
@@ -69,6 +65,7 @@ def bark_gen(spine, n, m_p, t_p, guide):
     scale_list = [s_fun(i/n, f_a)*radius for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
+    quat = mathutils.Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
     bark = [quat@i for i in bark_circle(sides,scale_list[0])]
     
     for x in range(1, n-1):
@@ -97,7 +94,7 @@ def face_gen(s, n):
 def branch_guides(spine, number, m_p, b_p, t_p):
     # parameters
     n = len(spine)
-    radius = m_p[2]
+    length, radius = m_p[1:3]
     a_br, h_br, var_br, s_br = b_p[1:]
     scale_f1, f_a, scale_f2, br_s = t_p
     guides = []
@@ -113,21 +110,19 @@ def branch_guides(spine, number, m_p, b_p, t_p):
         quat = mathutils.Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1])
         guide_vec = quat @ mathutils.Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
         guide_vec *= m_p[1]*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)
-        guide_r = scale_f1(s_pick/(n), f_a)*radius*0.8
+        guide_r = bl_math.clamp(scale_f1(s_pick/(n), f_a)*radius*0.8, 0, guide_vec.length/length*radius)
         guides.append([trans_vec, guide_vec, guide_r])
     return guides
 
 #generates a single trunk, whether it will be branch or the main trunk
 def trunk_gen(m_p, t_p, r_p, guide):
     spine, n = spine_gen(m_p, r_p, guide)
-    verts = bark_gen(spine, n, m_p, t_p, guide)
-    faces = face_gen(m_p[0], n)
+    verts = bark_gen(spine, n, m_p, t_p)
     
-    return verts, faces, spine
+    return verts, spine
 
-#this function updates facelist of all trunks and branches
-#returns newspinelist and newfacelist of the new branches
-def branch_gen(faceslist, spinelist, branchdata, b_p, number, t_p, r_p):
+#returns newspinelist of the new branches
+def branch_gen(spinelist, branchdata, b_p, number, t_p, r_p):
     newspinelist = []
     newvertslist = []
     newbranchdata = []
@@ -141,22 +136,20 @@ def branch_gen(faceslist, spinelist, branchdata, b_p, number, t_p, r_p):
             r_p[2]+=1 #updating perlin seeds
             r_p[-1]+=1
             
-            newverts, newfaces, newspine = trunk_gen(tm_p, t_p, r_p, pack[1])
+            newverts, newspine = trunk_gen(tm_p, t_p, r_p, pack[1])
             newverts = [vec+pack[0] for vec in newverts]
             newspine = [vec+pack[0] for vec in newspine]
             newspinelist.append(newspine)
             newvertslist.append(newverts)
-            faceslist.append(newfaces)
     return newvertslist, newspinelist, newbranchdata
 
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, b_p, bn_p, t_p, r_p):
     #initial trunk
-    verts, faces, spine = trunk_gen(m_p, t_p, r_p, mathutils.Vector((0,0,1)))
+    verts, spine = trunk_gen(m_p, t_p, r_p, mathutils.Vector((0,0,1)))
     branchdata = [m_p]
     newvertslist = [verts]
     vertslist = [verts]
-    faceslist = [faces]
     newspinelist = [spine]
     #generates branches on that trunk stored in new_lists temporarily
     #THIS CREATES BRANCH LEVELS
@@ -170,24 +163,23 @@ def tree_gen(m_p, b_p, bn_p, t_p, r_p):
                 if branchdata[k][0]<4:
                     branchdata[k][0]=4
                 branchdata[k][1] *= 0.4
-            newvertslist, newspinelist, branchdata = branch_gen(faceslist, newspinelist, branchdata, b_p, bn_p[i], t_p, r_p)
-            vertslist += newvertslist #newlists are added to old lists and facelist is updated with new set
+            newvertslist, newspinelist, branchdata = branch_gen(newspinelist, branchdata, b_p, bn_p[i], t_p, r_p)
+            vertslist += newvertslist #newlists are added to old lists
     #it is important that newvertslist is needed for new level of branches
-    #faceslist is not, thats why it just gets updated instead of having newfaceslist
-
+    '''
     #faces are created from the list of lists, I am adding corrections to make it into a whole new list
     adds = 0
     for i in range(1, len(vertslist)):
         adds += len(vertslist[i-1])
         faces += [tuple([i+adds for i in j]) for j in faceslist[i]]
-
+    '''
     #verts are created from the list of lists, so I am just joining them together
     verts = []
     for i in vertslist:
         verts += i
     
     verts = [vec*m_p[3] for vec in verts] #scales the tree
-    return verts, faces
+    return verts
 
 class TreeGen(bpy.types.Operator):
     """creates a tree in cursor location"""
@@ -212,7 +204,7 @@ class TreeGen(bpy.types.Operator):
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed, tps.Rbends_amount, tps.Rbends_angle, bl_math.clamp(tps.Rbends_correction)*3.3, tps.Rbends_scale, tps.Rbends_seed]
 
         #generates the trunk and lists of lists of stuff
-        verts, faces = tree_gen(m_p, b_p, bn_p, t_p, r_p)
+        verts = tree_gen(m_p, b_p, bn_p, t_p, r_p)
 
         
         if "tree" in bpy.data.meshes:
@@ -223,7 +215,7 @@ class TreeGen(bpy.types.Operator):
         object = bpy.data.objects.new("tree", mesh)
         
         bpy.context.collection.objects.link(object)
-        mesh.from_pydata(verts ,[], faces)
+        mesh.from_pydata(verts ,[], [])
         verts = []
         faces = []
         return {'FINISHED'}
