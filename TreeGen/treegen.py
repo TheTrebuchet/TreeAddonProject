@@ -122,7 +122,7 @@ def trunk_gen(m_p, t_p, r_p, guide):
     return verts, spine
 
 #returns newspinelist of the new branches
-def branch_gen(spinelist, branchdata, b_p, number, t_p, r_p):
+def branch_gen(spinelist, branchdata, vertslist, b_p, number, t_p, r_p):
     newspinelist = []
     newvertslist = []
     newbranchdata = []
@@ -137,34 +137,33 @@ def branch_gen(spinelist, branchdata, b_p, number, t_p, r_p):
             r_p[-1]+=1
             
             newverts, newspine = trunk_gen(tm_p, t_p, r_p, pack[1])
-            newverts = [vec+pack[0] for vec in newverts]
-            newspine = [vec+pack[0] for vec in newspine]
-            newspinelist.append(newspine)
-            newvertslist.append(newverts)
-    return newvertslist, newspinelist, newbranchdata
+            newvertslist.append([vec+pack[0] for vec in newverts])
+            newspinelist.append([vec+pack[0] for vec in newspine])
+    spinelist.append(newspinelist)
+    branchdata.append(newbranchdata)
+    vertslist.append(newvertslist)
 
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, b_p, bn_p, t_p, r_p):
     #initial trunk
     verts, spine = trunk_gen(m_p, t_p, r_p, mathutils.Vector((0,0,1)))
-    branchdata = [m_p]
-    newvertslist = [verts]
-    vertslist = [verts]
-    newspinelist = [spine]
+    spinelist = [[spine]]
+    branchdata = [[m_p]]
+    vertslist = [[verts]]
     #generates branches on that trunk stored in new_lists temporarily
     #THIS CREATES BRANCH LEVELS
     if b_p[0] != 0:
-        for i in range(b_p[0]):
+        for i in range(len(b_p[0])):
             #THIS CREATES ONE BRANCH LEVEL
             #i update the starting parameters for the branches
             #now they will have reduced sides and reduced length
             for k in range(len(branchdata)):
-                branchdata[k][0] = branchdata[k][0]//2 #sides update for every level
-                if branchdata[k][0]<4:
-                    branchdata[k][0]=4
-                branchdata[k][1] *= 0.4
-            newvertslist, newspinelist, branchdata = branch_gen(newspinelist, branchdata, b_p, bn_p[i], t_p, r_p)
-            vertslist += newvertslist #newlists are added to old lists
+                branchdata[i][k][0] = branchdata[i][k][0]//2 #sides update for every level
+                if branchdata[i][k][0]<4:
+                    branchdata[i][k][0]=4
+                branchdata[i][k][1] *= 0.4
+            # updates spinelist, branchdata and vertslist
+            branch_gen(spinelist, branchdata, vertslist, b_p, bn_p[i], t_p, r_p)
     #it is important that newvertslist is needed for new level of branches
     '''
     #faces are created from the list of lists, I am adding corrections to make it into a whole new list
@@ -177,7 +176,12 @@ def tree_gen(m_p, b_p, bn_p, t_p, r_p):
     verts = []
     for i in vertslist:
         verts += i
+    #spines are created from list of levels of spines, so I need to join them together
     
+
+
+
+
     verts = [vec*m_p[3] for vec in verts] #scales the tree
     return verts
 
