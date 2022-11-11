@@ -1,6 +1,5 @@
 import bpy
 def update_p(self, context):
-    print('sides updated')
     bpy.ops.object.create_tree()
 class TreeGen_PG(bpy.types.PropertyGroup):
     Msides: bpy.props.IntProperty(
@@ -110,7 +109,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     branch_levels: bpy.props.IntProperty(
         name="branching levels",
         default=2,
-        min=1,
+        min=0,
         soft_max=4,
         update=update_p
     )

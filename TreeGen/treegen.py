@@ -1,5 +1,4 @@
 import bpy
-import bmesh
 import math
 import random
 import mathutils
@@ -95,9 +94,10 @@ def branch_guides(spine, number, m_p, b_p, t_p):
     # parameters
     n = len(spine)
     length, radius = m_p[1:3]
+    l = m_p[4]
     a_br, h_br, var_br, s_br = b_p[1:]
     scale_f1, f_a, scale_f2, br_s = t_p
-    guides = []
+    guidepacks = []
     
     # guide instructions
     for i in range(number):
@@ -109,10 +109,10 @@ def branch_guides(spine, number, m_p, b_p, t_p):
         a = random.random()*2*math.pi
         quat = mathutils.Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1])
         guide_vec = quat @ mathutils.Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
-        guide_vec *= m_p[1]*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)
+        guide_vec *= m_p[1]*0.4*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)
         guide_r = bl_math.clamp(scale_f1(s_pick/(n), f_a)*radius*0.8, 0, guide_vec.length/length*radius)
-        guides.append([trans_vec, guide_vec, guide_r])
-    return guides
+        guidepacks.append([trans_vec, guide_vec, guide_r])
+    return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
 def trunk_gen(m_p, t_p, r_p, guide):
@@ -126,16 +126,19 @@ def branch_gen(spinelist, branchdata, vertslist, b_p, number, t_p, r_p):
     newspinelist = []
     newvertslist = []
     newbranchdata = []
-    for i in range(len(spinelist)):
+    newsides = int(bl_math.clamp(branchdata[-1][0][0]//2, 4, branchdata[-1][0][0]))
+    for i in range(len(spinelist[-1])):
         #THIS CREATES GUIDES FOR ONE BRANCH IN ONE LEVEL
-        guides = branch_guides(spinelist[i], number, branchdata[i], b_p, t_p)
-        for pack in guides:
+        guidepacks = branch_guides(spinelist[-1][i], number, branchdata[-1][i], b_p, t_p)
+        for pack in guidepacks:
             #THIS CREATES THE SUBBRANCHES FOR THIS ONE BRANCH
-            tm_p = [branchdata[i][0], pack[1].length, pack[2], branchdata[i][3], branchdata[i][4]]
+            tm_p = [newsides, pack[1].length, pack[2], branchdata[-1][i][3], branchdata[-1][i][4]]
             newbranchdata.append(tm_p)
             r_p[2]+=1 #updating perlin seeds
             r_p[-1]+=1
-            
+            #check if branch is long enough for the res, if not, temporarily change the 'l'
+            if tm_p[1]<tm_p[4]:
+                tm_p[1] = tm_p[4]
             newverts, newspine = trunk_gen(tm_p, t_p, r_p, pack[1])
             newvertslist.append([vec+pack[0] for vec in newverts])
             newspinelist.append([vec+pack[0] for vec in newspine])
@@ -150,40 +153,32 @@ def tree_gen(m_p, b_p, bn_p, t_p, r_p):
     spinelist = [[spine]]
     branchdata = [[m_p]]
     vertslist = [[verts]]
-    #generates branches on that trunk stored in new_lists temporarily
-    #THIS CREATES BRANCH LEVELS
+    
+    #branch levels
     if b_p[0] != 0:
-        for i in range(len(b_p[0])):
-            #THIS CREATES ONE BRANCH LEVEL
-            #i update the starting parameters for the branches
-            #now they will have reduced sides and reduced length
-            for k in range(len(branchdata)):
-                branchdata[i][k][0] = branchdata[i][k][0]//2 #sides update for every level
-                if branchdata[i][k][0]<4:
-                    branchdata[i][k][0]=4
-                branchdata[i][k][1] *= 0.4
-            # updates spinelist, branchdata and vertslist
+        for i in range(b_p[0]):
             branch_gen(spinelist, branchdata, vertslist, b_p, bn_p[i], t_p, r_p)
-    #it is important that newvertslist is needed for new level of branches
-    '''
-    #faces are created from the list of lists, I am adding corrections to make it into a whole new list
-    adds = 0
-    for i in range(1, len(vertslist)):
-        adds += len(vertslist[i-1])
-        faces += [tuple([i+adds for i in j]) for j in faceslist[i]]
-    '''
-    #verts are created from the list of lists, so I am just joining them together
+    
+    #joining verts into one group
     verts = []
     for i in vertslist:
-        verts += i
-    #spines are created from list of levels of spines, so I need to join them together
+        for k in i:
+            verts += k
     
-
-
-
+    #making faces
+    faces=[]
+    for i in range(b_p[0]+1):
+        s = branchdata[i][0][0]
+        for spi in spinelist[i]:
+            faces.append(face_gen(s, len(spi)))
+    while True:
+        if len(faces) == 1:
+            faces = faces[0]
+            break
+        faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
 
     verts = [vec*m_p[3] for vec in verts] #scales the tree
-    return verts
+    return verts, faces
 
 class TreeGen(bpy.types.Operator):
     """creates a tree in cursor location"""
@@ -208,7 +203,7 @@ class TreeGen(bpy.types.Operator):
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed, tps.Rbends_amount, tps.Rbends_angle, bl_math.clamp(tps.Rbends_correction)*3.3, tps.Rbends_scale, tps.Rbends_seed]
 
         #generates the trunk and lists of lists of stuff
-        verts = tree_gen(m_p, b_p, bn_p, t_p, r_p)
+        verts, faces = tree_gen(m_p, b_p, bn_p, t_p, r_p)
 
         
         if "tree" in bpy.data.meshes:
@@ -219,7 +214,7 @@ class TreeGen(bpy.types.Operator):
         object = bpy.data.objects.new("tree", mesh)
         
         bpy.context.collection.objects.link(object)
-        mesh.from_pydata(verts ,[], [])
+        mesh.from_pydata(verts ,[], faces)
         verts = []
         faces = []
         return {'FINISHED'}
