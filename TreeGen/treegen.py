@@ -1,35 +1,35 @@
 import bpy
 import math
 import random
-import mathutils as mu
+from mathutils import Vector, noise, Matrix
 import bl_math
 
 # SPINE
 # number of vertices, length
 def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     # quat rotates the spine, f1 and f2 jiggle the spine
-    quat = mu.Vector((0,0,1)).rotation_difference(guide)
-    f1 = lambda z : p_a*(mu.noise.noise(mu.Vector([0, p_seed, p_s*z]))-0.5)
-    f2 = lambda z : p_a*(mu.noise.noise(mu.Vector([0, p_seed, p_s*(z+length)]))-0.5)
-    spine = [quat@mu.Vector((f1(l*i), f2(l*i), l*i)) for i in range(n)]
+    quat = Vector((0,0,1)).rotation_difference(guide)
+    f1 = lambda z : p_a*(noise.noise(Vector([0, p_seed, p_s*z]))-0.5)
+    f2 = lambda z : p_a*(noise.noise(Vector([0, p_seed, p_s*(z+length)]))-0.5)
+    spine = [quat@Vector((f1(l*i), f2(l*i), l*i)) for i in range(n)]
     return spine
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
-    noise = lambda b_a, b_seed, i, l, b_s: b_a*mu.noise.noise((0, b_seed, i*l*b_s))
+    noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
     for i in range(1, len(spine)):
-        bend_vec = mu.Vector((noise(b_a, b_seed, i, l, b_s), noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
+        bend_vec = Vector((noise(b_a, b_seed, i, l, b_s), noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
         
         # correction for absurd angles
         vec = spine[i] - spine[i-1]
         x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))**(1-b_c)**(1-b_c)
         vec = (guide.rotation_difference((0,0,1)))@vec
-        bend_vec = bend_vec*(1-x) + mu.Vector((-vec[0],-vec[1], vec[2])).normalized()*x
+        bend_vec = bend_vec*(1-x) + Vector((-vec[0],-vec[1], vec[2])).normalized()*x
         
         # transformation itself
-        trans1 = mu.Matrix.Translation(-1*spine[i])
-        trans2 = mu.Matrix.Translation(spine[i])
-        quat = mu.Vector(((0,0,1))).rotation_difference(bend_vec)
+        trans1 = Matrix.Translation(-1*spine[i])
+        trans2 = Matrix.Translation(spine[i])
+        quat = Vector(((0,0,1))).rotation_difference(bend_vec)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
     return spine
 
@@ -55,7 +55,7 @@ def bark_circle(n,r):
         return []
     else:
         for i in range(n):
-            circle.append(mu.Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
+            circle.append(Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
 def bark_gen(spine, n, m_p, t_p):
@@ -66,17 +66,17 @@ def bark_gen(spine, n, m_p, t_p):
     scale_list = [s_fun(i/n, f_a)*radius for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
-    quat = mu.Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
+    quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
     bark = [quat@i for i in bark_circle(sides,scale_list[0])]
     
     for x in range(1, n-1):
         vec = spine[x+1] - spine[x-1]
-        quat = mu.Vector((0,0,1)).rotation_difference(vec)
+        quat = Vector((0,0,1)).rotation_difference(vec)
         new_circle = [quat @ i for i in bark_circle(sides,scale_list[x])]
         for y in new_circle:
-            bark.append((mu.Vector(spine[x]) + mu.Vector(y)))
+            bark.append((Vector(spine[x]) + Vector(y)))
     
-    bark += [(quat@i + mu.Vector(spine[-1])) for i in bark_circle(sides,scale_list[-1])]
+    bark += [(quat@i + Vector(spine[-1])) for i in bark_circle(sides,scale_list[-1])]
     return bark
 
 #number of sides, number of vertices, generates faces
@@ -109,8 +109,8 @@ def branch_guides(spine, number, m_p, b_p, t_p):
         trans_vec = spine[s_pick]
         random.seed(s_br+1)
         a = random.random()*2*math.pi
-        quat = mu.Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1])
-        guide_vec = quat @ mu.Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
+        quat = Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1])
+        guide_vec = quat @ Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
         guide_vec *= m_p[1]*0.4*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)
         guide_r = bl_math.clamp(scale_f1(s_pick/(n), f_a)*radius*0.8, 0, guide_vec.length/length*radius)
         guidepacks.append([trans_vec, guide_vec, guide_r])
@@ -151,7 +151,7 @@ def branch_gen(spinelist, branchdata, vertslist, b_p, number, t_p, r_p):
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, b_p, bn_p, t_p, r_p):
     #initial trunk
-    verts, spine = trunk_gen(m_p, t_p, r_p, mu.Vector((0,0,1)))
+    verts, spine = trunk_gen(m_p, t_p, r_p, Vector((0,0,1)))
     spinelist = [[spine]]
     branchdata = [[m_p]]
     vertslist = [[verts]]
