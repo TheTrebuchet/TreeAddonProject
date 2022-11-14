@@ -71,9 +71,9 @@ scale_lf2 = lambda x, a, b :  (a**(-2*(2*x-1))-(2*x-1)**2*a**(-2*(2*x-1)))**0.5*
 ```
 
 there are also functions for trunk flare and branches scale
-the first one is mostly a mix between y=-x and y = 1/x, the mixing is controlled by `h`, `r` and `a`
+the first one is mostly a mix between $y=-x$ and $y = 1/x$, the mixing is controlled by `h`, `r` and `a`
 where we have height of the tree, radius and amount of the flare
 the second one is based on this function
-$$ \left(x-1\right)^{2}+a^{\left(x-1\right)}\cdot y^{2}=r $$
+$\left(x-1\right)^{2}+a^{\left(x-1\right)}\cdot y^{2}=r$
 where `a` is the variable making the branches larger in the top of the tree or the bottom
 TODO: you will be able to use your own functions or the blender graph thing
