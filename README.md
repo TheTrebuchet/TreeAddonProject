@@ -4,18 +4,17 @@
 
 the whole tree looks like this:
 
-tree_gen
-
-- trunk_gen
-  - spine_gen
-    - spine_init
-    - spine_bend
-  - bark_gen
-    - bark_circle
-  - bark_faces
-- branch_gen
-  - branch_guides
-  - trunk_gen
+`tree_gen`
+- `trunk_gen`
+  - `spine_gen`
+    - `spine_init`
+    - `spine_bend`
+  - `bark_gen`
+    - `bark_circle`
+  - `bark_faces`
+- `branch_gen`
+  - `branch_guides`
+  - `trunk_gen`
 
 descriptions
 
