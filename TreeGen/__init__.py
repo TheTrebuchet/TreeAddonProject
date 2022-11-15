@@ -35,7 +35,7 @@ import bpy
 from . import treegen
 from . import property_group
 
-classes = [treegen.TreeGen, property_group.TreeGen_PG, treegen.Object_PT_TreeGenerator]
+classes = [treegen.TreeGen, property_group.TreeGen_PG, treegen.OBJECT_PT_TreeGenerator]
 
 def register():
     for cls in classes:

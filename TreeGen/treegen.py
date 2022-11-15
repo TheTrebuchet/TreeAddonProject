@@ -16,9 +16,9 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
-    noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
+    f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
     for i in range(1, len(spine)):
-        bend_vec = Vector((noise(b_a, b_seed, i, l, b_s), noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
+        bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
         
         # correction for absurd angles
         vec = spine[i] - spine[i-1]
@@ -36,15 +36,13 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
 def spine_gen(m_p, r_p, guide):
     # parameters
     length, l = m_p[1], m_p[4]
-    if length<l:
-        print(length, l)
-    n = round(length/l)
+    n = round(length/l)+1
     p_a, p_s, p_seed, b_a, b_ang, b_c, b_s, b_seed = r_p
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
     spine = spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide)
-    
+    print(length, l, len(spine))
     return spine, n
 
 # BARK
@@ -140,7 +138,7 @@ def branch_gen(spinelist, branchdata, vertslist, b_p, number, t_p, r_p):
             r_p[-1]+=1
             #check if branch is long enough for the res, if not, temporarily change the 'l'
             if tm_p[1]<tm_p[4]:
-                tm_p[1] = tm_p[4]
+                tm_p[4] = tm_p[1]
             newverts, newspine = trunk_gen(tm_p, t_p, r_p, pack[1])
             newvertslist.append([vec+pack[0] for vec in newverts])
             newspinelist.append([vec+pack[0] for vec in newspine])
@@ -221,7 +219,7 @@ class TreeGen(bpy.types.Operator):
         faces = []
         return {'FINISHED'}
 
-class Object_PT_TreeGenerator(bpy.types.Panel):
+class OBJECT_PT_TreeGenerator(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
     bl_label = "Tree_Gen"
     bl_space_type = "VIEW_3D"  
