@@ -179,7 +179,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     flare_amount: bpy.props.FloatProperty(
         name="amount of tree flare",
         default=0.8,
-        min=0,
+        min=0.01,
         max=1,
         update=update_p
     )
