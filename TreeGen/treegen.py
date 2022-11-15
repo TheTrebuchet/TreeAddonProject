@@ -96,6 +96,7 @@ def branch_guides(spine, number, m_p, b_p, t_p):
     length, radius = m_p[1:3]
     l = m_p[4]
     a_br, h_br, var_br, s_br = b_p[1:]
+    a_br = (1-var_br)*a_br+var_br*random.uniform(0,90)
     scale_f1, f_a, scale_f2, br_s = t_p
     guidepacks = []
     
@@ -109,7 +110,7 @@ def branch_guides(spine, number, m_p, b_p, t_p):
         a = random.random()*2*math.pi
         quat = Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1])
         guide_vec = quat @ Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
-        guide_vec *= m_p[1]*0.4*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)
+        guide_vec *= m_p[1]*0.4*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)*random.uniform(1-var_br, 1+var_br)
         guide_r = bl_math.clamp(scale_f1(s_pick/(n), f_a)*radius*0.8, 0, guide_vec.length/length*radius)
         guidepacks.append([trans_vec, guide_vec, guide_r])
     return guidepacks
