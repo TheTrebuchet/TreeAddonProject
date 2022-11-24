@@ -246,16 +246,12 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "Mratio")
 
         col = layout.column(align=True)
-        col.label(text="Random Parameters:")
-        col.prop(wm.treegen_props, "Rperlin")
-        col.prop(wm.treegen_props, "Rperlin_amount")
-        col.prop(wm.treegen_props, "Rperlin_scale")
+        col.label(text="Bends Parameters:")
         col.prop(wm.treegen_props, "Rperlin_seed")
         col.prop(wm.treegen_props, "Rbends_amount")
         col.prop(wm.treegen_props, "Rbends_angle")
         col.prop(wm.treegen_props, "Rbends_correction")
         col.prop(wm.treegen_props, "Rbends_scale")
-        col.prop(wm.treegen_props, "Rbends_seed")
 
         col = layout.column(align=True)
         col.label(text="Branch Parameters:")
@@ -266,8 +262,18 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_angle")
         col.prop(wm.treegen_props, "branch_height")
         col.prop(wm.treegen_props, "branch_weight")
-        col.prop(wm.treegen_props, "branch_variety")
+        
+        col = layout.column(align=True)
+        col.label(text="Perlin Parameters:")
+        col.prop(wm.treegen_props, "Rperlin")
+        col.prop(wm.treegen_props, "Rperlin_amount")
+        col.prop(wm.treegen_props, "Rperlin_scale")
+
+        col = layout.column(align=True)
+        col.label(text="Seeds and randomization:")
         col.prop(wm.treegen_props, "branch_seed")
+        col.prop(wm.treegen_props, "Rbends_seed")
+        col.prop(wm.treegen_props, "branch_variety")
 
         col = layout.column(align=True)
         col.label(text="Scale Parameters:")
