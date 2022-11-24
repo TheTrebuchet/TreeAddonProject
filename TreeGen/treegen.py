@@ -249,12 +249,6 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "Mratio")
 
         col = layout.column(align=True)
-        col.label(text="Perlin Parameters:")
-        col.prop(wm.treegen_props, "Rperlin")
-        col.prop(wm.treegen_props, "Rperlin_amount")
-        col.prop(wm.treegen_props, "Rperlin_scale")
-
-        col = layout.column(align=True)
         col.label(text="Bending Parameters:")
         col.prop(wm.treegen_props, "bends_type")
         col.prop(wm.treegen_props, "bends_amount")
@@ -272,15 +266,19 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_height")
         col.prop(wm.treegen_props, "branch_weight")
 
+        
+        col = layout.column(align=True)
+        col.label(text="Perlin Parameters:")
+        col.prop(wm.treegen_props, "Rperlin")
+        col.prop(wm.treegen_props, "Rperlin_amount")
+        col.prop(wm.treegen_props, "Rperlin_scale")
+
         col = layout.column(align=True)
         col.label(text="Seeds and variety:")
         col.prop(wm.treegen_props, "Rperlin_seed")
-        col.prop(wm.treegen_props, "Rbends_seed")
+        col.prop(wm.treegen_props, "bends_seed")
         col.prop(wm.treegen_props, "branch_seed")
         col.prop(wm.treegen_props, "branch_variety")
-        
-
-
         col = layout.column(align=True)
         col.label(text="Scale Parameters:")
         col.prop(wm.treegen_props, 'flare_amount')
