@@ -15,16 +15,18 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     return spine
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
+def spine_bend1(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
     for i in range(1, len(spine)):
         bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
         
-        # correction for absurd angles
+        # correction bend_vec, but honestly it just decides how much this vector points upwards
         vec = spine[i] - spine[i-1]
         x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))**(1-b_c)**(1-b_c)
         vec = (guide.rotation_difference((0,0,1)))@vec
         bend_vec = bend_vec*(1-x) + Vector((-vec[0],-vec[1], vec[2])).normalized()*x
+
+        #based on a the bd
         
         # transformation itself
         trans1 = Matrix.Translation(-1*spine[i])
@@ -42,7 +44,8 @@ def spine_gen(m_p, bd_p, r_p, guide):
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    spine = spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide)
+    if bd_p[0] == 1:
+        spine = spine_bend1(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide)
     print(length, l, len(spine))
     return spine, n
 
@@ -149,7 +152,7 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
     vertslist.append(newvertslist)
 
 # THE MIGHTY TREE GENERATION
-def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p):
+def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     #initial trunk
     verts, spine = trunk_gen(m_p, bd_p, r_p, t_p, Vector((0,0,1)))
     spinelist = [[spine]]
@@ -169,15 +172,16 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p):
     
     #making faces
     faces=[]
-    for i in range(br_p[0]+1):
-        s = branchdata[i][0][0]
-        for spi in spinelist[i]:
-            faces.append(face_gen(s, len(spi)))
-    while True:
-        if len(faces) == 1:
-            faces = faces[0]
-            break
-        faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
+    if facebool:
+        for i in range(br_p[0]+1):
+            s = branchdata[i][0][0]
+            for spi in spinelist[i]:
+                faces.append(face_gen(s, len(spi)))
+        while True:
+            if len(faces) == 1:
+                faces = faces[0]
+                break
+            faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
 
     verts = [vec*m_p[3] for vec in verts] #scales the tree
     return verts, faces
@@ -207,7 +211,7 @@ class TreeGen(bpy.types.Operator):
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
 
         #generates the trunk and lists of lists of stuff
-        verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p)
+        verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
         
         if "tree" in bpy.data.meshes:
             tree = bpy.data.meshes["tree"]
@@ -255,6 +259,7 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "bends_scale")
         col.prop(wm.treegen_props, "bends_angle")
         col.prop(wm.treegen_props, "bends_correction")
+        col.prop(wm.treegen_props, "bends_weight")
 
         col = layout.column(align=True)
         col.label(text="Branch Parameters:")
@@ -264,7 +269,7 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_number3")
         col.prop(wm.treegen_props, "branch_angle")
         col.prop(wm.treegen_props, "branch_height")
-        col.prop(wm.treegen_props, "branch_weight")
+        
 
         
         col = layout.column(align=True)

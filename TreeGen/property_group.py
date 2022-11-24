@@ -2,6 +2,11 @@ import bpy
 def update_p(self, context):
     bpy.ops.object.create_tree()
 class TreeGen_PG(bpy.types.PropertyGroup):
+    facebool: bpy.props.BoolProperty(
+        name='Faces switch'
+        default=True
+        update=update_p
+    )
     Msides: bpy.props.IntProperty(
         name="Number of trunk sides",
         default=10,
@@ -68,7 +73,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
 
     bends_type: bpy.props.IntProperty(
-        name="bending amount",
+        name="bending type",
         default=1,
         min=1,
         max=3,
@@ -94,6 +99,14 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     bends_correction: bpy.props.FloatProperty(
         name="bending correction",
         default=0.2,
+        min=0.0,
+        soft_max=1,
+        update=update_p
+    )
+
+    bends_weight: bpy.props.FloatProperty(
+        name="branch weight",
+        default=0.5,
         min=0.0,
         soft_max=1,
         update=update_p
@@ -159,14 +172,6 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         default=0.3,
         min=0.0,
         soft_max=0.9,
-        update=update_p
-    )
-
-    branch_weight: bpy.props.FloatProperty(
-        name="branch weight",
-        default=0.5,
-        min=0.0,
-        soft_max=1,
         update=update_p
     )
 
