@@ -67,7 +67,15 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    Rbends_amount: bpy.props.FloatProperty(
+    bends_type: bpy.props.IntProperty(
+        name="bending amount",
+        default=1,
+        min=1,
+        max=3,
+        update=update_p
+    )
+
+    bends_amount: bpy.props.FloatProperty(
         name="bending amount",
         default=0.5,
         min=0.0,
@@ -75,7 +83,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    Rbends_angle: bpy.props.FloatProperty(
+    bends_angle: bpy.props.FloatProperty(
         name="Bends max angle",
         default=90,
         min=15,
@@ -83,7 +91,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    Rbends_correction: bpy.props.FloatProperty(
+    bends_correction: bpy.props.FloatProperty(
         name="bending correction",
         default=0.2,
         min=0.0,
@@ -91,7 +99,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    Rbends_scale: bpy.props.FloatProperty(
+    bends_scale: bpy.props.FloatProperty(
         name="Bending scale",
         default=0.1,
         min=0.01,
@@ -99,7 +107,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    Rbends_seed: bpy.props.IntProperty(
+    bends_seed: bpy.props.IntProperty(
         name="bends seed",
         default=1,
         min = 1,
