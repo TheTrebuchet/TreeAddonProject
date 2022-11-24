@@ -3,9 +3,9 @@ def update_p(self, context):
     bpy.ops.object.create_tree()
 class TreeGen_PG(bpy.types.PropertyGroup):
     facebool: bpy.props.BoolProperty(
-        name='Faces switch'
-        default=True
-        update=update_p
+        name='Faces switch',
+        default=True,
+        update=update_p,
     )
     Msides: bpy.props.IntProperty(
         name="Number of trunk sides",
