@@ -139,10 +139,12 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
             #THIS CREATES THE SUBBRANCHES FOR THIS ONE BRANCH
             tm_p = [newsides, pack[1].length, pack[2], branchdata[-1][i][3], branchdata[-1][i][4]]
             newbranchdata.append(tm_p)
-            r_p[2]+=1 #updating perlin seeds
-            r_p[-1]+=1
-            #check if branch is long enough for the res, if not, temporarily change the 'l'
-            if tm_p[1]<tm_p[4]:
+            r_p[2]+=1 #updating seeds
+            br_p[-1]+=1
+            bd_p[-1]+=1
+            tbd_p = []
+            bd_p[5]*=pack[2] #multiply weight setting by radius temporarily for the branch
+            if tm_p[1]<tm_p[4]: #change 'l' if branch is not long enough
                 tm_p[4] = tm_p[1]
             newverts, newspine = trunk_gen(tm_p, bd_p, r_p, t_p, pack[1])
             newvertslist.append([vec+pack[0] for vec in newverts])
@@ -206,7 +208,7 @@ class TreeGen(bpy.types.Operator):
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_type, tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_seed]
+        bd_p = [tps.bends_type, tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
 
