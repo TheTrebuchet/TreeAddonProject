@@ -15,7 +15,7 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     return spine
 
 # bends the spine in a more meaningful way
-def spine_bend1(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
+def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
     for i in range(1, len(spine)):
         bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
@@ -40,13 +40,11 @@ def spine_gen(m_p, bd_p, r_p, guide):
     length, l = m_p[1], m_p[4]
     n = round(length/l)+1
     p_a, p_s, p_seed = r_p
-    b_a, b_ang, b_c, b_s, b_seed = bd_p[1:]
+    b_a, b_ang, b_c, b_s, b_w, b_seed = bd_p
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    if bd_p[0] == 1:
-        spine = spine_bend1(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide)
-    print(length, l, len(spine))
+    spine = spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide)
     return spine, n
 
 # BARK
@@ -94,13 +92,13 @@ def face_gen(s, n):
 
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
-def branch_guides(spine, number, m_p, b_p, t_p):
+def branch_guides(spine, number, m_p, br_p, t_p):
     # parameters
     n = len(spine)
     length, radius = m_p[1:3]
-    l = m_p[4]
-    a_br, h_br, var_br, s_br = b_p[1:]
-    a_br = (1-var_br)*a_br+var_br*random.uniform(0,90)
+    a_br, h_br, var_br, s_br = br_p[1:]
+    #a_br = (1-var_br)*a_br+var_br*random.uniform(0,90)
+    a_br = 45+random.uniform(-var_br*45,var_br*45)
     scale_f1, f_a, scale_f2, br_s = t_p
     guidepacks = []
     
@@ -142,11 +140,11 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
             r_p[2]+=1 #updating seeds
             br_p[-1]+=1
             bd_p[-1]+=1
-            tbd_p = []
-            bd_p[5]*=pack[2] #multiply weight setting by radius temporarily for the branch
+            tbd_p = bd_p.copy()
+            tbd_p[4]*=pack[2] #multiply weight setting by radius temporarily for the branch
             if tm_p[1]<tm_p[4]: #change 'l' if branch is not long enough
                 tm_p[4] = tm_p[1]
-            newverts, newspine = trunk_gen(tm_p, bd_p, r_p, t_p, pack[1])
+            newverts, newspine = trunk_gen(tm_p, tbd_p, r_p, t_p, pack[1])
             newvertslist.append([vec+pack[0] for vec in newverts])
             newspinelist.append([vec+pack[0] for vec in newspine])
     spinelist.append(newspinelist)
@@ -208,7 +206,7 @@ class TreeGen(bpy.types.Operator):
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_type, tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_weight, tps.bends_seed]
+        bd_p = [tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
 
@@ -247,6 +245,9 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         text = 'Create a Tree')
         layout.separator()
         col = layout.column(align=True)
+        col.label(text="Main Settings:")
+        col.prop(wm.treegen_props, "facebool")
+        col = layout.column(align=True)
         col.label(text="Main Parameters:")
         col.prop(wm.treegen_props, "Msides")
         col.prop(wm.treegen_props, "Mlength")
@@ -256,7 +257,6 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
 
         col = layout.column(align=True)
         col.label(text="Bending Parameters:")
-        col.prop(wm.treegen_props, "bends_type")
         col.prop(wm.treegen_props, "bends_amount")
         col.prop(wm.treegen_props, "bends_scale")
         col.prop(wm.treegen_props, "bends_angle")
