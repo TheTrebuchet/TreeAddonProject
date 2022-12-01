@@ -2,6 +2,9 @@ import bpy
 def update_p(self, context):
     bpy.ops.object.create_tree()
 class TreeGen_PG(bpy.types.PropertyGroup):
+    treename: bpy.props.StringProperty(
+        default='tree',
+    )
     facebool: bpy.props.BoolProperty(
         name='Faces switch',
         default=True,
@@ -196,3 +199,4 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         max=1,
         update=update_p
     )
+    

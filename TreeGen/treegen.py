@@ -15,7 +15,7 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     return spine
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
+def spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide):
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
     for i in range(1, len(spine)):
         bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
@@ -28,6 +28,7 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide):
 
         #based on a the bd
         
+
         # transformation itself
         trans1 = Matrix.Translation(-1*spine[i])
         trans2 = Matrix.Translation(spine[i])
@@ -44,7 +45,7 @@ def spine_gen(m_p, bd_p, r_p, guide):
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    spine = spine_bend(spine, b_a, b_ang, b_c, b_s, b_seed, l, guide)
+    spine = spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide)
     return spine, n
 
 # BARK
