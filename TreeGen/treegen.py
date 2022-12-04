@@ -201,7 +201,6 @@ class TreeGen_new(bpy.types.Operator):
 
         # temporary parameters
         scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
-        branch_shift = 0.6
         scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
 
         #parameter lists, l is globally defined
@@ -211,7 +210,7 @@ class TreeGen_new(bpy.types.Operator):
         br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
         bd_p = [tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_weight, tps.bends_seed]
-        t_p = [scale_lf1, tps.flare_amount, scale_lf2, branch_shift]
+        t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
 
         #generates the trunk and lists of lists of stuff
@@ -240,7 +239,7 @@ class TreeGen_new(bpy.types.Operator):
         bpy.context.object["branch parameters"] = br_p
         bpy.context.object["branch number parameters"] = bn_p
         bpy.context.object["bends parameters"] = bd_p
-        bpy.context.object["temporary parameters"] = t_p
+        bpy.context.object["temporary parameters"] = [t_p[1],t_p[3]]
         bpy.context.object["random parameters"] = r_p
 
         verts = []
@@ -258,7 +257,6 @@ class TreeGen_update(bpy.types.Operator):
 
         # temporary parameters
         scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
-        branch_shift = 0.6
         scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
 
         #parameter lists, l is globally defined
@@ -268,7 +266,7 @@ class TreeGen_update(bpy.types.Operator):
         br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
         bd_p = [tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_weight, tps.bends_seed]
-        t_p = [scale_lf1, tps.flare_amount, scale_lf2, branch_shift]
+        t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
 
         #generates the trunk and lists of lists of stuff

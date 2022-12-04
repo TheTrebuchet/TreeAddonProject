@@ -193,6 +193,13 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         min=1,
         update=update_p
     )
+    branch_shift: bpy.props.FloatProperty(
+        name="the general shape of tree",
+        default=0.6,
+        min=0.01,
+        max=1,
+        update=update_p
+    )
     flare_amount: bpy.props.FloatProperty(
         name="amount of tree flare",
         default=0.8,
