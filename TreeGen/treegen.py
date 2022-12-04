@@ -3,6 +3,7 @@ import math
 import random
 from mathutils import Vector, noise, Matrix
 import bl_math
+import bmesh
 
 # SPINE
 # number of vertices, length
@@ -183,11 +184,13 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
                 faces = faces[0]
                 break
             faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
+        verts = [vec*m_p[3] for vec in verts] #scales the tree
+        return verts, faces
+    else:
+        spine = [vec*m_p[3] for vec in spine]
+        return spine, []
 
-    verts = [vec*m_p[3] for vec in verts] #scales the tree
-    return verts, faces
-
-class TreeGen(bpy.types.Operator):
+class TreeGen_new(bpy.types.Operator):
     """creates a tree in cursor location"""
     bl_idname = 'object.create_tree'
     bl_label = 'Lob that tree'
@@ -213,18 +216,76 @@ class TreeGen(bpy.types.Operator):
 
         #generates the trunk and lists of lists of stuff
         verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
-        
-        if "tree" in bpy.data.meshes:
-            tree = bpy.data.meshes["tree"]
-            bpy.data.meshes.remove(tree)
+
+        #list of last meshes
+        last_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
 
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
-        
         bpy.context.collection.objects.link(object)
         mesh.from_pydata(verts ,[], faces)
+        
+        #list of new meshes
+        new_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
+        
+        #name of the created object and slecting it
+        tps.treename = list(new_meshes-last_meshes)[0]
+        this_object = bpy.data.objects[tps.treename]
+        bpy.ops.object.select_all(action='DESELECT')
+        this_object.select_set(True)
+        bpy.context.view_layer.objects.active = this_object
+        
+        #writing properties
+        bpy.context.object["main parameters"] = m_p
+        bpy.context.object["branch parameters"] = br_p
+        bpy.context.object["branch number parameters"] = bn_p
+        bpy.context.object["bends parameters"] = bd_p
+        bpy.context.object["temporary parameters"] = t_p
+        bpy.context.object["random parameters"] = r_p
+
         verts = []
         faces = []
+        return {'FINISHED'}
+        
+class TreeGen_update(bpy.types.Operator):
+    """creates a tree in cursor location"""
+    bl_idname = 'object.update_tree'
+    bl_label = 'update that tree'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        tps = context.window_manager.treegen_props
+
+        # temporary parameters
+        scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
+        branch_shift = 0.6
+        scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
+
+        #parameter lists, l is globally defined
+        l=tps.Mlength/(tps.Mlength//(tps.Mratio*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
+
+        m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
+        br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_seed]
+        bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
+        bd_p = [tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_weight, tps.bends_seed]
+        t_p = [scale_lf1, tps.flare_amount, scale_lf2, branch_shift]
+        r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
+
+        #generates the trunk and lists of lists of stuff
+        verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+        
+        selected_obj = bpy.context.object.data
+
+        t_mesh = bpy.data.meshes.new('tree update')
+        t_mesh.from_pydata(verts,[],faces)
+
+        bm = bmesh.new()
+        bm.from_mesh(t_mesh)
+
+        bm.to_mesh(selected_obj)
+        bm.free()
+        bpy.data.meshes.remove(t_mesh)
+
         return {'FINISHED'}
 
 class OBJECT_PT_TreeGenerator(bpy.types.Panel):

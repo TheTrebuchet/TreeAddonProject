@@ -1,6 +1,7 @@
 import bpy
 def update_p(self, context):
-    bpy.ops.object.create_tree()
+    bpy.ops.object.update_tree()
+
 class TreeGen_PG(bpy.types.PropertyGroup):
     treename: bpy.props.StringProperty(
         default='tree',
@@ -12,7 +13,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
     Msides: bpy.props.IntProperty(
         name="Number of trunk sides",
-        default=10,
+        default=11,
         min=4,
         soft_max=32,
         update=update_p
