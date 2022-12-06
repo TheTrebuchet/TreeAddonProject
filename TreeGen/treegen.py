@@ -24,6 +24,7 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide):
         # correction bend_vec, but honestly it just decides how much this vector points upwards
         vec = spine[i] - spine[i-1]
         x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))**(1-b_c)**(1-b_c)
+        print(x)
         vec = (guide.rotation_difference((0,0,1)))@vec
         bend_vec = bend_vec*(1-x) + Vector((-vec[0],-vec[1], vec[2])).normalized()*x
 
@@ -46,7 +47,7 @@ def spine_gen(m_p, bd_p, r_p, guide):
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    spine = spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide)
+    spine = spine_bend(spine, b_a, b_ang, bl_math.clamp(b_c)*3.3, b_s, b_w, b_seed, l, guide)
     return spine, n
 
 # BARK
@@ -155,6 +156,8 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
 
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
+    
+    print(bd_p[2])
     #initial trunk
     verts, spine = trunk_gen(m_p, bd_p, r_p, t_p, Vector((0,0,1)))
     spinelist = [[spine]]
@@ -191,7 +194,8 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
         return spine, []
 
 class TreeGen_new(bpy.types.Operator):
-    """creates a tree in cursor location"""
+    #creates the mesh and updates the properties
+    """creates a tree at (0,0,0) according to user panel input"""
     bl_idname = 'object.create_tree'
     bl_label = 'Lob that tree'
     bl_options = {'REGISTER', 'UNDO'}
@@ -209,7 +213,7 @@ class TreeGen_new(bpy.types.Operator):
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_weight, tps.bends_seed]
+        bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
 
@@ -235,7 +239,7 @@ class TreeGen_new(bpy.types.Operator):
         bpy.context.view_layer.objects.active = this_object
         
         #writing properties
-        bpy.context.object["main parameters"] = m_p
+        bpy.context.object["main parameters"] = m_p[:-1]
         bpy.context.object["branch parameters"] = br_p
         bpy.context.object["branch number parameters"] = bn_p
         bpy.context.object["bends parameters"] = bd_p
@@ -247,13 +251,15 @@ class TreeGen_new(bpy.types.Operator):
         return {'FINISHED'}
         
 class TreeGen_update(bpy.types.Operator):
-    """creates a tree in cursor location"""
+    #updates the mesh and writes to custom properties
+    """updates the tree according to user panel input"""
     bl_idname = 'object.update_tree'
     bl_label = 'update that tree'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         tps = context.window_manager.treegen_props
+        selected_obj = bpy.context.object.data
 
         # temporary parameters
         scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
@@ -265,15 +271,15 @@ class TreeGen_update(bpy.types.Operator):
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_amount, tps.bends_angle, bl_math.clamp(tps.bends_correction)*3.3, tps.bends_scale, tps.bends_weight, tps.bends_seed]
+        bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
 
         #generates the trunk and lists of lists of stuff
         verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
         
-        selected_obj = bpy.context.object.data
-
+        
+        #updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new('tree update')
         t_mesh.from_pydata(verts,[],faces)
 
@@ -284,7 +290,64 @@ class TreeGen_update(bpy.types.Operator):
         bm.free()
         bpy.data.meshes.remove(t_mesh)
 
+        bpy.context.object["main parameters"] = m_p[:-1]
+        bpy.context.object["branch parameters"] = br_p
+        bpy.context.object["branch number parameters"] = bn_p
+        bpy.context.object["bends parameters"] = bd_p
+        bpy.context.object["temporary parameters"] = [t_p[1],t_p[3]]
+        bpy.context.object["random parameters"] = r_p
+
         return {'FINISHED'}
+
+class TreeGen_sync(bpy.types.Operator):
+    #writes the property group from custom properties
+    """syncs tps property group with custom properties"""
+    bl_idname = 'object.sync_tree'
+    bl_label = 'update that tree'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        
+        selection_name = bpy.context.object.data.name
+        print(selection_name)
+        
+        tps = bpy.data.window_managers["WinMan"].treegen_props
+
+        m_p = bpy.data.objects[selection_name]["main parameters"]
+        br_p = bpy.data.objects[selection_name]['branch parameters']
+        bn_p = bpy.data.objects[selection_name]['branch number parameters']
+        bd_p = bpy.data.objects[selection_name]['bends parameters']
+        r_p = bpy.data.objects[selection_name]['temporary parameters']
+        t_p = bpy.data.objects[selection_name]['random parameters']
+        
+        tps.Msides = int(m_p[0])
+        tps.Mlength = float(m_p[1])
+        tps.Mradius = float(m_p[2])
+        tps.Mscale = float(m_p[3])
+        tps.branch_levels = int(br_p[0])
+        tps.branch_angle = float(br_p[1])
+        tps.branch_height = float(br_p[2])
+        tps.branch_variety = float(br_p[3])
+        tps.branch_seed = int(br_p[4])
+        tps.branch_number1 = int(bn_p[0])
+        tps.branch_number2 = int(bn_p[1])
+        tps.branch_number3 = int(bn_p[2])
+        tps.bends_amount = float(bd_p[0])
+        tps.bends_angle = float(bd_p[1])
+        tps.bends_correction = float(bd_p[2])
+        tps.bends_scale = float(bd_p[3])
+        tps.bends_weight = float(bd_p[4])
+        tps.bends_seed = int(bd_p[5])
+        tps.flare_amount = float(r_p[0])
+        tps.branch_shift = float(r_p[1])
+        tps.Rperlin_amount = float(t_p[0])
+        tps.Rperlin_scale = float(t_p[1])
+        tps.Rperlin_seed = int(t_p[2])
+
+
+        return {'FINISHED'}
+
+    
 
 class OBJECT_PT_TreeGenerator(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
@@ -303,6 +366,9 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
 
         col.operator('object.create_tree',
         text = 'Create a Tree')
+        layout.separator()
+        col.operator('object.sync_tree',
+        text = 'Sync a Tree')
         layout.separator()
         col = layout.column(align=True)
         col.label(text="Main Settings:")
