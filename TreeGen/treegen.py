@@ -246,7 +246,7 @@ class TreeGen_new(bpy.types.Operator):
         this_object.select_set(True)
         bpy.context.view_layer.objects.active = this_object
         bpy.ops.object.shade_smooth()
-        
+
         #writing properties
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         bpy.context.object["main parameters"] = m_p[:-1]
@@ -302,6 +302,8 @@ class TreeGen_update(bpy.types.Operator):
         bm.to_mesh(selected_obj)
         bm.free()
         bpy.data.meshes.remove(t_mesh)
+        bpy.ops.object.shade_smooth()
+        
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         bpy.context.object["main parameters"] = m_p[:-1]
         bpy.context.object["branch parameters"] = br_p
