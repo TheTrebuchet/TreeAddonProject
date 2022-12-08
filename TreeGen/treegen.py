@@ -23,8 +23,7 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide):
         
         # correction bend_vec, but honestly it just decides how much this vector points upwards
         vec = spine[i] - spine[i-1]
-        x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))**(1-b_c)**(1-b_c)
-        print(x)
+        x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))*b_c
         vec = (guide.rotation_difference((0,0,1)))@vec
         bend_vec = bend_vec*(1-x) + Vector((-vec[0],-vec[1], vec[2])).normalized()*x
 
@@ -47,7 +46,7 @@ def spine_gen(m_p, bd_p, r_p, guide):
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    spine = spine_bend(spine, b_a, b_ang, bl_math.clamp(b_c)*3.3, b_s, b_w, b_seed, l, guide)
+    spine = spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide)
     return spine, n
 
 # BARK
@@ -101,7 +100,7 @@ def branch_guides(spine, number, m_p, br_p, t_p):
     length, radius = m_p[1:3]
     a_br, h_br, var_br, s_br = br_p[1:]
     #a_br = (1-var_br)*a_br+var_br*random.uniform(0,90)
-    a_br = 45+random.uniform(-var_br*45,var_br*45)
+    a_br += random.uniform(-var_br*a_br,var_br*a_br)
     scale_f1, f_a, scale_f2, br_s = t_p
     guidepacks = []
     
@@ -114,7 +113,8 @@ def branch_guides(spine, number, m_p, br_p, t_p):
         random.seed(s_br+1)
         a = random.random()*2*math.pi
         quat = Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1])
-        guide_vec = quat @ Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
+        dir_vec = Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
+        guide_vec = quat @ dir_vec
         guide_vec *= m_p[1]*0.4*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)*random.uniform(1-var_br, 1+var_br)
         guide_r = bl_math.clamp(scale_f1(s_pick/(n), f_a)*radius*0.8, 0, guide_vec.length/length*radius)
         guidepacks.append([trans_vec, guide_vec, guide_r])
@@ -156,8 +156,6 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
 
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
-    
-    print(bd_p[2])
     #initial trunk
     verts, spine = trunk_gen(m_p, bd_p, r_p, t_p, Vector((0,0,1)))
     spinelist = [[spine]]
@@ -196,7 +194,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
 class TreeGen_new(bpy.types.Operator):
     #creates the mesh and updates the properties
     """creates a tree at (0,0,0) according to user panel input"""
-    bl_idname = 'object.create_tree'
+    bl_idname = 'object.tree_create'
     bl_label = 'Lob that tree'
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -216,6 +214,7 @@ class TreeGen_new(bpy.types.Operator):
         bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
+        seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of stuff
         verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
@@ -232,20 +231,21 @@ class TreeGen_new(bpy.types.Operator):
         new_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
         
         #name of the created object and slecting it
-        tps.treename = list(new_meshes-last_meshes)[0]
-        this_object = bpy.data.objects[tps.treename]
+        treename = list(new_meshes-last_meshes)[0]
+        this_object = bpy.data.objects[treename]
         bpy.ops.object.select_all(action='DESELECT')
         this_object.select_set(True)
         bpy.context.view_layer.objects.active = this_object
-        
+
         #writing properties
+        br_p[-1], bd_p[-1], r_p[-1] = seeds
         bpy.context.object["main parameters"] = m_p[:-1]
         bpy.context.object["branch parameters"] = br_p
         bpy.context.object["branch number parameters"] = bn_p
         bpy.context.object["bends parameters"] = bd_p
         bpy.context.object["temporary parameters"] = [t_p[1],t_p[3]]
         bpy.context.object["random parameters"] = r_p
-
+        
         verts = []
         faces = []
         return {'FINISHED'}
@@ -253,13 +253,15 @@ class TreeGen_new(bpy.types.Operator):
 class TreeGen_update(bpy.types.Operator):
     #updates the mesh and writes to custom properties
     """updates the tree according to user panel input"""
-    bl_idname = 'object.update_tree'
+    bl_idname = 'object.tree_update'
     bl_label = 'update that tree'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         tps = context.window_manager.treegen_props
         selected_obj = bpy.context.object.data
+        if 'tree' not in selected_obj.name:
+            return {'FINISHED'}
 
         # temporary parameters
         scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
@@ -274,6 +276,7 @@ class TreeGen_update(bpy.types.Operator):
         bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
+        seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of stuff
         verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
@@ -289,7 +292,7 @@ class TreeGen_update(bpy.types.Operator):
         bm.to_mesh(selected_obj)
         bm.free()
         bpy.data.meshes.remove(t_mesh)
-
+        br_p[-1], bd_p[-1], r_p[-1] = seeds
         bpy.context.object["main parameters"] = m_p[:-1]
         bpy.context.object["branch parameters"] = br_p
         bpy.context.object["branch number parameters"] = bn_p
@@ -302,18 +305,19 @@ class TreeGen_update(bpy.types.Operator):
 class TreeGen_sync(bpy.types.Operator):
     #writes the property group from custom properties
     """syncs tps property group with custom properties"""
-    bl_idname = 'object.sync_tree'
-    bl_label = 'update that tree'
+    bl_idname = 'object.tree_sync'
+    bl_label = 'sync that tree'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         
         selection_name = bpy.context.object.data.name
-        print(selection_name)
         
         tps = bpy.data.window_managers["WinMan"].treegen_props
 
-        m_p = bpy.data.objects[selection_name]["main parameters"]
+        tps.sync_complete = False
+
+        m_p = bpy.data.objects[selection_name]['main parameters']
         br_p = bpy.data.objects[selection_name]['branch parameters']
         bn_p = bpy.data.objects[selection_name]['branch number parameters']
         bd_p = bpy.data.objects[selection_name]['bends parameters']
@@ -344,6 +348,7 @@ class TreeGen_sync(bpy.types.Operator):
         tps.Rperlin_scale = float(t_p[1])
         tps.Rperlin_seed = int(t_p[2])
 
+        tps.sync_complete = True
 
         return {'FINISHED'}
 
@@ -364,10 +369,10 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         
         layout.label(text="Aight lad, lob that tree over there would ya?")
 
-        col.operator('object.create_tree',
+        col.operator('object.tree_create',
         text = 'Create a Tree')
         layout.separator()
-        col.operator('object.sync_tree',
+        col.operator('object.tree_sync',
         text = 'Sync a Tree')
         layout.separator()
         col = layout.column(align=True)
@@ -390,7 +395,7 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "bends_weight")
 
         col = layout.column(align=True)
-        col.label(text="Branch Parameters:")
+        col.label(text="Branch :")
         col.prop(wm.treegen_props, "branch_levels")
         col.prop(wm.treegen_props, "branch_number1")
         col.prop(wm.treegen_props, "branch_number2")
@@ -398,11 +403,8 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_angle")
         col.prop(wm.treegen_props, "branch_height")
         
-
-        
         col = layout.column(align=True)
-        col.label(text="Perlin Parameters:")
-        col.prop(wm.treegen_props, "Rperlin")
+        col.label(text="Simple jiggle:")
         col.prop(wm.treegen_props, "Rperlin_amount")
         col.prop(wm.treegen_props, "Rperlin_scale")
 
@@ -413,5 +415,6 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_seed")
         col.prop(wm.treegen_props, "branch_variety")
         col = layout.column(align=True)
-        col.label(text="Scale Parameters:")
+        col.label(text="Scale and shape:")
         col.prop(wm.treegen_props, 'flare_amount')
+        col.prop(wm.treegen_props, 'branch_shift')

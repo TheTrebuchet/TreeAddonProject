@@ -1,10 +1,17 @@
 import bpy
 def update_p(self, context):
-    bpy.ops.object.update_tree()
+    tps = bpy.data.window_managers["WinMan"].treegen_props
+    if tps.sync_complete:
+        bpy.ops.object.tree_update()
 
 class TreeGen_PG(bpy.types.PropertyGroup):
-    treename: bpy.props.StringProperty(
-        default='tree',
+    sync_complete: bpy.props.BoolProperty(
+        default=True,
+    )
+    facebool: bpy.props.BoolProperty(
+        name='Faces switch',
+        default=True,
+        update=update_p,
     )
     facebool: bpy.props.BoolProperty(
         name='Faces switch',
@@ -48,11 +55,6 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    Rperlin: bpy.props.BoolProperty(
-        name="turns on the jiggles",
-        default=False,
-    )
-
     Rperlin_amount: bpy.props.FloatProperty(
         name="jiggle amount",
         default=0.01,
@@ -63,7 +65,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
 
     Rperlin_scale: bpy.props.FloatProperty(
         name="jiggle scale",
-        default=0.05,
+        default=0.2,
         min=0.0001,
         soft_max=32,
         update=update_p
@@ -140,7 +142,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
 
     branch_number1: bpy.props.IntProperty(
-        name="branches number1",
+        name="number of branches 1",
         default=30,
         min=1,
         soft_max=100,
@@ -148,7 +150,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
 
     branch_number2: bpy.props.IntProperty(
-        name="branches number2",
+        name="number of branches 2",
         default=5,
         min=1,
         soft_max=20,
@@ -156,7 +158,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
 
     branch_number3: bpy.props.IntProperty(
-        name="branches number3",
+        name="number of branches 2",
         default=2,
         min=1,
         soft_max=10,
@@ -165,9 +167,9 @@ class TreeGen_PG(bpy.types.PropertyGroup):
 
     branch_angle: bpy.props.FloatProperty(
         name="branching angle",
-        default=70,
-        min=15,
-        soft_max=90,
+        default=70.0,
+        min=15.0,
+        soft_max=90.0,
         update=update_p
     )
 
@@ -194,14 +196,14 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
     branch_shift: bpy.props.FloatProperty(
-        name="the general shape of tree",
+        name="the shape of tree",
         default=0.6,
         min=0.01,
         max=1,
         update=update_p
     )
     flare_amount: bpy.props.FloatProperty(
-        name="amount of tree flare",
+        name="amount of trunk flare",
         default=0.8,
         min=0.01,
         max=1,
