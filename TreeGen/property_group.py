@@ -165,11 +165,19 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    branch_angle: bpy.props.FloatProperty(
-        name="branching angle",
+    branch_maxangle: bpy.props.FloatProperty(
+        name="top angle",
         default=70.0,
-        min=15.0,
-        soft_max=90.0,
+        min=0.0,
+        soft_max=180.0,
+        update=update_p
+    )
+
+    branch_minangle: bpy.props.FloatProperty(
+        name="bottom angle",
+        default=0.0,
+        min=0.0,
+        soft_max=180.0,
         update=update_p
     )
 

@@ -98,7 +98,7 @@ def branch_guides(spine, number, m_p, br_p, t_p):
     # parameters
     n = len(spine)
     length, radius = m_p[1:3]
-    ang, start_h, var, scaling, br_seed = br_p[1:]
+    minang, maxang, start_h, var, scaling, br_seed = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
     guidepacks = []
     
@@ -106,13 +106,15 @@ def branch_guides(spine, number, m_p, br_p, t_p):
     for i in range(number):
         br_seed+=1 #seed update
         
-        random.seed(br_seed)#choosing the angle
-        ang += random.uniform(-var*ang,var*ang)
-        
-        random.seed(br_seed+1) #choosing placement of the branch
+        random.seed(br_seed) #choosing placement of the branch
         height = random.uniform(start_h, 0.99)
         pick = math.floor(n*height)
         trans_vec = spine[pick]*(height*n-pick)+spine[pick]*(pick+1-height*n) #translation vector
+
+        random.seed(br_seed+1) #x axis angle
+        x = (height-start_h)/(1-start_h)
+        ang = minang*x+maxang*(1-x)
+        ang += random.uniform(-var*ang,var*ang)
 
         random.seed(br_seed+2) #z axis angle
         a = random.random()*2*math.pi 
@@ -120,7 +122,7 @@ def branch_guides(spine, number, m_p, br_p, t_p):
         quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1]) #quaternion from 001 to vector alongside the spine
         dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
         guide_vec = quat @ dir_vec #final guide
-        guide_vec *= m_p[1]*scaling*scale_f2((height-start_h)/(1-start_h), shift)*random.uniform(1-var, 1+var) #guide length update
+        guide_vec *= m_p[1]*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
         guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, 0, guide_vec.length/length*radius) #radius of the new branch
         guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
     return guidepacks
@@ -218,7 +220,7 @@ class TreeGen_new(bpy.types.Operator):
         l=tps.Mlength/(tps.Mlength//(tps.Mratio*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
 
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
-        br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
+        br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
         bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
@@ -281,7 +283,7 @@ class TreeGen_update(bpy.types.Operator):
         l=tps.Mlength/(tps.Mlength//(tps.Mratio*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
 
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
-        br_p = [tps.branch_levels, tps.branch_angle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
+        br_p = br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
         bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
@@ -341,11 +343,12 @@ class TreeGen_sync(bpy.types.Operator):
         tps.Mradius = float(m_p[2])
         tps.Mscale = float(m_p[3])
         tps.branch_levels = int(br_p[0])
-        tps.branch_angle = float(br_p[1])
-        tps.branch_height = float(br_p[2])
-        tps.branch_variety = float(br_p[3])
-        tps.branch_scaling = float(br_p[4])
-        tps.branch_seed = int(br_p[5])
+        tps.branch_minangle = float(br_p[1])
+        tps.branch_maxangle = float(br_p[2])
+        tps.branch_height = float(br_p[3])
+        tps.branch_variety = float(br_p[4])
+        tps.branch_scaling = float(br_p[5])
+        tps.branch_seed = int(br_p[6])
         tps.branch_number1 = int(bn_p[0])
         tps.branch_number2 = int(bn_p[1])
         tps.branch_number3 = int(bn_p[2])
@@ -414,7 +417,8 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_number2")
         col.prop(wm.treegen_props, "branch_number3")
         col.prop(wm.treegen_props, "branch_scaling")
-        col.prop(wm.treegen_props, "branch_angle")
+        col.prop(wm.treegen_props, "branch_minangle")
+        col.prop(wm.treegen_props, "branch_maxangle")
         col.prop(wm.treegen_props, "branch_height")
         
         col = layout.column(align=True)
