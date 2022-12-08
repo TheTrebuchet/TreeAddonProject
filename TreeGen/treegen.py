@@ -193,6 +193,10 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
         verts = [vec*m_p[3] for vec in verts] #scales the tree
         return verts, faces
     else:
+        spine = []
+        for i in spinelist:
+            for k in i:
+                spine += k
         spine = [vec*m_p[3] for vec in spine]
         return spine, []
 
