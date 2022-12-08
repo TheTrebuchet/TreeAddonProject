@@ -98,30 +98,30 @@ def branch_guides(spine, number, m_p, br_p, t_p):
     # parameters
     n = len(spine)
     length, radius = m_p[1:3]
-    ang, start_h, var, brseed = br_p[1:]
+    ang, start_h, var, br_seed = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
     guidepacks = []
     
     # guide instructions
     for i in range(number):
+        br_seed+=1 #seed update
         
-        brseed+=1
-        random.seed(brseed)
+        random.seed(br_seed)#choosing the angle
         ang += random.uniform(-var*ang,var*ang)
         
-        brseed+=1
-        random.seed(brseed)
+        random.seed(br_seed+1) #choosing placement of the branch
         height = random.uniform(start_h, 0.99)
         pick = math.floor(n*height)
         trans_vec = spine[pick]*(height*n-pick)+spine[pick]*(pick+1-height*n) #translation vector
 
-        random.seed(brseed+1) #seed update
-        a = random.random()*2*math.pi #z axis angle
+        random.seed(br_seed+2) #z axis angle
+        a = random.random()*2*math.pi 
+
         quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1]) #quaternion from 001 to vector alongside the spine
         dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
         guide_vec = quat @ dir_vec #final guide
-        guide_vec *= m_p[1]*0.4*scale_f2((pick/n-start_h)/(1-start_h), shift)*random.uniform(1-var, 1+var) #guide length update
-        guide_r = bl_math.clamp(scale_f1(pick/(n), flare)*radius*0.8, 0, guide_vec.length/length*radius) #radius of the new branch
+        guide_vec *= m_p[1]*0.4*scale_f2((height-start_h)/(1-start_h), shift)*random.uniform(1-var, 1+var) #guide length update
+        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, 0, guide_vec.length/length*radius) #radius of the new branch
         guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
     return guidepacks
 
