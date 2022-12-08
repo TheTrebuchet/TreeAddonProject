@@ -98,25 +98,30 @@ def branch_guides(spine, number, m_p, br_p, t_p):
     # parameters
     n = len(spine)
     length, radius = m_p[1:3]
-    a_br, h_br, var_br, s_br = br_p[1:]
-    #a_br = (1-var_br)*a_br+var_br*random.uniform(0,90)
-    a_br += random.uniform(-var_br*a_br,var_br*a_br)
-    scale_f1, f_a, scale_f2, br_s = t_p
+    ang, start_h, var, brseed = br_p[1:]
+    scale_f1, flare, scale_f2, shift = t_p
     guidepacks = []
     
     # guide instructions
     for i in range(number):
-        s_br+=1
-        random.seed(s_br) #seed update
-        s_pick = random.randint(round(h_br*n), n-2)+1 #picking place on the branch
-        trans_vec = spine[s_pick] #translation vector
-        random.seed(s_br+1) #seed update
+        
+        brseed+=1
+        random.seed(brseed)
+        ang += random.uniform(-var*ang,var*ang)
+        
+        brseed+=1
+        random.seed(brseed)
+        height = random.uniform(start_h, 0.99)
+        pick = math.floor(n*height)
+        trans_vec = spine[pick]*(height*n-pick)+spine[pick]*(pick+1-height*n) #translation vector
+
+        random.seed(brseed+1) #seed update
         a = random.random()*2*math.pi #z axis angle
-        quat = Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1]) #quaternion from 001 to normal
-        dir_vec = Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized() #bent vector from 001
+        quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1]) #quaternion from 001 to vector alongside the spine
+        dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
         guide_vec = quat @ dir_vec #final guide
-        guide_vec *= m_p[1]*0.4*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)*random.uniform(1-var_br, 1+var_br) #guide length update
-        guide_r = bl_math.clamp(scale_f1(s_pick/(n), f_a)*radius*0.8, 0, guide_vec.length/length*radius) #radius of the new branch
+        guide_vec *= m_p[1]*0.4*scale_f2((pick/n-start_h)/(1-start_h), shift)*random.uniform(1-var, 1+var) #guide length update
+        guide_r = bl_math.clamp(scale_f1(pick/(n), flare)*radius*0.8, 0, guide_vec.length/length*radius) #radius of the new branch
         guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
     return guidepacks
 

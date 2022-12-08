@@ -209,4 +209,3 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         max=1,
         update=update_p
     )
-    
