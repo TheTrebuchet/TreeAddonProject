@@ -158,7 +158,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
 
     branch_number3: bpy.props.IntProperty(
-        name="number of branches 2",
+        name="number of branches 3",
         default=2,
         min=1,
         soft_max=10,
@@ -186,6 +186,14 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         default=0.1,
         min=0.0,
         soft_max=1,
+        update=update_p
+    )
+
+    branch_scaling: bpy.props.FloatProperty(
+        name="scale of branch levels",
+        default=0.4,
+        min=0.1,
+        soft_max=0.9,
         update=update_p
     )
 
