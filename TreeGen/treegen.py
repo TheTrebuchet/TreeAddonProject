@@ -107,17 +107,17 @@ def branch_guides(spine, number, m_p, br_p, t_p):
     # guide instructions
     for i in range(number):
         s_br+=1
-        random.seed(s_br)
-        s_pick = random.randint(round(h_br*n), n-2)+1
-        trans_vec = spine[s_pick]
-        random.seed(s_br+1)
-        a = random.random()*2*math.pi
-        quat = Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1])
-        dir_vec = Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized()
-        guide_vec = quat @ dir_vec
-        guide_vec *= m_p[1]*0.4*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)*random.uniform(1-var_br, 1+var_br)
-        guide_r = bl_math.clamp(scale_f1(s_pick/(n), f_a)*radius*0.8, 0, guide_vec.length/length*radius)
-        guidepacks.append([trans_vec, guide_vec, guide_r])
+        random.seed(s_br) #seed update
+        s_pick = random.randint(round(h_br*n), n-2)+1 #picking place on the branch
+        trans_vec = spine[s_pick] #translation vector
+        random.seed(s_br+1) #seed update
+        a = random.random()*2*math.pi #z axis angle
+        quat = Vector((0,0,1)).rotation_difference(spine[s_pick]-spine[s_pick-1]) #quaternion from 001 to normal
+        dir_vec = Vector((math.sin(math.radians(a_br))*math.cos(a),math.sin(math.radians(a_br))*math.sin(a), math.cos(math.radians(a_br)))).normalized() #bent vector from 001
+        guide_vec = quat @ dir_vec #final guide
+        guide_vec *= m_p[1]*0.4*scale_f2((s_pick/n-h_br)/(1-h_br), br_s)*random.uniform(1-var_br, 1+var_br) #guide length update
+        guide_r = bl_math.clamp(scale_f1(s_pick/(n), f_a)*radius*0.8, 0, guide_vec.length/length*radius) #radius of the new branch
+        guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
     return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
