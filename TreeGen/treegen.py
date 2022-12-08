@@ -245,7 +245,8 @@ class TreeGen_new(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         this_object.select_set(True)
         bpy.context.view_layer.objects.active = this_object
-
+        bpy.ops.object.shade_smooth()
+        
         #writing properties
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         bpy.context.object["main parameters"] = m_p[:-1]
