@@ -173,34 +173,35 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     if br_p[0] != 0:
         for i in range(br_p[0]):
             branch_gen(spinelist, branchdata, vertslist, br_p, bn_p[i], bd_p, r_p, t_p)
-    
-    #joining verts into one group
-    verts = []
-    for i in vertslist:
-        for k in i:
-            verts += k
-    
-    #making faces
-    faces=[]
-    if facebool:
-        for i in range(br_p[0]+1):
-            s = branchdata[i][0][0]
-            for spi in spinelist[i]:
-                faces.append(face_gen(s, len(spi)))
-        while True:
-            if len(faces) == 1:
-                faces = faces[0]
-                break
-            faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
-        verts = [vec*m_p[3] for vec in verts] #scales the tree
-        return verts, faces
-    else:
+
+    #if the user doesn't need faces    
+    if not facebool:
         spine = []
         for i in spinelist:
             for k in i:
                 spine += k
         spine = [vec*m_p[3] for vec in spine]
         return spine, []
+
+
+    #making faces and verts
+    faces=[]
+    verts=[]
+    for i in vertslist:
+        for k in i:
+            verts += k
+
+    for i in range(br_p[0]+1):
+        s = branchdata[i][0][0]
+        for spi in spinelist[i]:
+            faces.append(face_gen(s, len(spi)))
+    while True:
+        if len(faces) == 1:
+            faces = faces[0]
+            break
+        faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
+    verts = [vec*m_p[3] for vec in verts] #scales the tree
+    return verts, faces
 
 class TreeGen_new(bpy.types.Operator):
     #creates the mesh and updates the properties
@@ -257,6 +258,10 @@ class TreeGen_new(bpy.types.Operator):
         bpy.context.object["bends parameters"] = bd_p
         bpy.context.object["temporary parameters"] = [t_p[1],t_p[3]]
         bpy.context.object["random parameters"] = r_p
+
+        #adding vertex group for furthest branches
+        vertex_group = this_object.vertex_groups.new(name="leaves")
+        vertex_group.add(leaves_selection, 1.0, 'ADD')
         
         verts = []
         faces = []
