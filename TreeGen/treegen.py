@@ -66,7 +66,7 @@ def bark_gen(spine, n, m_p, t_p):
     sides, radius = m_p[0], m_p[2]
     s_fun, f_a = t_p[:2]
     # s_fun function, should be accessible from interface, scales the circles
-    scale_list = [s_fun(i/n, f_a)*radius for i in range(n)]
+    scale_list = [bl_math.clamp(s_fun(i/n, f_a)*radius, 0.01*radius, radius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
     quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
@@ -124,7 +124,7 @@ def branch_guides(spine, number, m_p, br_p, t_p):
         dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
         guide_vec = quat @ dir_vec #final guide
         guide_vec *= m_p[1]*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
-        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, 0, guide_vec.length/length*radius) #radius of the new branch
+        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, 0.01*radius, guide_vec.length/length*radius) #radius of the new branch
         guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
     return guidepacks
 
@@ -263,8 +263,8 @@ class TreeGen_new(bpy.types.Operator):
 
         #adding vertex group for furthest branches
         if selection:
-            vertex_group = this_object.vertex_groups.new(name="leaves")
-            vertex_group.add(selection, 1.0, 'ADD')
+            v_group = this_object.vertex_groups.new(name="leaves")
+            v_group.add(selection, 1.0, 'ADD')
         
         verts = []
         faces = []
@@ -313,6 +313,9 @@ class TreeGen_update(bpy.types.Operator):
         bm.free()
         bpy.data.meshes.remove(t_mesh)
         bpy.ops.object.shade_smooth()
+        
+        v_group = bpy.context.object.vertex_groups['leaves']
+        v_group.add(selection, 1.0, 'REPLACE')
         
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         bpy.context.object["main parameters"] = m_p[:-1]
