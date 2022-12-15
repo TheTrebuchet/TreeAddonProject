@@ -124,7 +124,7 @@ def branch_guides(spine, number, m_p, br_p, t_p):
         dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
         guide_vec = quat @ dir_vec #final guide
         guide_vec *= m_p[1]*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
-        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, 0.01*radius, guide_vec.length/length*radius) #radius of the new branch
+        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, 0.01*radius, guide_vec.length/length*radius) #radius of the new branch between 1% and proportionate of parent
         guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
     return guidepacks
 
