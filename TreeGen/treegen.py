@@ -1,5 +1,4 @@
 import bpy
-import numpy as np
 import math
 import random
 from mathutils import Vector, noise, Matrix
@@ -336,7 +335,7 @@ class TreeGen_sync(bpy.types.Operator):
 
     def execute(self, context):
         
-        selection_name = bpy.context.object.data.name
+        selection_name = bpy.context.object.name
         
         tps = bpy.data.window_managers["WinMan"].treegen_props
 
