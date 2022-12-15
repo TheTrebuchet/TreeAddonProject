@@ -181,7 +181,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
             for k in i:
                 spine += k
         spine = [vec*m_p[3] for vec in spine]
-        return spine, []
+        return spine, [], []
 
 
     #making faces and verts
@@ -201,7 +201,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
             break
         faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
     verts = [vec*m_p[3] for vec in verts] #scales the tree
-    return verts, faces
+    return verts, faces, selection
 
 class TreeGen_new(bpy.types.Operator):
     #creates the mesh and updates the properties
@@ -229,7 +229,7 @@ class TreeGen_new(bpy.types.Operator):
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of stuff
-        verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+        verts, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
 
         #list of last meshes
         last_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
@@ -261,7 +261,7 @@ class TreeGen_new(bpy.types.Operator):
 
         #adding vertex group for furthest branches
         vertex_group = this_object.vertex_groups.new(name="leaves")
-        vertex_group.add(leaves_selection, 1.0, 'ADD')
+        vertex_group.add(selection, 1.0, 'ADD')
         
         verts = []
         faces = []
