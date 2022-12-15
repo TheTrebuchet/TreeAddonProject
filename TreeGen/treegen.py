@@ -90,6 +90,7 @@ def face_gen(s, n):
                 faces.append(tuple([j+s*i, j+1+s*i, j+1+(i+1)*s, j+(i+1)*s]))
             else:
                 faces.append(tuple([j+s*i, s*i, s*(i+1), j+s*(i+1)]))
+    
     return faces
 
 # BRANCHES AND TREE GENERATION
