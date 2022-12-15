@@ -1,4 +1,5 @@
 import bpy
+import numpy as np
 import math
 import random
 from mathutils import Vector, noise, Matrix
@@ -190,7 +191,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     for i in vertslist:
         for k in i:
             verts += k
-
+    selection = [len(verts) - i for i in range(sum([len(k) for k in vertslist[-1]]))]
     for i in range(br_p[0]+1):
         s = branchdata[i][0][0]
         for spi in spinelist[i]:
@@ -230,6 +231,7 @@ class TreeGen_new(bpy.types.Operator):
 
         #generates the trunk and lists of lists of stuff
         verts, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+        print(selection)
 
         #list of last meshes
         last_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
@@ -260,8 +262,9 @@ class TreeGen_new(bpy.types.Operator):
         bpy.context.object["random parameters"] = r_p
 
         #adding vertex group for furthest branches
-        vertex_group = this_object.vertex_groups.new(name="leaves")
-        vertex_group.add(selection, 1.0, 'ADD')
+        if selection:
+            vertex_group = this_object.vertex_groups.new(name="leaves")
+            vertex_group.add(selection, 1.0, 'ADD')
         
         verts = []
         faces = []
@@ -296,7 +299,7 @@ class TreeGen_update(bpy.types.Operator):
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of stuff
-        verts, faces = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+        verts, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
         
         
         #updating mesh, tree update is a temporary object
