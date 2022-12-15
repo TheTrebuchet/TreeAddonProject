@@ -312,14 +312,3 @@ def TreeGen_nodegroup_exec():
     TreeGen_nodegroup.links.new(group_input.outputs["Selection"], distribute_points_on_faces.inputs["Selection"])
     TreeGen_nodegroup.links.new(group_input.outputs["Distance Min"], distribute_points_on_faces.inputs["Distance Min"])
     TreeGen_nodegroup.links.new(group_input.outputs["Seed"], math_addseed.inputs[0])
-
-
-
-if 'TreeGen_nodegroup' not in bpy.data.node_groups:
-    TreeGen_nodegroup_exec()
-ng = bpy.data.node_groups['TreeGen_nodegroup']
-if 'TreeGen' not in bpy.context.object.modifiers:
-    bpy.context.object.modifiers.new(name = 'TreeGen',type = 'NODES')
-geo_mod = bpy.context.object.modifiers['TreeGen']
-if not geo_mod.node_group:
-    geo_mod.node_group = ng

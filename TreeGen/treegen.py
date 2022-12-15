@@ -4,6 +4,7 @@ import random
 from mathutils import Vector, noise, Matrix
 import bl_math
 import bmesh
+from geogroup import TreeGen_nodegroup_exec
 
 # SPINE
 # number of vertices, length
@@ -265,7 +266,17 @@ class TreeGen_new(bpy.types.Operator):
         if selection:
             v_group = this_object.vertex_groups.new(name="leaves")
             v_group.add(selection, 1.0, 'ADD')
-        
+
+
+        if 'TreeGen_nodegroup' not in bpy.data.node_groups:
+            TreeGen_nodegroup_exec()
+        ng = bpy.data.node_groups['TreeGen_nodegroup']
+        if 'TreeGen' not in bpy.context.object.modifiers:
+            bpy.context.object.modifiers.new(name = 'TreeGen',type = 'NODES')
+        geo_mod = bpy.context.object.modifiers['TreeGen']
+        if not geo_mod.node_group:
+            geo_mod.node_group = ng
+            
         verts = []
         faces = []
         return {'FINISHED'}
