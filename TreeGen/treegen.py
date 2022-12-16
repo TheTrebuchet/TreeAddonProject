@@ -4,7 +4,7 @@ import random
 from mathutils import Vector, noise, Matrix
 import bl_math
 import bmesh
-from geogroup import TreeGen_nodegroup_exec
+from . import geogroup
 
 # SPINE
 # number of vertices, length
@@ -232,7 +232,6 @@ class TreeGen_new(bpy.types.Operator):
 
         #generates the trunk and lists of lists of stuff
         verts, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
-        print(selection)
 
         #list of last meshes
         last_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
@@ -269,14 +268,16 @@ class TreeGen_new(bpy.types.Operator):
 
 
         if 'TreeGen_nodegroup' not in bpy.data.node_groups:
-            TreeGen_nodegroup_exec()
+            geogroup.TreeGen_nodegroup_exec()
         ng = bpy.data.node_groups['TreeGen_nodegroup']
         if 'TreeGen' not in bpy.context.object.modifiers:
             bpy.context.object.modifiers.new(name = 'TreeGen',type = 'NODES')
         geo_mod = bpy.context.object.modifiers['TreeGen']
         if not geo_mod.node_group:
             geo_mod.node_group = ng
-            
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_2_use_attribute\"]", modifier_name="TreeGen")
+        bpy.context.object.modifiers["TreeGen"]["Input_2_attribute_name"] = "leaves"
+
         verts = []
         faces = []
         return {'FINISHED'}
@@ -326,6 +327,7 @@ class TreeGen_update(bpy.types.Operator):
         bpy.ops.object.shade_smooth()
         
         v_group = bpy.context.object.vertex_groups['leaves']
+        v_group.remove([i for i in range(len(verts))])
         v_group.add(selection, 1.0, 'REPLACE')
         
         br_p[-1], bd_p[-1], r_p[-1] = seeds
