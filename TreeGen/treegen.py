@@ -17,14 +17,14 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     return spine
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide):
+def spine_bend(spine, b_a, b_ang, b_s, b_w, b_seed, l, guide):
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
     for i in range(1, len(spine)):
         bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized()
         
         # correction bend_vec, but honestly it just decides how much this vector points upwards
         vec = spine[i] - spine[i-1]
-        x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))*b_c
+        x = bl_math.clamp(vec.angle(guide.normalized(),0.0)/math.radians(b_ang))
         vec = (guide.rotation_difference((0,0,1)))@vec
         bend_vec = bend_vec*(1-x) + Vector((-vec[0],-vec[1], vec[2])).normalized()*x
 
@@ -40,14 +40,14 @@ def spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide):
 
 def spine_gen(m_p, bd_p, r_p, guide):
     # parameters
-    length, l = m_p[1], m_p[4]
+    length, l = m_p[1], m_p[5]
     n = round(length/l)+1
     p_a, p_s, p_seed = r_p
-    b_a, b_ang, b_c, b_s, b_w, b_seed = bd_p
+    b_a, b_ang, b_s, b_w, b_seed = bd_p
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    spine = spine_bend(spine, b_a, b_ang, b_c, b_s, b_w, b_seed, l, guide)
+    spine = spine_bend(spine, b_a, b_ang, b_s, b_w, b_seed, l, guide)
     return spine, n
 
 # BARK
@@ -63,10 +63,10 @@ def bark_circle(n,r):
 
 def bark_gen(spine, n, m_p, t_p):
     # parameters
-    sides, radius = m_p[0], m_p[2]
+    sides, radius, tipradius = m_p[0], m_p[2], m_p[3]
     s_fun, f_a = t_p[:2]
     # s_fun function, should be accessible from interface, scales the circles
-    scale_list = [bl_math.clamp(s_fun(i/n, f_a)*radius, 0.01*radius, radius) for i in range(n)]
+    scale_list = [bl_math.clamp(s_fun(i/n, f_a)*radius, tipradius*radius, radius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
     quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
@@ -99,7 +99,7 @@ def face_gen(s, n):
 def branch_guides(spine, number, m_p, br_p, t_p):
     # parameters
     n = len(spine)
-    length, radius = m_p[1:3]
+    length, radius, tipradius = m_p[1:4]
     minang, maxang, start_h, var, scaling, br_seed = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
     guidepacks = []
@@ -124,8 +124,8 @@ def branch_guides(spine, number, m_p, br_p, t_p):
         quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1]) #quaternion from 001 to vector alongside the spine
         dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
         guide_vec = quat @ dir_vec #final guide
-        guide_vec *= m_p[1]*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
-        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, 0.01*radius, guide_vec.length/length*radius) #radius of the new branch between 1% and proportionate of parent
+        guide_vec *= length*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
+        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius*radius, guide_vec.length/length*radius) #radius of the new branch between 1% and proportionate of parent
         guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
     return guidepacks
 
@@ -147,15 +147,15 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
         guidepacks = branch_guides(spinelist[-1][i], number, branchdata[-1][i], br_p, t_p)
         for pack in guidepacks:
             #THIS CREATES THE SUBBRANCHES FOR THIS ONE BRANCH
-            tm_p = [newsides, pack[1].length, pack[2], branchdata[-1][i][3], branchdata[-1][i][4]]
+            tm_p = [newsides, pack[1].length, pack[2], branchdata[-1][i][3], branchdata[-1][i][4] ,branchdata[-1][i][5]] #last level, i branch, parameter
             newbranchdata.append(tm_p)
             r_p[2]+=1 #updating seeds
             br_p[-1]+=1
             bd_p[-1]+=1
             tbd_p = bd_p.copy()
-            tbd_p[4]*=pack[2] #multiply weight setting by radius temporarily for the branch
-            if tm_p[1]<tm_p[4]: #change 'l' if branch is not long enough
-                tm_p[4] = tm_p[1]
+            tbd_p[3]*=pack[2] #multiply weight setting by radius temporarily for the branch
+            if tm_p[1]<tm_p[5]: #change 'l' if branch is not long enough
+                tm_p[5] = tm_p[1]
             newverts, newspine = trunk_gen(tm_p, tbd_p, r_p, t_p, pack[1])
             newvertslist.append([vec+pack[0] for vec in newverts])
             newspinelist.append([vec+pack[0] for vec in newspine])
@@ -182,7 +182,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
         for i in spinelist:
             for k in i:
                 spine += k
-        spine = [vec*m_p[3] for vec in spine]
+        spine = [vec*m_p[4] for vec in spine] #scale update
         return spine, [], []
 
 
@@ -202,7 +202,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
             faces = faces[0]
             break
         faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
-    verts = [vec*m_p[3] for vec in verts] #scales the tree
+    verts = [vec*m_p[4] for vec in verts] #scales the tree
     return verts, faces, selection
 
 class TreeGen_new(bpy.types.Operator):
@@ -222,10 +222,10 @@ class TreeGen_new(bpy.types.Operator):
         #parameter lists, l is globally defined
         l=tps.Mlength/(tps.Mlength//(tps.Mratio*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
 
-        m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
+        m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
+        bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
@@ -302,10 +302,10 @@ class TreeGen_update(bpy.types.Operator):
         #parameter lists, l is globally defined
         l=tps.Mlength/(tps.Mlength//(tps.Mratio*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
 
-        m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mscale, l]
-        br_p = br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
+        m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
+        br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
+        bd_p = [tps.bends_amount, tps.bends_angle, tps.bends_scale, tps.bends_weight, tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
@@ -365,7 +365,8 @@ class TreeGen_sync(bpy.types.Operator):
         tps.Msides = int(m_p[0])
         tps.Mlength = float(m_p[1])
         tps.Mradius = float(m_p[2])
-        tps.Mscale = float(m_p[3])
+        tps.Mtipradius = float(m_p[3])
+        tps.Mscale = float(m_p[4])
         tps.branch_levels = int(br_p[0])
         tps.branch_minangle = float(br_p[1])
         tps.branch_maxangle = float(br_p[2])
@@ -378,10 +379,9 @@ class TreeGen_sync(bpy.types.Operator):
         tps.branch_number3 = int(bn_p[2])
         tps.bends_amount = float(bd_p[0])
         tps.bends_angle = float(bd_p[1])
-        tps.bends_correction = float(bd_p[2])
-        tps.bends_scale = float(bd_p[3])
-        tps.bends_weight = float(bd_p[4])
-        tps.bends_seed = int(bd_p[5])
+        tps.bends_scale = float(bd_p[2])
+        tps.bends_weight = float(bd_p[3])
+        tps.bends_seed = int(bd_p[4])
         tps.flare_amount = float(r_p[0])
         tps.branch_shift = float(r_p[1])
         tps.Rperlin_amount = float(t_p[0])
@@ -423,7 +423,7 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "Msides")
         col.prop(wm.treegen_props, "Mlength")
         col.prop(wm.treegen_props, "Mradius")
-        col.prop(wm.treegen_props, "Mscale")
+        col.prop(wm.treegen_props, "Mtipradius")
         col.prop(wm.treegen_props, "Mratio")
 
         col = layout.column(align=True)
@@ -431,7 +431,6 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "bends_amount")
         col.prop(wm.treegen_props, "bends_scale")
         col.prop(wm.treegen_props, "bends_angle")
-        col.prop(wm.treegen_props, "bends_correction")
         col.prop(wm.treegen_props, "bends_weight")
 
         col = layout.column(align=True)
@@ -458,5 +457,6 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_variety")
         col = layout.column(align=True)
         col.label(text="Scale and shape:")
+        col.prop(wm.treegen_props, "Mscale")
         col.prop(wm.treegen_props, 'flare_amount')
         col.prop(wm.treegen_props, 'branch_shift')

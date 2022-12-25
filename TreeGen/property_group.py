@@ -21,21 +21,28 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
     Mlength: bpy.props.FloatProperty(
-        name="Trunk Length",
+        name="Height",
         default=100.0,
         min=0.1,
         soft_max=200.0,
         update=update_p
     )
     Mradius: bpy.props.FloatProperty(
-        name="Tree Radius",
+        name="Base Radius",
         default=4,
         min=0.1,
         soft_max=32,
         update=update_p
     )
+    Mtipradius: bpy.props.FloatProperty(
+        name="Tip Radius",
+        default=0.01,
+        min=0,
+        max=1,
+        update=update_p
+    )
     Mscale: bpy.props.FloatProperty(
-        name="Tree Scale",
+        name="Object Scale",
         default=0.1,
         min=0.01,
         soft_max=10,
