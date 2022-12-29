@@ -96,11 +96,11 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    bends_angle: bpy.props.FloatProperty(
-        name="Max Angle of Bends",
-        default=90,
-        min=15,
-        soft_max=180,
+    bends_up: bpy.props.FloatProperty(
+        name="Angle Influence",
+        default=0.0,
+        min=-1.0,
+        max=1.0,
         update=update_p
     )
 
