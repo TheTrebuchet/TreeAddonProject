@@ -17,35 +17,55 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     return spine
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide):
+def spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide, r):
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
+    corr = lambda x, c : x**(2*c)*(1-c)+x**(1/(1-c))*c
+    weight = lambda x, ang: math.sin(ang)*(1-x)*l*len(spine) #it has influences from trunk working corss section, weight of the branch, angle of the branch
+    
     for i in range(1, len(spine)):
-        bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized() #generate random vector
-        old_vec = spine[i] - spine[i-1] #get previous vector
-        angle = (b_up*Vector((0,0,1)).angle(old_vec))**(1-b_c)
-        quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), angle)
-        new_vec = quat@old_vec
-        bend_vec = (Vector((0,0,1)).rotation_difference(new_vec))@bend_vec #rotate bend vector to current direction
-        x = bl_math.clamp(new_vec.angle(bend_vec,0.0)/math.radians(90)*b_c) #apply dampening, to be improved
-        new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random and ideal vectors
 
-        # transformation itself
+        old_vec = spine[i] - spine[i-1] #get previous vector
+        angle = (Vector((0,0,1)).angle(old_vec)) #calculate global z angle
+
+        quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), b_up*angle/(len(spine)-i)) #quat for this step ideal progression
+        new_vec = quat@old_vec #rotating the vec
+        
+        bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized() #generate random vector        
+        bend_vec = (Vector((0,0,1)).rotation_difference(new_vec))@bend_vec #rotating bend_vec to local direction
+        x = corr(bl_math.clamp(guide.angle(bend_vec,0.0)/math.radians(90)),(1-b_c)) #apply dampening, to be improved
+        new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random (bend_vec) and ideal (new_vec) vectors
+
+        # transformation itself, rotating the remaining branch towards the new vector
         trans1 = Matrix.Translation(-1*spine[i])
         trans2 = Matrix.Translation(spine[i])
         quat = old_vec.rotation_difference(new_vec)
+        spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
+
+    for i in range(len(spine)):
+        vec = spine[i] - spine[i-1] #get previous vector
+        angle = (Vector((0,0,1)).angle(vec))
+
+        CM = spine[(len(spine)+i)//2]-spine[i]
+        w_angle = CM[0]**2+CM[1]**2-r**2*math.cos(angle)
+        if w_angle<0: w_angle = 0
+        w_angle = weight(i/len(spine), math.atan(w_angle**0.5/(CM[2]+r*math.sin(angle))))
+        
+        trans1 = Matrix.Translation(-1*spine[i])
+        trans2 = Matrix.Translation(spine[i])
+        quat = Quaternion(Vector((vec[1], -vec[0],0)), -w_angle*b_w)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
     return spine
 
 def spine_gen(m_p, bd_p, r_p, guide):
     # parameters
-    length, l = m_p[1], m_p[5]
+    length, r, l = m_p[1], m_p[2], m_p[5]
     n = round(length/l)+1
     p_a, p_s, p_seed = r_p
-    b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
+    b_a, b_up, b_c, b_s, b_w, b_gc, b_seed = bd_p
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    spine = spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide)
+    spine = spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide, r)
     return spine, n
 
 # BARK
@@ -150,11 +170,9 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
             r_p[2]+=1 #updating seeds
             br_p[-1]+=1
             bd_p[-1]+=1
-            tbd_p = bd_p.copy()
-            tbd_p[4]*=pack[2] #multiply weight setting by radius temporarily for the branch
             if tm_p[1]<tm_p[5]: #change 'l' if branch is not long enough
                 tm_p[5] = tm_p[1]
-            newverts, newspine = trunk_gen(tm_p, tbd_p, r_p, t_p, pack[1])
+            newverts, newspine = trunk_gen(tm_p, bd_p, r_p, t_p, pack[1])
             newvertslist.append([vec+pack[0] for vec in newverts])
             newspinelist.append([vec+pack[0] for vec in newspine])
     spinelist.append(newspinelist)
@@ -223,7 +241,7 @@ class TreeGen_new(bpy.types.Operator):
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
+        bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
@@ -303,7 +321,7 @@ class TreeGen_update(bpy.types.Operator):
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
         bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight, tps.bends_seed]
+        bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
         t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
         r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
@@ -429,8 +447,8 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.label(text="Bending Parameters:")
         col.prop(wm.treegen_props, "bends_amount")
         col.prop(wm.treegen_props, "bends_scale")
-        col.prop(wm.treegen_props, "bends_up")
         col.prop(wm.treegen_props, "bends_correction")
+        col.prop(wm.treegen_props, "bends_up")
         col.prop(wm.treegen_props, "bends_weight")
 
         col = layout.column(align=True)

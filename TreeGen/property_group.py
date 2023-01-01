@@ -168,7 +168,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
 
     branch_maxangle: bpy.props.FloatProperty(
-        name="Tip's Angle",
+        name="Bottom Angle",
         default=70.0,
         min=0.0,
         soft_max=180.0,
@@ -176,7 +176,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
 
     branch_minangle: bpy.props.FloatProperty(
-        name="Bottom angle",
+        name="Tip's angle",
         default=0.0,
         min=0.0,
         soft_max=180.0,
