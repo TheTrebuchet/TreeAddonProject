@@ -84,7 +84,7 @@ def bark_gen(spine, n, m_p, t_p):
     sides, radius, tipradius = m_p[0], m_p[2], m_p[3]
     s_fun, f_a = t_p[:2]
     # s_fun function, should be accessible from interface, scales the circles
-    scale_list = [bl_math.clamp(s_fun(i/n, f_a)*radius, tipradius*radius, radius) for i in range(n)]
+    scale_list = [bl_math.clamp(s_fun(i/n, f_a)*radius, tipradius, radius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
     quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
