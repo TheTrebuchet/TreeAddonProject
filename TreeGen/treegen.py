@@ -46,7 +46,7 @@ def spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide, r):
         angle = (Vector((0,0,1)).angle(vec))
 
         CM = spine[(len(spine)+i)//2]-spine[i]
-        w_angle = CM[0]**2+CM[1]**2-r**2*math.cos(angle)
+        w_angle = CM[0]**2+CM[1]**2-(r*math.cos(angle))**2
         if w_angle<0: w_angle = 0
         w_angle = weight(i/len(spine), math.atan(w_angle**0.5/(CM[2]+r*math.sin(angle))))
         

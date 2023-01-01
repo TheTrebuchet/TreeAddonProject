@@ -15,7 +15,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
     Msides: bpy.props.IntProperty(
         name="Number of Trunk Sides",
-        default=11,
+        default=10,
         min=4,
         soft_max=32,
         update=update_p
@@ -36,7 +36,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
     )
     Mtipradius: bpy.props.FloatProperty(
         name="Tip Radius",
-        default=0.01,
+        default=0.03,
         min=0,
         max=1,
         update=update_p
@@ -59,7 +59,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
 
     Rperlin_amount: bpy.props.FloatProperty(
         name="Jiggle Amount",
-        default=0.01,
+        default=0.3,
         min=0.0,
         soft_max=1,
         update=update_p
@@ -67,7 +67,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
 
     Rperlin_scale: bpy.props.FloatProperty(
         name="Jiggle Scale",
-        default=0.2,
+        default=0.4,
         min=0.0001,
         soft_max=32,
         update=update_p
@@ -77,14 +77,6 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         name="Jiggle Seed",
         default=1,
         min=1,
-        update=update_p
-    )
-
-    bends_type: bpy.props.IntProperty(
-        name="Bending Type",
-        default=1,
-        min=1,
-        max=3,
         update=update_p
     )
 
@@ -98,7 +90,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
 
     bends_up: bpy.props.FloatProperty(
         name="Angle Influence",
-        default=0.0,
+        default=0.3,
         min=-1.0,
         max=1.0,
         update=update_p
@@ -177,7 +169,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
 
     branch_minangle: bpy.props.FloatProperty(
         name="Tip's angle",
-        default=0.0,
+        default=30.0,
         min=0.0,
         soft_max=180.0,
         update=update_p
@@ -201,7 +193,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
 
     branch_scaling: bpy.props.FloatProperty(
         name="Subsequent Branch Scale",
-        default=0.4,
+        default=0.3,
         min=0.1,
         soft_max=0.9,
         update=update_p
