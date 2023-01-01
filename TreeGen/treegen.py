@@ -61,7 +61,7 @@ def spine_gen(m_p, bd_p, r_p, guide):
     length, r, l = m_p[1], m_p[2], m_p[5]
     n = round(length/l)+1
     p_a, p_s, p_seed = r_p
-    b_a, b_up, b_c, b_s, b_w, b_gc, b_seed = bd_p
+    b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
