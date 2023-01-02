@@ -255,6 +255,7 @@ class TreeGen_new(bpy.types.Operator):
         #list of last meshes
         last_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
 
+        #creating the tree
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
         bpy.context.collection.objects.link(object)
@@ -263,14 +264,13 @@ class TreeGen_new(bpy.types.Operator):
         #list of new meshes
         new_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
         
-        #name of the created object and slecting it
+        #name of the created object and selecting it
         treename = list(new_meshes-last_meshes)[0]
         this_object = bpy.data.objects[treename]
         bpy.ops.object.select_all(action='DESELECT')
         this_object.select_set(True)
         bpy.context.view_layer.objects.active = this_object
         bpy.ops.object.shade_smooth()
-
         #writing properties
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         bpy.context.object["main parameters"] = m_p[:-1]
@@ -309,10 +309,14 @@ class TreeGen_update(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        try: 
+            bpy.context.object["main parameters"]
+        except: 
+            self.report({"INFO"}, "I can't update an object that isn't a tree")
+            return {'FINISHED'}
+        
         tps = context.window_manager.treegen_props
         selected_obj = bpy.context.object.data
-        if 'tree' not in selected_obj.name:
-            return {'FINISHED'}
 
         # temporary parameters
         scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
@@ -367,6 +371,11 @@ class TreeGen_sync(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        try: 
+            bpy.context.object["main parameters"]
+        except: 
+            self.report({"INFO"}, "I can't sync an object that isn't a tree")
+            return {'FINISHED'}
         
         selection_name = bpy.context.object.name
         
