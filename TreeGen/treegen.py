@@ -252,25 +252,19 @@ class TreeGen_new(bpy.types.Operator):
         #generates the trunk and lists of lists of stuff
         verts, edges, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
 
-        #list of last meshes
-        last_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
-
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
         bpy.context.collection.objects.link(object)
         mesh.from_pydata(verts ,edges, faces)
         
-        #list of new meshes
-        new_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
-        
         #name of the created object and selecting it
-        treename = list(new_meshes-last_meshes)[0]
-        this_object = bpy.data.objects[treename]
         bpy.ops.object.select_all(action='DESELECT')
-        this_object.select_set(True)
-        bpy.context.view_layer.objects.active = this_object
+        object.select_set(True)
+        bpy.context.view_layer.objects.active = object
         bpy.ops.object.shade_smooth()
+        object.matrix_world.translation = context.scene.cursor.location
+
         #writing properties
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         bpy.context.object["main parameters"] = m_p[:-1]
@@ -282,7 +276,7 @@ class TreeGen_new(bpy.types.Operator):
 
         #adding vertex group for furthest branches
         if selection:
-            v_group = this_object.vertex_groups.new(name="leaves")
+            v_group = object.vertex_groups.new(name="leaves")
             v_group.add(selection, 1.0, 'ADD')
 
 
