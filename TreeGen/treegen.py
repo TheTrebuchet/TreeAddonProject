@@ -192,14 +192,17 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
         for i in range(br_p[0]):
             branch_gen(spinelist, branchdata, vertslist, br_p, bn_p[i], bd_p, r_p, t_p)
 
-    #if the user doesn't need faces    
+    #if the user doesn't need faces I provide a spine
     if not facebool:
         spine = []
+        edges =[]
         for i in spinelist:
             for k in i:
                 spine += k
+                if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(k))][:-1]
+                else: edges += [(n,n+1) for n in range(len(k))][:-1]
         spine = [vec*m_p[4] for vec in spine] #scale update
-        return spine, [], []
+        return spine, edges, [], []
 
 
     #making faces and verts
@@ -219,7 +222,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
             break
         faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
     verts = [vec*m_p[4] for vec in verts] #scales the tree
-    return verts, faces, selection
+    return verts, [], faces, selection
 
 class TreeGen_new(bpy.types.Operator):
     #creates the mesh and updates the properties
@@ -247,7 +250,7 @@ class TreeGen_new(bpy.types.Operator):
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of stuff
-        verts, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+        verts, edges, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
 
         #list of last meshes
         last_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
@@ -255,7 +258,7 @@ class TreeGen_new(bpy.types.Operator):
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
         bpy.context.collection.objects.link(object)
-        mesh.from_pydata(verts ,[], faces)
+        mesh.from_pydata(verts ,edges, faces)
         
         #list of new meshes
         new_meshes = set(o.name for o in bpy.context.scene.objects if o.type == 'MESH')
@@ -327,12 +330,12 @@ class TreeGen_update(bpy.types.Operator):
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of stuff
-        verts, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+        verts, edges, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
         
         
         #updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new('tree update')
-        t_mesh.from_pydata(verts,[],faces)
+        t_mesh.from_pydata(verts,edges,faces)
 
         bm = bmesh.new()
         bm.from_mesh(t_mesh)
@@ -452,7 +455,7 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "bends_weight")
 
         col = layout.column(align=True)
-        col.label(text="Branch :")
+        col.label(text="Branch Parameters:")
         col.prop(wm.treegen_props, "branch_levels")
         col.prop(wm.treegen_props, "branch_number1")
         col.prop(wm.treegen_props, "branch_number2")
@@ -463,18 +466,18 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_height")
         
         col = layout.column(align=True)
-        col.label(text="Simple jiggle:")
+        col.label(text="Simple Jiggle:")
         col.prop(wm.treegen_props, "Rperlin_amount")
         col.prop(wm.treegen_props, "Rperlin_scale")
 
         col = layout.column(align=True)
-        col.label(text="Seeds and variety:")
+        col.label(text="Seeds and Variety:")
         col.prop(wm.treegen_props, "Rperlin_seed")
         col.prop(wm.treegen_props, "bends_seed")
         col.prop(wm.treegen_props, "branch_seed")
         col.prop(wm.treegen_props, "branch_variety")
         col = layout.column(align=True)
-        col.label(text="Scale and shape:")
+        col.label(text="Scale and Shape:")
         col.prop(wm.treegen_props, "Mscale")
         col.prop(wm.treegen_props, 'flare_amount')
         col.prop(wm.treegen_props, 'branch_shift')
