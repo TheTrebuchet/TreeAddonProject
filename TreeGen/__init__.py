@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2022 Jan Kulczycki
+Copyright (C) 2023 Jan Kulczycki
 jan.kulczycki1@gmail.com
 
 Created by Jan Kulczycki
@@ -21,11 +21,10 @@ Created by Jan Kulczycki
 bl_info = {
     "name": "TreeGen",
     "author": "TheTrebuchet",
-    "version": (0, 0, 1),
+    "version": (0, 1, 0),
     "blender": (3, 3, 0),
     "location": "View3D > Sidebar > Tree Generator (Create Tab)",
-    "description": "Adds a generated tree at cursor",
-    "warning": "still in development",
+    "description": "Procedurally generates a tree at cursor location",
     "doc_url": "",
     "category": "Add Object",
 }
