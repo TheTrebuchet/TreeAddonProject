@@ -1,7 +1,7 @@
 import bpy
 def update_p(self, context):
     tps = bpy.data.window_managers["WinMan"].treegen_props
-    if tps.sync_complete:
+    if tps.sync_complete: 
         bpy.ops.object.tree_update()
 
 class TreeGen_PG(bpy.types.PropertyGroup):
