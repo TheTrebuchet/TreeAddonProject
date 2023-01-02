@@ -5,6 +5,7 @@
 the whole tree looks like this:
 
 `tree_gen`
+
 - `trunk_gen`
   - `spine_gen`
     - `spine_init`
