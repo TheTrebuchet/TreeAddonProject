@@ -131,7 +131,7 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         name="Branching Levels",
         default=2,
         min=0,
-        soft_max=4,
+        max=3,
         update=update_p
     )
 

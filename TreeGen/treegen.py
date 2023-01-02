@@ -341,7 +341,8 @@ class TreeGen_update(bpy.types.Operator):
         bm.to_mesh(selected_obj)
         bm.free()
         bpy.data.meshes.remove(t_mesh)
-        bpy.ops.object.shade_smooth()
+        for f in selected_obj.polygons:
+            f.use_smooth = True
         
         v_group = bpy.context.object.vertex_groups['leaves']
         v_group.remove([i for i in range(len(verts))])
@@ -429,7 +430,7 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         layout = self.layout
         wm = context.window_manager
         col = layout.column(align=True)
-        
+        tps = bpy.data.window_managers["WinMan"].treegen_props
         layout.label(text="Aight lad, lob that tree over there would ya?")
 
         col.operator('object.tree_create',
@@ -460,9 +461,8 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col = layout.column(align=True)
         col.label(text="Branch Parameters:")
         col.prop(wm.treegen_props, "branch_levels")
-        col.prop(wm.treegen_props, "branch_number1")
-        col.prop(wm.treegen_props, "branch_number2")
-        col.prop(wm.treegen_props, "branch_number3")
+        for i in range(tps.branch_levels):
+            col.prop(wm.treegen_props, "branch_number"+str(i+1))
         col.prop(wm.treegen_props, "branch_scaling")
         col.prop(wm.treegen_props, "branch_minangle")
         col.prop(wm.treegen_props, "branch_maxangle")
