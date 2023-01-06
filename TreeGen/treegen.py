@@ -239,7 +239,7 @@ class TreeGen_new(bpy.types.Operator):
         scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
 
         #parameter lists, l is globally defined
-        l=tps.Mlength/(tps.Mlength//(tps.Mratio*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
+        l=tps.Mlength/(tps.Mlength//(tps.Mvres*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
 
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
@@ -317,7 +317,7 @@ class TreeGen_update(bpy.types.Operator):
         scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
 
         #parameter lists, l is globally defined
-        l=tps.Mlength/(tps.Mlength//(tps.Mratio*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
+        l=tps.Mlength/(tps.Mlength//(tps.Mvres*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
 
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
@@ -445,10 +445,11 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         col = layout.column(align=True)
         col.label(text="Main Parameters:")
         col.prop(wm.treegen_props, "Msides")
+        col.prop(wm.treegen_props, "Mvres")
         col.prop(wm.treegen_props, "Mlength")
         col.prop(wm.treegen_props, "Mradius")
         col.prop(wm.treegen_props, "Mtipradius")
-        col.prop(wm.treegen_props, "Mratio")
+        
 
         col = layout.column(align=True)
         col.label(text="Bending Parameters:")
