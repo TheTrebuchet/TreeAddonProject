@@ -84,7 +84,7 @@ def bark_circle(n,r):
             circle.append(Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
-def bark_gen(spine, n, m_p, t_p, guide):
+def bark_gen(spine, n, m_p, t_p):
     # parameters
     sides, radius, tipradius = m_p[0], m_p[2], m_p[3]
     s_fun, f_a = t_p[:2]
@@ -92,7 +92,7 @@ def bark_gen(spine, n, m_p, t_p, guide):
     scale_list = [bl_math.clamp(s_fun(i/n, f_a)*radius, tipradius, radius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
-    quat = Vector((0,0,1)).rotation_difference(guide)
+    quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
     bark = [quat@i for i in bark_circle(sides,scale_list[0])]
     
     for x in range(1, n-1):
@@ -155,7 +155,7 @@ def guides_gen(spine, number, m_p, br_p, t_p):
 #generates a single trunk, whether it will be branch or the main trunk
 def trunk_gen(m_p, bd_p, r_p, t_p, guide, trunk):
     spine, n = spine_gen(m_p, bd_p, r_p, guide, trunk)
-    verts = bark_gen(spine, n, m_p, t_p, guide)
+    verts = bark_gen(spine, n, m_p, t_p)
     
     return verts, spine
 
