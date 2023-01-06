@@ -55,12 +55,11 @@ class TreeGen_PG(bpy.types.PropertyGroup):
         update=update_p
     )
 
-    Mvres: bpy.props.FloatProperty(
+    Mvres: bpy.props.IntProperty(
         name="Curve Resolution",
         description='The number of segments along the main trunk.',
-        default=2,
-        min=0.2,
-        soft_max=5,
+        default=30,
+        min=5,
         update=update_p
     )
 

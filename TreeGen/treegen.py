@@ -239,7 +239,7 @@ class TreeGen_new(bpy.types.Operator):
         scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
 
         #parameter lists, l is globally defined
-        l=tps.Mlength/(tps.Mlength//(tps.Mvres*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
+        l=tps.Mlength/tps.Mvres
 
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
@@ -267,7 +267,7 @@ class TreeGen_new(bpy.types.Operator):
 
         #writing properties
         br_p[-1], bd_p[-1], r_p[-1] = seeds
-        bpy.context.object["main parameters"] = m_p[:-1]
+        bpy.context.object["main parameters"] = m_p[:-1] +[tps.Mvres]
         bpy.context.object["branch parameters"] = br_p
         bpy.context.object["branch number parameters"] = bn_p
         bpy.context.object["bends parameters"] = bd_p
@@ -317,7 +317,7 @@ class TreeGen_update(bpy.types.Operator):
         scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
 
         #parameter lists, l is globally defined
-        l=tps.Mlength/(tps.Mlength//(tps.Mvres*math.tan(2*math.pi/(2*tps.Msides))*tps.Mradius))
+        l=tps.Mlength/tps.Mvres
 
         m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
         br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
@@ -349,7 +349,7 @@ class TreeGen_update(bpy.types.Operator):
         v_group.add(selection, 1.0, 'REPLACE')
         
         br_p[-1], bd_p[-1], r_p[-1] = seeds
-        bpy.context.object["main parameters"] = m_p[:-1]
+        bpy.context.object["main parameters"] = m_p[:-1] + [tps.Mvres]
         bpy.context.object["branch parameters"] = br_p
         bpy.context.object["branch number parameters"] = bn_p
         bpy.context.object["bends parameters"] = bd_p
@@ -390,6 +390,7 @@ class TreeGen_sync(bpy.types.Operator):
         tps.Mradius = float(m_p[2])
         tps.Mtipradius = float(m_p[3])
         tps.Mscale = float(m_p[4])
+        tps.Mvres = float(m_p[6])
         tps.branch_levels = int(br_p[0])
         tps.branch_minangle = float(br_p[1])
         tps.branch_maxangle = float(br_p[2])
