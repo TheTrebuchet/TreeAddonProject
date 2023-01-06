@@ -17,7 +17,7 @@ the whole 'tree' of functions looks like this:
     - `bark_circle`
   - `bark_faces`
 - `branch_gen`
-  - `branch_guides`
+  - `guides_gen`
   - `trunk_gen`
 
 descriptions
@@ -32,7 +32,7 @@ descriptions
 - `branch_gen` is responsible for making sure the trunk_gen output is handled correctly by the guides, outputs semi-ready branches verts list and appends to faces
 - `branch_guides` is creating vectors and additional parameters for the branches generated on the trunk or branch specified in the input
 
-I am registering quite a few classes. Respectively, three operators to create a tree, update it when you change a parameter and sync the panel with selected tree. 
+I am registering quite a few classes. Respectively, three operators to create a tree, update it when you change a parameter and sync the panel with selected tree.
 Then you have the panel itself and a property group of all the properties.
 
 `[treegen.TreeGen_new, treegen.TreeGen_update, treegen.TreeGen_sync, property_group.TreeGen_PG, treegen.OBJECT_PT_TreeGenerator]`

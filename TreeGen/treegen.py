@@ -17,11 +17,12 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     return spine
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide, r):
+def spine_bend(spine, bd_p, l, guide, r, trunk):
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
     corr = lambda x, c : x**(2*c)*(1-c)+x**(1/(1-c))*c
     weight = lambda x, ang: math.sin(ang)*(1-x)*l*len(spine) #it has influences from trunk working corss section, weight of the branch, angle of the branch
     
+    b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
     for i in range(1, len(spine)):
 
         old_vec = spine[i] - spine[i-1] #get previous vector
@@ -32,7 +33,7 @@ def spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide, r):
         
         bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized() #generate random vector        
         bend_vec = (Vector((0,0,1)).rotation_difference(new_vec))@bend_vec #rotating bend_vec to local direction
-        x = corr(bl_math.clamp(guide.angle(bend_vec,0.0)/math.radians(90)),(1-b_c)) #apply dampening, to be improved
+        x = bl_math.clamp(guide.angle(bend_vec,0.0)/math.radians(90))**2 #apply dampening, to be improved
         new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random (bend_vec) and ideal (new_vec) vectors
 
         # transformation itself, rotating the remaining branch towards the new vector
@@ -40,7 +41,7 @@ def spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide, r):
         trans2 = Matrix.Translation(spine[i])
         quat = old_vec.rotation_difference(new_vec)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
-
+    
     for i in range(len(spine)):
         vec = spine[i] - spine[i-1] #get previous vector
         angle = (Vector((0,0,1)).angle(vec))
@@ -54,18 +55,22 @@ def spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide, r):
         trans2 = Matrix.Translation(spine[i])
         quat = Quaternion(Vector((vec[1], -vec[0],0)), -w_angle*b_w)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
+
+    if trunk:
+        CM = Vector([sum([i[0] for i in spine])/len(spine), sum([i[1] for i in spine])/len(spine), sum([i[2] for i in spine])/len(spine)])
+        quat = Quaternion(Vector((CM[1],-CM[0],0)), Vector((0,0,1)).angle(CM)*b_c)
+        spine = [quat@i for i in spine]
     return spine
 
-def spine_gen(m_p, bd_p, r_p, guide):
+def spine_gen(m_p, bd_p, r_p, guide, trunk):
     # parameters
     length, r, l = m_p[1], m_p[2], m_p[5]
     n = round(length/l)+1
     p_a, p_s, p_seed = r_p
-    b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
 
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    spine = spine_bend(spine, b_a, b_up, b_c, b_s, b_w, b_seed, l, guide, r)
+    spine = spine_bend(spine, bd_p, l, guide, r, trunk)
     return spine, n
 
 # BARK
@@ -79,7 +84,7 @@ def bark_circle(n,r):
             circle.append(Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
-def bark_gen(spine, n, m_p, t_p):
+def bark_gen(spine, n, m_p, t_p, guide):
     # parameters
     sides, radius, tipradius = m_p[0], m_p[2], m_p[3]
     s_fun, f_a = t_p[:2]
@@ -87,7 +92,7 @@ def bark_gen(spine, n, m_p, t_p):
     scale_list = [bl_math.clamp(s_fun(i/n, f_a)*radius, tipradius, radius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
-    quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
+    quat = Vector((0,0,1)).rotation_difference(guide)
     bark = [quat@i for i in bark_circle(sides,scale_list[0])]
     
     for x in range(1, n-1):
@@ -114,7 +119,7 @@ def face_gen(s, n):
 
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
-def branch_guides(spine, number, m_p, br_p, t_p):
+def guides_gen(spine, number, m_p, br_p, t_p):
     # parameters
     n = len(spine)
     length, radius, tipradius = m_p[1:4]
@@ -143,14 +148,14 @@ def branch_guides(spine, number, m_p, br_p, t_p):
         dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
         guide_vec = quat @ dir_vec #final guide
         guide_vec *= length*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
-        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius*radius, guide_vec.length/length*radius) #radius of the new branch between 1% and proportionate of parent
+        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius) #radius of the new branch between 1% and proportionate of parent
         guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
     return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
-def trunk_gen(m_p, bd_p, r_p, t_p, guide):
-    spine, n = spine_gen(m_p, bd_p, r_p, guide)
-    verts = bark_gen(spine, n, m_p, t_p)
+def trunk_gen(m_p, bd_p, r_p, t_p, guide, trunk):
+    spine, n = spine_gen(m_p, bd_p, r_p, guide, trunk)
+    verts = bark_gen(spine, n, m_p, t_p, guide)
     
     return verts, spine
 
@@ -162,7 +167,7 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
     newsides = int(bl_math.clamp(branchdata[-1][0][0]//2, 4, branchdata[-1][0][0]))
     for i in range(len(spinelist[-1])):
         #THIS CREATES GUIDES FOR ONE BRANCH IN ONE LEVEL
-        guidepacks = branch_guides(spinelist[-1][i], number, branchdata[-1][i], br_p, t_p)
+        guidepacks = guides_gen(spinelist[-1][i], number, branchdata[-1][i], br_p, t_p)
         for pack in guidepacks:
             #THIS CREATES THE SUBBRANCHES FOR THIS ONE BRANCH
             tm_p = [newsides, pack[1].length, pack[2], branchdata[-1][i][3], branchdata[-1][i][4] ,branchdata[-1][i][5]] #last level, i branch, parameter
@@ -172,7 +177,7 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
             bd_p[-1]+=1
             if tm_p[1]<tm_p[5]: #change 'l' if branch is not long enough
                 tm_p[5] = tm_p[1]
-            newverts, newspine = trunk_gen(tm_p, bd_p, r_p, t_p, pack[1])
+            newverts, newspine = trunk_gen(tm_p, bd_p, r_p, t_p, pack[1], False)
             newvertslist.append([vec+pack[0] for vec in newverts])
             newspinelist.append([vec+pack[0] for vec in newspine])
     spinelist.append(newspinelist)
@@ -182,7 +187,7 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     #initial trunk
-    verts, spine = trunk_gen(m_p, bd_p, r_p, t_p, Vector((0,0,1)))
+    verts, spine = trunk_gen(m_p, bd_p, r_p, t_p, Vector((0,0,1)), True)
     spinelist = [[spine]]
     branchdata = [[m_p]]
     vertslist = [[verts]]
