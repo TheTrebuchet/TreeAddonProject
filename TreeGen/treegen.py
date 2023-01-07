@@ -463,6 +463,7 @@ class TREEGEN_OT_default(bpy.types.Operator):
         tps.branch_shift=0.6
         tps.flare_amount=0.8
         tps.sync_complete=True
+        bpy.ops.object.tree_update()
         return {'FINISHED'}
 
 class TREEGEN_PT_panel(bpy.types.Panel):
@@ -501,9 +502,9 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         col.label(text="Bending Parameters:")
         col.prop(wm.treegen_props, "bends_amount")
         col.prop(wm.treegen_props, "bends_scale")
-        col.prop(wm.treegen_props, "bends_correction")
         col.prop(wm.treegen_props, "bends_up")
         col.prop(wm.treegen_props, "bends_weight")
+        col.prop(wm.treegen_props, "bends_correction")
 
         col = layout.column(align=True)
         col.label(text="Branch Parameters:")
