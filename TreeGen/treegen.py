@@ -432,7 +432,36 @@ class TreeGen_OT_default(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-
+        tps = bpy.data.window_managers["WinMan"].treegen_props
+        tps.sync_complete=True
+        tps.facebool=True
+        tps.Msides=10
+        tps.Mlength=100.0
+        tps.Mradius=4
+        tps.Mtipradius=0.03
+        tps.Mscale=0.1
+        tps.Mvres=30
+        tps.Rperlin_amount=0.3
+        tps.Rperlin_scale=0.4
+        tps.Rperlin_seed=1
+        tps.bends_amount=0.5
+        tps.bends_up=0.3
+        tps.bends_correction=0.2
+        tps.bends_weight=0.5
+        tps.bends_scale=0.1
+        tps.bends_seed=1
+        tps.branch_levels=2
+        tps.branch_number1=30
+        tps.branch_number2=5
+        tps.branch_number3=2
+        tps.branch_maxangle=70.0
+        tps.branch_minangle=30.0
+        tps.branch_height=0.3
+        tps.branch_variety=0.1
+        tps.branch_scaling=0.3
+        tps.branch_seed=1
+        tps.branch_shift=0.6
+        tps.flare_amount=0.8
         return {'FINISHED'}
 
 class TreeGen_PT_panel(bpy.types.Panel):
