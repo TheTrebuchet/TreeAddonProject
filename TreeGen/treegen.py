@@ -433,7 +433,7 @@ class TREEGEN_OT_default(bpy.types.Operator):
 
     def execute(self, context):
         tps = bpy.data.window_managers["WinMan"].treegen_props
-        tps.sync_complete=True
+        tps.sync_complete = False
         tps.facebool=True
         tps.Msides=10
         tps.Mlength=100.0
@@ -462,6 +462,7 @@ class TREEGEN_OT_default(bpy.types.Operator):
         tps.branch_seed=1
         tps.branch_shift=0.6
         tps.flare_amount=0.8
+        tps.sync_complete=True
         return {'FINISHED'}
 
 class TREEGEN_PT_panel(bpy.types.Panel):
