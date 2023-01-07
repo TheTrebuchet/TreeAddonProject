@@ -4,7 +4,7 @@ def update_p(self, context):
     if tps.sync_complete: 
         bpy.ops.object.tree_update()
 
-class TreeGen_PG_props(bpy.types.PropertyGroup):
+class TREEGEN_PG_props(bpy.types.PropertyGroup):
     sync_complete: bpy.props.BoolProperty(
         default=True,
     )

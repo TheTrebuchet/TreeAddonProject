@@ -235,7 +235,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     
     return verts, [], faces, selection
 
-class TreeGen_OT_new(bpy.types.Operator):
+class TREEGEN_OT_new(bpy.types.Operator):
     """creates a tree at (0,0,0) according to user panel input"""
     bl_idname = 'object.tree_create'
     bl_label = 'Lob that tree'
@@ -305,7 +305,7 @@ class TreeGen_OT_new(bpy.types.Operator):
         faces = []
         return {'FINISHED'}
         
-class TreeGen_OT_update(bpy.types.Operator):
+class TREEGEN_OT_update(bpy.types.Operator):
     """updates the tree according to user panel input"""
     bl_idname = 'object.tree_update'
     bl_label = 'update that tree'
@@ -367,7 +367,7 @@ class TreeGen_OT_update(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class TreeGen_OT_sync(bpy.types.Operator):
+class TREEGEN_OT_sync(bpy.types.Operator):
     """syncs tps property group with custom properties"""
     bl_idname = 'object.tree_sync'
     bl_label = 'sync that tree'
@@ -425,9 +425,9 @@ class TreeGen_OT_sync(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class TreeGen_OT_default(bpy.types.Operator):
+class TREEGEN_OT_default(bpy.types.Operator):
     """returns all values to default"""
-    bl_idname = 'object.tree_sync'
+    bl_idname = 'object.tree_default'
     bl_label = 'sync that tree'
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -464,7 +464,7 @@ class TreeGen_OT_default(bpy.types.Operator):
         tps.flare_amount=0.8
         return {'FINISHED'}
 
-class TreeGen_PT_panel(bpy.types.Panel):
+class TREEGEN_PT_panel(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
     bl_label = "Tree_Gen"
     bl_space_type = "VIEW_3D"  
@@ -483,6 +483,7 @@ class TreeGen_PT_panel(bpy.types.Panel):
         layout.separator()
         col.operator('object.tree_sync', text = 'Sync a Tree')
         layout.separator()
+        col.operator('object.tree_default', text = 'Reset to default')
         col = layout.column(align=True)
         col.label(text="Main Settings:")
         col.prop(wm.treegen_props, "facebool")
