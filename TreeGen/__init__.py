@@ -31,16 +31,16 @@ bl_info = {
 
 import bpy
 
-from . import treegen
-from . import property_group
+from .treegen import *
+from .property_group import *
 
-classes = [treegen.TreeGen_new, treegen.TreeGen_update, treegen.TreeGen_sync, property_group.TreeGen_PG, treegen.OBJECT_PT_TreeGenerator]
+classes = (TreeGen_OT_new, TreeGen_OT_update, TreeGen_OT_sync, TreeGen_PG_props, TreeGen_PT_panel)
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.WindowManager.treegen_props = bpy.props.PointerProperty(type=property_group.TreeGen_PG)
+    bpy.types.WindowManager.treegen_props = bpy.props.PointerProperty(type=property_group.TreeGen_PG_props)
 
 def unregister():
     del bpy.types.WindowManager.treegen_props

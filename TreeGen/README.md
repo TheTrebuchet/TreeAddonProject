@@ -13,12 +13,12 @@ the whole 'tree' of functions looks like this:
   - `spine_gen`
     - `spine_init`
     - `spine_bend`
-  - `bark_gen`
-    - `bark_circle`
-  - `bark_faces`
 - `branch_gen`
   - `guides_gen`
   - `trunk_gen`
+- `bark_gen`
+  - `bark_circle`
+  - `bark_faces`
 
 descriptions
 
