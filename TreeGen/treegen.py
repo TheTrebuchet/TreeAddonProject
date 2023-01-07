@@ -19,7 +19,6 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
 # bends the spine in a more meaningful way
 def spine_bend(spine, bd_p, l, guide, r, trunk):
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
-    corr = lambda x, c : x**(2*c)*(1-c)+x**(1/(1-c))*c
     weight = lambda x, ang: math.sin(ang)*(1-x)*l*len(spine) #it has influences from trunk working corss section, weight of the branch, angle of the branch
     
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
@@ -71,7 +70,7 @@ def spine_gen(m_p, bd_p, r_p, guide, trunk):
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
     spine = spine_bend(spine, bd_p, l, guide, r, trunk)
-    return spine, n
+    return spine
 
 # BARK
 # number of sides, radius
@@ -84,16 +83,17 @@ def bark_circle(n,r):
             circle.append(Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
-def bark_gen(spine, n, m_p, t_p):
+def bark_gen(spine, m_p, t_p):
     # parameters
     sides, radius, tipradius = m_p[0], m_p[2], m_p[3]
-    s_fun, f_a = t_p[:2]
-    # s_fun function, should be accessible from interface, scales the circles
-    scale_list = [bl_math.clamp(s_fun(i/n, f_a)*radius, tipradius, radius) for i in range(n)]
+    flare_f, flare_a = t_p[:2]
+    n = len(spine)
+
+    scale_list = [bl_math.clamp(flare_f(i/n, flare_a)*radius, tipradius, radius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
     quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
-    bark = [quat@i for i in bark_circle(sides,scale_list[0])]
+    bark = [(quat@i)+spine[0] for i in bark_circle(sides,scale_list[0])]
     
     for x in range(1, n-1):
         vec = spine[x+1] - spine[x-1]
@@ -153,16 +153,14 @@ def guides_gen(spine, number, m_p, br_p, t_p):
     return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
-def trunk_gen(m_p, bd_p, r_p, t_p, guide, trunk):
-    spine, n = spine_gen(m_p, bd_p, r_p, guide, trunk)
-    verts = bark_gen(spine, n, m_p, t_p)
+def trunk_gen(m_p, bd_p, r_p, guide, trunk):
+    spine= spine_gen(m_p, bd_p, r_p, guide, trunk)
     
-    return verts, spine
+    return spine
 
 #returns newspinelist of the new branches
-def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
+def branch_gen(spinelist, branchdata, br_p, number, bd_p, r_p, t_p):
     newspinelist = []
-    newvertslist = []
     newbranchdata = []
     newsides = int(bl_math.clamp(branchdata[-1][0][0]//2, 4, branchdata[-1][0][0]))
     for i in range(len(spinelist[-1])):
@@ -177,25 +175,22 @@ def branch_gen(spinelist, branchdata, vertslist, br_p, number, bd_p, r_p, t_p):
             bd_p[-1]+=1
             if tm_p[1]<tm_p[5]: #change 'l' if branch is not long enough
                 tm_p[5] = tm_p[1]
-            newverts, newspine = trunk_gen(tm_p, bd_p, r_p, t_p, pack[1], False)
-            newvertslist.append([vec+pack[0] for vec in newverts])
+            newspine = trunk_gen(tm_p, bd_p, r_p, pack[1], False)
             newspinelist.append([vec+pack[0] for vec in newspine])
     spinelist.append(newspinelist)
     branchdata.append(newbranchdata)
-    vertslist.append(newvertslist)
 
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     #initial trunk
-    verts, spine = trunk_gen(m_p, bd_p, r_p, t_p, Vector((0,0,1)), True)
+    spine = trunk_gen(m_p, bd_p, r_p, Vector((0,0,1)), True)
     spinelist = [[spine]]
     branchdata = [[m_p]]
-    vertslist = [[verts]]
     
-    #branch levels
+    #creating the rest of levels
     if br_p[0] != 0:
         for i in range(br_p[0]):
-            branch_gen(spinelist, branchdata, vertslist, br_p, bn_p[i], bd_p, r_p, t_p)
+            branch_gen(spinelist, branchdata, br_p, bn_p[i], bd_p, r_p, t_p)
 
     #if the user doesn't need faces I provide a spine
     if not facebool:
@@ -209,27 +204,38 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
         spine = [vec*m_p[4] for vec in spine] #scale update
         return spine, edges, [], []
 
+    #generating verts from spine
+    vertslist = []
+    for i in range(len(spinelist)):
+        level = []
+        for k in range(len(spinelist[i])):
+            level.append(bark_gen(spinelist[i][k], branchdata[i][k], t_p))
+        vertslist.append(level)
 
-    #making faces and verts
+    #generating faces and making verts from vertslist
     faces=[]
     verts=[]
     for i in vertslist:
         for k in i:
             verts += k
     selection = [len(verts) - i for i in range(sum([len(k) for k in vertslist[-1]]))]
+    
     for i in range(br_p[0]+1):
         s = branchdata[i][0][0]
         for spi in spinelist[i]:
             faces.append(face_gen(s, len(spi)))
+    
     while True:
         if len(faces) == 1:
             faces = faces[0]
             break
         faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
+    
     verts = [vec*m_p[4] for vec in verts] #scales the tree
+    
     return verts, [], faces, selection
 
-class TreeGen_new(bpy.types.Operator):
+class TreeGen_OT_new(bpy.types.Operator):
     #creates the mesh and updates the properties
     """creates a tree at (0,0,0) according to user panel input"""
     bl_idname = 'object.tree_create'
@@ -300,7 +306,7 @@ class TreeGen_new(bpy.types.Operator):
         faces = []
         return {'FINISHED'}
         
-class TreeGen_update(bpy.types.Operator):
+class TreeGen_OT_update(bpy.types.Operator):
     #updates the mesh and writes to custom properties
     """updates the tree according to user panel input"""
     bl_idname = 'object.tree_update'
@@ -363,7 +369,7 @@ class TreeGen_update(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class TreeGen_sync(bpy.types.Operator):
+class TreeGen_OT_sync(bpy.types.Operator):
     #writes the property group from custom properties
     """syncs tps property group with custom properties"""
     bl_idname = 'object.tree_sync'
@@ -422,9 +428,18 @@ class TreeGen_sync(bpy.types.Operator):
 
         return {'FINISHED'}
 
-    
+class TreeGen_OT_default(bpy.types.Operator):
+    #writes the property group from custom properties
+    """syncs tps property group with custom properties"""
+    bl_idname = 'object.tree_sync'
+    bl_label = 'sync that tree'
+    bl_options = {'REGISTER', 'UNDO'}
 
-class OBJECT_PT_TreeGenerator(bpy.types.Panel):
+    def execute(self, context):
+
+        return {'FINISHED'}
+
+class TreeGen_PT_panel(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
     bl_label = "Tree_Gen"
     bl_space_type = "VIEW_3D"  
@@ -439,11 +454,9 @@ class OBJECT_PT_TreeGenerator(bpy.types.Panel):
         tps = bpy.data.window_managers["WinMan"].treegen_props
         layout.label(text="Aight lad, lob that tree over there would ya?")
 
-        col.operator('object.tree_create',
-        text = 'Create a Tree')
+        col.operator('object.tree_create', text = 'Create a Tree')
         layout.separator()
-        col.operator('object.tree_sync',
-        text = 'Sync a Tree')
+        col.operator('object.tree_sync', text = 'Sync a Tree')
         layout.separator()
         col = layout.column(align=True)
         col.label(text="Main Settings:")
