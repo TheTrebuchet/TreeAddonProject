@@ -236,7 +236,6 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     return verts, [], faces, selection
 
 class TreeGen_OT_new(bpy.types.Operator):
-    #creates the mesh and updates the properties
     """creates a tree at (0,0,0) according to user panel input"""
     bl_idname = 'object.tree_create'
     bl_label = 'Lob that tree'
@@ -307,7 +306,6 @@ class TreeGen_OT_new(bpy.types.Operator):
         return {'FINISHED'}
         
 class TreeGen_OT_update(bpy.types.Operator):
-    #updates the mesh and writes to custom properties
     """updates the tree according to user panel input"""
     bl_idname = 'object.tree_update'
     bl_label = 'update that tree'
@@ -370,7 +368,6 @@ class TreeGen_OT_update(bpy.types.Operator):
         return {'FINISHED'}
 
 class TreeGen_OT_sync(bpy.types.Operator):
-    #writes the property group from custom properties
     """syncs tps property group with custom properties"""
     bl_idname = 'object.tree_sync'
     bl_label = 'sync that tree'
@@ -429,8 +426,7 @@ class TreeGen_OT_sync(bpy.types.Operator):
         return {'FINISHED'}
 
 class TreeGen_OT_default(bpy.types.Operator):
-    #writes the property group from custom properties
-    """syncs tps property group with custom properties"""
+    """returns all values to default"""
     bl_idname = 'object.tree_sync'
     bl_label = 'sync that tree'
     bl_options = {'REGISTER', 'UNDO'}
