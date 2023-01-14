@@ -14,6 +14,7 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     f1 = lambda z : p_a*(noise.noise(Vector([0, p_seed, p_s*z]))-0.5)
     f2 = lambda z : p_a*(noise.noise(Vector([0, p_seed, p_s*(z+length)]))-0.5)
     spine = [quat@Vector((f1(l*i), f2(l*i), l*i)) for i in range(n)]
+    spine[0] = Vector((0,0,0))
     return spine
 
 # bends the spine in a more meaningful way
