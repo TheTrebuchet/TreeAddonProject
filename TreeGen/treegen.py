@@ -1,6 +1,6 @@
 import bpy
 import bmesh
-from . import geogroup
+from .geogroup import *
 from .algorithm import *
 
 class TREEGEN_OT_new(bpy.types.Operator):
@@ -59,7 +59,7 @@ class TREEGEN_OT_new(bpy.types.Operator):
 
 
         if 'TreeGen_nodegroup' not in bpy.data.node_groups:
-            geogroup.TreeGen_nodegroup_exec()
+            TreeGen_nodegroup_exec()
         ng = bpy.data.node_groups['TreeGen_nodegroup']
         if 'TreeGen' not in bpy.context.object.modifiers:
             bpy.context.object.modifiers.new(name = 'TreeGen',type = 'NODES')
