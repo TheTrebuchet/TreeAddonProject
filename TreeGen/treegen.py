@@ -435,6 +435,7 @@ class TREEGEN_OT_default(bpy.types.Operator):
         tps = bpy.data.window_managers["WinMan"].treegen_props
         tps.sync_complete = False
         tps.facebool=True
+        tps.leafbool=False
         tps.Msides=10
         tps.Mlength=100.0
         tps.Mradius=4
@@ -479,15 +480,13 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         wm = context.window_manager
         col = layout.column(align=True)
         tps = bpy.data.window_managers["WinMan"].treegen_props
-        layout.label(text="Aight lad, lob that tree over there would ya?")
 
-        col.operator('object.tree_create', text = 'Create a Tree')
-        layout.separator()
-        col.operator('object.tree_sync', text = 'Sync a Tree')
-        layout.separator()
-        col.operator('object.tree_default', text = 'Reset to default')
+        col.operator('object.tree_create', text = 'Create',icon='SCRIPT')
+        col.operator('object.tree_sync', text = 'Sync', icon='FILE_REFRESH')
+        col.operator('object.tree_default', text = 'Reset to default', icon='LOOP_BACK')
         col = layout.column(align=True)
         col.label(text="Main Settings:")
+        col.prop(wm.treegen_props, "leafbool")
         col.prop(wm.treegen_props, "facebool")
         col = layout.column(align=True)
         col.label(text="Main Parameters:")

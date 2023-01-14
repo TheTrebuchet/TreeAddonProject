@@ -20,12 +20,12 @@ Created by Jan Kulczycki
 
 bl_info = {
     "name": "TreeGen",
-    "author": "TheTrebuchet",
+    "author": "Jan Kulczycki",
     "version": (0, 1, 0),
     "blender": (3, 3, 0),
     "location": "View3D > Sidebar > Tree Generator (Create Tab)",
     "description": "Procedurally generates a tree at cursor location",
-    "doc_url": "",
+    "doc_url": "https://treegen-docs.readthedocs.io/en/latest/",
     "category": "Add Object",
 }
 
