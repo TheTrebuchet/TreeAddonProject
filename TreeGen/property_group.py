@@ -130,7 +130,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     bends_weight: bpy.props.FloatProperty(
         name='Weight Factor',
         description='Raise this value to weigh down heavy branches, same as it would happen naturally. If your tree falls down, it means it is too heavy, either lower weight or raise the correction amount',
-        default=0.5,
+        default=0.1,
         min=0.0,
         soft_max=1,
         update=tree_update
