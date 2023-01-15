@@ -2,6 +2,7 @@ import math
 import random
 from mathutils import Vector, noise, Matrix, Quaternion
 import bl_math
+from .helper import *
 
 # SPINE
 # number of vertices, length
@@ -125,11 +126,12 @@ def guides_gen(spine, number, m_p, br_p, t_p):
     scale_f1, flare, scale_f2, shift = t_p
     guidepacks = []
     br_seed *= number
+    # generating branch placements
+    chosen = pseudo_poisson_disc(number, length/radius, br_seed)
+
     # guide instructions
     for i in range(number):
-        br_seed+=1 #seed update
-        random.seed(br_seed) #choosing placement of the branch
-        height = random.uniform(start_h, 0.99)
+        height = chosen[i][1]*(1-start_h)+start_h
         pick = math.floor(n*height)
         trans_vec = spine[pick]*(height*n-pick)+spine[pick]*(pick+1-height*n) #translation vector
 
@@ -138,8 +140,7 @@ def guides_gen(spine, number, m_p, br_p, t_p):
         ang = minang*x+maxang*(1-x)
         ang += random.uniform(-var*ang,var*ang)
 
-        random.seed(br_seed+2) #z axis angle
-        a = random.random()*2*math.pi 
+        a = chosen[i][0]*2*math.pi
 
         quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1]) #quaternion from 001 to vector alongside the spine
         dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
@@ -179,6 +180,9 @@ def branch_gen(spinelist, branchdata, br_p, number, bd_p, r_p, t_p):
 
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
+    #making radius relative
+    m_p[3]*=m_p[2]
+    
     #initial trunk
     spine = trunk_gen(m_p, bd_p, r_p, Vector((0,0,1)), True)
     spinelist = [[spine]]
@@ -228,6 +232,11 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
             break
         faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
     
-    verts = [vec*m_p[4] for vec in verts] #scales the tree
+    #flattening the base
+    for i in range(m_p[0]):
+        verts[i][2] = 0
+
+    #scaling the tree
+    verts = [vec*m_p[4] for vec in verts]
     
     return verts, [], faces, selection
