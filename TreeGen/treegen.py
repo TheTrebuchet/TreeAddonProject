@@ -266,7 +266,7 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         
 
         col = layout.column(align=True)
-        col.label(text="Bending Parameters:")
+        col.label(text="Growth Parameters:")
         col.prop(wm.treegen_props, "bends_amount")
         col.prop(wm.treegen_props, "bends_scale")
         col.prop(wm.treegen_props, "bends_up")
