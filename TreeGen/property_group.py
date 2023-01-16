@@ -6,8 +6,13 @@ def tree_update(self, context):
 def leaf_update(self,context):
     tps = bpy.data.window_managers['WinMan'].treegen_props
     bpy.context.object.modifiers["TreeGen"].show_viewport = tps.leafbool
-    bpy.context.object.modifiers["TreeGen"].show_render = tps.leafbool
     bpy.context.object.modifiers["TreeGen"].show_in_editmode = tps.leafbool
+    if tps.leafname =='':tps.leafname='basic_leaf'
+    if tps.leafbool:
+        bpy.ops.object.tree_leaf()
+        bpy.context.object.modifiers["TreeGen"]["Input_3"] = bpy.data.objects[tps.leafname]
+        bpy.context.object.modifiers["TreeGen"].show_viewport = True
+
 
 
 class TREEGEN_PG_props(bpy.types.PropertyGroup):
@@ -25,6 +30,12 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
         description='Turns leaves on and off',
         default=False,
         update=leaf_update,
+    )
+    leafname: bpy.props.StringProperty(
+        name='Leaf Object',
+        description='object used to create leaves, x is width, y is length',
+        default='',
+        update=leaf_update
     )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',

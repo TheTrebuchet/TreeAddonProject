@@ -16,7 +16,6 @@ def pseudo_poisson_disc(n, ratio, seed):
         random.seed(seed)
         seed+=1
         result.pop(random.randint(0,len(result)-1))
-    print(len(result), n)
     return result
 
 if __name__ == "__main__":
