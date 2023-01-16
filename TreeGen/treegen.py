@@ -57,7 +57,7 @@ class TREEGEN_OT_new(bpy.types.Operator):
             v_group = object.vertex_groups.new(name="leaves")
             v_group.add(selection, 1.0, 'ADD')
 
-
+        #adding geometry nodes for leaves
         if 'TreeGen_nodegroup' not in bpy.data.node_groups:
             TreeGen_nodegroup_exec()
         ng = bpy.data.node_groups['TreeGen_nodegroup']
@@ -235,6 +235,36 @@ class TREEGEN_OT_default(bpy.types.Operator):
         bpy.ops.object.tree_update()
         return {'FINISHED'}
 
+class TREEGEN_OT_leaf(bpy.types.Operator):
+    """handles leaves"""
+    bl_idname = 'object.tree_leaf'
+    bl_label = 'leaf that tree'
+    bl_options = {'REGISTER', 'UNDO'}
+    def execute(self, context):
+        tps = context.window_manager.treegen_props
+        
+        colname = "TreeGenLeaves"
+        name = tps.leafname
+
+        if colname not in [i.name for i in bpy.data.collections]:
+            collection = bpy.data.collections.new(colname)
+            bpy.context.scene.collection.children.link(collection)
+
+        for col in bpy.data.collections:
+            if col.name == colname and name not in [o.name for o in col.objects]:
+                if name in [o.name for o in bpy.data.objects]:
+                    object = bpy.data.objects[name]
+                    bpy.context.scene.collection.objects.unlink(object)
+                    col.objects.link(object)
+                    break
+                mesh = bpy.data.meshes.new(name)
+                object = bpy.data.objects.new(name, mesh)
+                col.objects.link(object)
+                verts = [Vector((1,0,0)),Vector((1,2,0)),Vector((-1,2,0)),Vector((-1,0,0))]
+                mesh.from_pydata(verts,[], [[0,1,2,3]])
+        return {'FINISHED'}
+    
+
 class TREEGEN_PT_panel(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
     bl_label = "Tree_Gen"
@@ -299,3 +329,6 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         col.prop(wm.treegen_props, "Mscale")
         col.prop(wm.treegen_props, 'flare_amount')
         col.prop(wm.treegen_props, 'branch_shift')
+        col = layout.column(align=True)
+        col.label(text="Advanced")
+        col = layout.prop_search(wm.treegen_props, 'leafname', context.scene, "objects")
