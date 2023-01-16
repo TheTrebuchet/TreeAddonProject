@@ -174,7 +174,7 @@ def TreeGen_nodegroup_exec():
 
     #input Rotation Variety
     TreeGen_nodegroup.inputs.new("NodeSocketFloat", "Rotation Variety")
-    TreeGen_nodegroup.inputs["Rotation Variety"].default_value = 0.0
+    TreeGen_nodegroup.inputs["Rotation Variety"].default_value = 0.2
     TreeGen_nodegroup.inputs["Rotation Variety"].min_value = -1.0
     TreeGen_nodegroup.inputs["Rotation Variety"].max_value = 1.0
 
@@ -186,7 +186,7 @@ def TreeGen_nodegroup_exec():
 
     #input Size Variety
     TreeGen_nodegroup.inputs.new("NodeSocketFloat", "Size Variety")
-    TreeGen_nodegroup.inputs["Size Variety"].default_value = 0.0
+    TreeGen_nodegroup.inputs["Size Variety"].default_value = 0.1
     TreeGen_nodegroup.inputs["Size Variety"].min_value = -3.4028234663852886e+38
     TreeGen_nodegroup.inputs["Size Variety"].max_value = 3.4028234663852886e+38
 
