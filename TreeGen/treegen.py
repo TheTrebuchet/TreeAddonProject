@@ -272,6 +272,7 @@ class TREEGEN_PT_panel(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Create"
     bl_context = "objectmode"
+    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         layout = self.layout
@@ -287,7 +288,7 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         col.prop(wm.treegen_props, "leafbool")
         col.prop(wm.treegen_props, "facebool")
         col = layout.column(align=True)
-        col.label(text="Main Parameters:")
+        col.label(text="Main Parameters")
         col.prop(wm.treegen_props, "Msides")
         col.prop(wm.treegen_props, "Mvres")
         col.prop(wm.treegen_props, "Mlength")
@@ -296,7 +297,7 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         
 
         col = layout.column(align=True)
-        col.label(text="Growth Parameters:")
+        col.label(text="Growth Parameters")
         col.prop(wm.treegen_props, "bends_amount")
         col.prop(wm.treegen_props, "bends_scale")
         col.prop(wm.treegen_props, "bends_up")
@@ -304,7 +305,7 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         col.prop(wm.treegen_props, "bends_correction")
 
         col = layout.column(align=True)
-        col.label(text="Branch Parameters:")
+        col.label(text="Branch Parameters")
         col.prop(wm.treegen_props, "branch_levels")
         for i in range(tps.branch_levels):
             col.prop(wm.treegen_props, "branch_number"+str(i+1))
@@ -314,18 +315,18 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_height")
         
         col = layout.column(align=True)
-        col.label(text="Simple Jiggle:")
+        col.label(text="Simple Jiggle")
         col.prop(wm.treegen_props, "Rperlin_amount")
         col.prop(wm.treegen_props, "Rperlin_scale")
 
         col = layout.column(align=True)
-        col.label(text="Seeds and Variety:")
+        col.label(text="Seeds and Variety")
         col.prop(wm.treegen_props, "Rperlin_seed")
         col.prop(wm.treegen_props, "bends_seed")
         col.prop(wm.treegen_props, "branch_seed")
         col.prop(wm.treegen_props, "branch_variety")
         col = layout.column(align=True)
-        col.label(text="Scale and Shape:")
+        col.label(text="Scale and Shape")
         col.prop(wm.treegen_props, "Mscale")
         col.prop(wm.treegen_props, 'flare_amount')
         col.prop(wm.treegen_props, 'branch_shift')
