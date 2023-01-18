@@ -34,7 +34,15 @@ import bpy
 from .treegen import *
 from .property_group import *
 
-classes = (TREEGEN_OT_new, TREEGEN_OT_update, TREEGEN_OT_sync, TREEGEN_OT_default, TREEGEN_PG_props, TREEGEN_PT_panel, TREEGEN_OT_leaf)
+classes = (
+TREEGEN_OT_new,
+TREEGEN_OT_update,
+TREEGEN_OT_sync,
+TREEGEN_OT_default,
+TREEGEN_PG_props,
+TREEGEN_PT_createmain,
+TREEGEN_PT_createsubpanel,
+TREEGEN_OT_leaf)
 
 def register():
     for cls in classes:

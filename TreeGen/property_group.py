@@ -1,4 +1,5 @@
 import bpy
+import math 
 def tree_update(self, context):
     tps = bpy.data.window_managers['WinMan'].treegen_props
     if tps.sync_complete: 
@@ -7,8 +8,8 @@ def leaf_update(self,context):
     tps = bpy.data.window_managers['WinMan'].treegen_props
     bpy.context.object.modifiers["TreeGen"].show_viewport = tps.leafbool
     bpy.context.object.modifiers["TreeGen"].show_in_editmode = tps.leafbool
-    if tps.leafname =='':tps.leafname='basic_leaf'
     if tps.leafbool:
+        if tps.leafname =='':tps.leafname='basic_leaf'
         bpy.ops.object.tree_leaf()
         bpy.context.object.modifiers["TreeGen"]["Input_3"] = bpy.data.objects[tps.leafname]
         bpy.context.object.modifiers["TreeGen"].show_viewport = True
@@ -202,18 +203,20 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     branch_maxangle: bpy.props.FloatProperty(
         name='Bottom Angle',
         description='Angle at which the bottom branch grows',
-        default=70.0,
+        default=7/18*math.pi,
         min=0.0,
-        soft_max=180.0,
+        soft_max=2*math.pi,
+        unit = 'ROTATION',
         update=tree_update
     )
 
     branch_minangle: bpy.props.FloatProperty(
         name='Top angle',
         description='Angle at which the top branch grows',
-        default=30.0,
+        default=1/6*math.pi,
         min=0.0,
-        soft_max=180.0,
+        soft_max=2*math.pi,
+        unit = 'ROTATION',
         update=tree_update
     )
 

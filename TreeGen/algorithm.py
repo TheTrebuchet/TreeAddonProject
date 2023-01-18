@@ -143,7 +143,7 @@ def guides_gen(spine, number, m_p, br_p, t_p):
         a = chosen[i][0]*2*math.pi
 
         quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1]) #quaternion from 001 to vector alongside the spine
-        dir_vec = Vector((math.sin(math.radians(ang))*math.cos(a),math.sin(math.radians(ang))*math.sin(a), math.cos(math.radians(ang)))).normalized() #bent vector from 001
+        dir_vec = Vector((math.sin(ang)*math.cos(a),math.sin(ang)*math.sin(a), math.cos(ang))).normalized() #bent vector from 001
         guide_vec = quat @ dir_vec #final guide
         guide_vec *= length*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
         guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius) #radius of the new branch between 1% and proportionate of parent

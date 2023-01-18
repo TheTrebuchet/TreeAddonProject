@@ -204,6 +204,7 @@ class TREEGEN_OT_default(bpy.types.Operator):
         tps.sync_complete = False
         tps.facebool=True
         tps.leafbool=False
+        tps.leafname=''
         tps.Msides=10
         tps.Mlength=100.0
         tps.Mradius=4
@@ -223,8 +224,8 @@ class TREEGEN_OT_default(bpy.types.Operator):
         tps.branch_number1=30
         tps.branch_number2=5
         tps.branch_number3=2
-        tps.branch_maxangle=70.0
-        tps.branch_minangle=30.0
+        tps.branch_maxangle=7/18*math.pi
+        tps.branch_minangle=1/6*math.pi
         tps.branch_height=0.3
         tps.branch_variety=0.1
         tps.branch_scaling=0.3
@@ -263,9 +264,14 @@ class TREEGEN_OT_leaf(bpy.types.Operator):
                 verts = [Vector((1,0,0)),Vector((1,2,0)),Vector((-1,2,0)),Vector((-1,0,0))]
                 mesh.from_pydata(verts,[], [[0,1,2,3]])
         return {'FINISHED'}
-    
 
-class TREEGEN_PT_panel(bpy.types.Panel):
+class TREEGEN_PT_createparent:
+    bl_space_type = "VIEW_3D"  
+    bl_region_type = "UI"
+    bl_category = "Create"
+    bl_context = "objectmode"
+
+class TREEGEN_PT_createmain(TREEGEN_PT_createparent, bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
     bl_label = "TreeGen"
     bl_space_type = "VIEW_3D"  
@@ -313,23 +319,26 @@ class TREEGEN_PT_panel(bpy.types.Panel):
         col.prop(wm.treegen_props, "branch_minangle")
         col.prop(wm.treegen_props, "branch_maxangle")
         col.prop(wm.treegen_props, "branch_height")
-        
-        col = layout.column(align=True)
         col.label(text="Simple Jiggle")
         col.prop(wm.treegen_props, "Rperlin_amount")
         col.prop(wm.treegen_props, "Rperlin_scale")
-
-        col = layout.column(align=True)
         col.label(text="Seeds and Variety")
         col.prop(wm.treegen_props, "Rperlin_seed")
         col.prop(wm.treegen_props, "bends_seed")
         col.prop(wm.treegen_props, "branch_seed")
         col.prop(wm.treegen_props, "branch_variety")
-        col = layout.column(align=True)
         col.label(text="Scale and Shape")
         col.prop(wm.treegen_props, "Mscale")
         col.prop(wm.treegen_props, 'flare_amount')
         col.prop(wm.treegen_props, 'branch_shift')
-        col = layout.column(align=True)
-        col.label(text="Advanced")
+        
+
+class TREEGEN_PT_createsubpanel(TREEGEN_PT_createparent, bpy.types.Panel):
+    """Creates a Panel in the Object properties window for tree creation, use with caution"""
+    bl_label = "advanced"
+    bl_parent_id = "TREEGEN_PT_createmain"
+
+    def draw(self,context):
+        layout = self.layout
+        wm = context.window_manager
         col = layout.prop_search(wm.treegen_props, 'leafname', context.scene, "objects")
