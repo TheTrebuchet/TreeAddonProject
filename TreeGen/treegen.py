@@ -267,7 +267,7 @@ class TREEGEN_OT_leaf(bpy.types.Operator):
 
 class TREEGEN_PT_panel(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
-    bl_label = "Tree_Gen"
+    bl_label = "TreeGen"
     bl_space_type = "VIEW_3D"  
     bl_region_type = "UI"
     bl_category = "Create"
