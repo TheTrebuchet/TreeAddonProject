@@ -38,6 +38,12 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
         default='',
         update=leaf_update
     )
+    treename: bpy.props.StringProperty(
+        name='name of the current tree',
+        description='used for updating panel',
+        default='',
+        update=leaf_update
+    )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
         description='Number of segments in the circle of the main trunk',

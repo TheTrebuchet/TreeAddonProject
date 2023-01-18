@@ -3,6 +3,32 @@ import bmesh
 from .geogroup import *
 from .algorithm import *
 
+def parameters():
+    tps = bpy.data.window_managers["WinMan"].treegen_props
+    
+    # temporary parameters
+    scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
+    scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
+    
+    l=tps.Mlength/tps.Mvres
+    m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
+    br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
+    bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
+    bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
+    t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
+    r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
+    return m_p, br_p, bn_p, bd_p, r_p, t_p
+
+def saveconfig():
+    tps = bpy.data.window_managers["WinMan"].treegen_props
+    config = ''
+    excluded = ['__','rna','sync']
+    for new in dir(tps):
+            if not any(x in new for x in excluded):
+                config += new + '=' +str(getattr(tps, new)) + ','
+    return config
+
+
 class TREEGEN_OT_new(bpy.types.Operator):
     """creates a tree at (0,0,0) according to user panel input"""
     bl_idname = 'object.tree_create'
@@ -12,19 +38,7 @@ class TREEGEN_OT_new(bpy.types.Operator):
     def execute(self, context):
         tps = context.window_manager.treegen_props
 
-        # temporary parameters
-        scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
-        scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
-
-        #parameter lists, l is globally defined
-        l=tps.Mlength/tps.Mvres
-
-        m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
-        br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
-        bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
-        t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
-        r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
+        m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of stuff
@@ -45,12 +59,7 @@ class TREEGEN_OT_new(bpy.types.Operator):
 
         #writing properties
         br_p[-1], bd_p[-1], r_p[-1] = seeds
-        bpy.context.object["main parameters"] = m_p[:-1] +[tps.Mvres]
-        bpy.context.object["branch parameters"] = br_p
-        bpy.context.object["branch number parameters"] = bn_p
-        bpy.context.object["bends parameters"] = bd_p
-        bpy.context.object["temporary parameters"] = [t_p[1],t_p[3]]
-        bpy.context.object["random parameters"] = r_p
+        context.object["TreeGenConfig"] = saveconfig()
 
         #adding vertex group for furthest branches
         if selection:
@@ -68,7 +77,7 @@ class TREEGEN_OT_new(bpy.types.Operator):
             geo_mod.node_group = ng
         bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_2_use_attribute\"]", modifier_name="TreeGen")
         bpy.context.object.modifiers["TreeGen"]["Input_2_attribute_name"] = "leaves"
-
+        tps.treename = context.object.name
         verts = []
         faces = []
         return {'FINISHED'}
@@ -81,7 +90,7 @@ class TREEGEN_OT_update(bpy.types.Operator):
 
     def execute(self, context):
         try: 
-            bpy.context.object["main parameters"]
+            bpy.context.object["TreeGenConfig"]
         except: 
             self.report({"INFO"}, "I can't update an object that isn't a tree")
             return {'FINISHED'}
@@ -89,19 +98,7 @@ class TREEGEN_OT_update(bpy.types.Operator):
         tps = context.window_manager.treegen_props
         selected_obj = bpy.context.object.data
 
-        # temporary parameters
-        scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
-        scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
-
-        #parameter lists, l is globally defined
-        l=tps.Mlength/tps.Mvres
-
-        m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
-        br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
-        bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
-        bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
-        t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
-        r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
+        m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of stuff
@@ -126,12 +123,7 @@ class TREEGEN_OT_update(bpy.types.Operator):
         v_group.add(selection, 1.0, 'REPLACE')
         
         br_p[-1], bd_p[-1], r_p[-1] = seeds
-        bpy.context.object["main parameters"] = m_p[:-1] + [tps.Mvres]
-        bpy.context.object["branch parameters"] = br_p
-        bpy.context.object["branch number parameters"] = bn_p
-        bpy.context.object["bends parameters"] = bd_p
-        bpy.context.object["temporary parameters"] = [t_p[1],t_p[3]]
-        bpy.context.object["random parameters"] = r_p
+        context.object["TreeGenConfig"] = saveconfig()
 
         return {'FINISHED'}
 
@@ -143,52 +135,35 @@ class TREEGEN_OT_sync(bpy.types.Operator):
 
     def execute(self, context):
         try: 
-            bpy.context.object["main parameters"]
+            bpy.context.object["TreeGenConfig"]
         except: 
             self.report({"INFO"}, "I can't sync an object that isn't a tree")
             return {'FINISHED'}
         
-        selection_name = bpy.context.object.name
-        
         tps = bpy.data.window_managers["WinMan"].treegen_props
-
+        config = [i.split('=') for i in config.split(',')]
+        excluded = ['__','rna','sync']
         tps.sync_complete = False
-
-        m_p = bpy.data.objects[selection_name]['main parameters']
-        br_p = bpy.data.objects[selection_name]['branch parameters']
-        bn_p = bpy.data.objects[selection_name]['branch number parameters']
-        bd_p = bpy.data.objects[selection_name]['bends parameters']
-        r_p = bpy.data.objects[selection_name]['temporary parameters']
-        t_p = bpy.data.objects[selection_name]['random parameters']
-        
-        tps.Msides = int(m_p[0])
-        tps.Mlength = float(m_p[1])
-        tps.Mradius = float(m_p[2])
-        tps.Mtipradius = float(m_p[3])
-        tps.Mscale = float(m_p[4])
-        tps.Mvres = float(m_p[6])
-        tps.branch_levels = int(br_p[0])
-        tps.branch_minangle = float(br_p[1])
-        tps.branch_maxangle = float(br_p[2])
-        tps.branch_height = float(br_p[3])
-        tps.branch_variety = float(br_p[4])
-        tps.branch_scaling = float(br_p[5])
-        tps.branch_seed = int(br_p[6])
-        tps.branch_number1 = int(bn_p[0])
-        tps.branch_number2 = int(bn_p[1])
-        tps.branch_number3 = int(bn_p[2])
-        tps.bends_amount = float(bd_p[0])
-        tps.bends_up = float(bd_p[1])
-        tps.bends_correction = float(bd_p[2])
-        tps.bends_scale = float(bd_p[3])
-        tps.bends_weight = float(bd_p[4])
-        tps.bends_seed = int(bd_p[5])
-        tps.flare_amount = float(r_p[0])
-        tps.branch_shift = float(r_p[1])
-        tps.Rperlin_amount = float(t_p[0])
-        tps.Rperlin_scale = float(t_p[1])
-        tps.Rperlin_seed = int(t_p[2])
-
+        for old in dir(tps):
+                if not any(x in old for x in excluded):
+                    new = [i for i in config if old in i][0][1]
+                    print(old, new)
+                    try:int(new)
+                    except: pass
+                    else: 
+                        setattr(tps, old, int(new))
+                        continue
+                    try:float(new)
+                    except: pass
+                    else: 
+                        setattr(tps, old, float(new))
+                        continue
+                    if new =='True':
+                        setattr(tps,old,True)
+                    elif new =='False':
+                        setattr(tps,old,False)
+                    else:
+                        setattr(tps,old,new)
         tps.sync_complete = True
 
         return {'FINISHED'}
@@ -202,36 +177,9 @@ class TREEGEN_OT_default(bpy.types.Operator):
     def execute(self, context):
         tps = bpy.data.window_managers["WinMan"].treegen_props
         tps.sync_complete = False
-        tps.facebool=True
-        tps.leafbool=False
-        tps.leafname=''
-        tps.Msides=10
-        tps.Mlength=100.0
-        tps.Mradius=4
-        tps.Mtipradius=0.03
-        tps.Mscale=0.1
-        tps.Mvres=30
-        tps.Rperlin_amount=0.3
-        tps.Rperlin_scale=0.4
-        tps.Rperlin_seed=1
-        tps.bends_amount=0.5
-        tps.bends_up=0.3
-        tps.bends_correction=0.2
-        tps.bends_weight=0.1
-        tps.bends_scale=0.1
-        tps.bends_seed=1
-        tps.branch_levels=2
-        tps.branch_number1=30
-        tps.branch_number2=5
-        tps.branch_number3=2
-        tps.branch_maxangle=7/18*math.pi
-        tps.branch_minangle=1/6*math.pi
-        tps.branch_height=0.3
-        tps.branch_variety=0.1
-        tps.branch_scaling=0.3
-        tps.branch_seed=1
-        tps.branch_shift=0.6
-        tps.flare_amount=0.8
+        for i in dir(tps):
+            if '__' not in i and 'rna' not in i and 'sync' not in i:
+                tps.property_unset(i)
         tps.sync_complete=True
         bpy.ops.object.tree_update()
         return {'FINISHED'}
@@ -278,7 +226,6 @@ class TREEGEN_PT_createmain(TREEGEN_PT_createparent, bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Create"
     bl_context = "objectmode"
-    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         layout = self.layout
@@ -335,8 +282,9 @@ class TREEGEN_PT_createmain(TREEGEN_PT_createparent, bpy.types.Panel):
 
 class TREEGEN_PT_createsubpanel(TREEGEN_PT_createparent, bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
-    bl_label = "advanced"
+    bl_label = "Advanced"
     bl_parent_id = "TREEGEN_PT_createmain"
+    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self,context):
         layout = self.layout
