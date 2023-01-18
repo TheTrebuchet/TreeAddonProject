@@ -95,7 +95,13 @@ class TREEGEN_OT_update(bpy.types.Operator):
             self.report({"INFO"}, "I can't update an object that isn't a tree")
             return {'FINISHED'}
         
-        tps = context.window_manager.treegen_props
+        tps = context.window_manager.treegen_props        
+        
+        # now this is just a temporary trick until blender fixes something
+        if tps.treename != context.object.name:
+            bpy.ops.object.tree_sync()
+            tps.treename = context.object.name
+
         selected_obj = bpy.context.object.data
 
         m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
@@ -140,6 +146,8 @@ class TREEGEN_OT_sync(bpy.types.Operator):
             self.report({"INFO"}, "I can't sync an object that isn't a tree")
             return {'FINISHED'}
         
+        config = context.object["TreeGenConfig"]
+
         tps = bpy.data.window_managers["WinMan"].treegen_props
         config = [i.split('=') for i in config.split(',')]
         excluded = ['__','rna','sync']
@@ -147,7 +155,6 @@ class TREEGEN_OT_sync(bpy.types.Operator):
         for old in dir(tps):
                 if not any(x in old for x in excluded):
                     new = [i for i in config if old in i][0][1]
-                    print(old, new)
                     try:int(new)
                     except: pass
                     else: 
