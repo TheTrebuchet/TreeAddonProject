@@ -71,7 +71,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     Mtipradius: bpy.props.FloatProperty(
         name='Tip Radius',
         description='The minimum radius a branch can have',
-        default=0.03,
+        default=0.015,
         min=0,
         max=1,
         update=tree_update

@@ -96,12 +96,12 @@ class TREEGEN_OT_update(bpy.types.Operator):
             return {'FINISHED'}
         
         tps = context.window_manager.treegen_props        
-        
+        '''
         # now this is just a temporary trick until blender fixes something
         if tps.treename != context.object.name:
             bpy.ops.object.tree_sync()
             tps.treename = context.object.name
-
+        '''
         selected_obj = bpy.context.object.data
 
         m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
@@ -183,9 +183,11 @@ class TREEGEN_OT_default(bpy.types.Operator):
 
     def execute(self, context):
         tps = bpy.data.window_managers["WinMan"].treegen_props
+        tps.treename = context.object.name
         tps.sync_complete = False
+        excluded = ['__', 'rna', 'sync']
         for i in dir(tps):
-            if '__' not in i and 'rna' not in i and 'sync' not in i:
+            if not any(x in i for x in excluded):
                 tps.property_unset(i)
         tps.sync_complete=True
         bpy.ops.object.tree_update()
@@ -233,6 +235,14 @@ class TREEGEN_PT_createmain(TREEGEN_PT_createparent, bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Create"
     bl_context = "objectmode"
+    
+    '''    @staticmethod
+    def poll(self,context):
+        tps = bpy.data.window_managers["WinMan"].treegen_props
+        if tps.treename != context.object.name:
+            bpy.ops.object.tree_sync()
+            tps.treename = context.object.name
+        return True'''
 
     def draw(self, context):
         layout = self.layout
