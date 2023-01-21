@@ -69,7 +69,7 @@ def spine_gen(m_p, bd_p, r_p, guide, trunk):
     # spine gen
     spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
     spine = spine_bend(spine, bd_p, l, guide, r, trunk)
-    return spine
+    return spine, n
 
 # BARK
 # number of sides, radius
@@ -147,94 +147,82 @@ def guides_gen(spine, number, m_p, br_p, t_p):
         guide_vec = quat @ dir_vec #final guide
         guide_vec *= length*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
         guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius) #radius of the new branch between 1% and proportionate of parent
-        guidepacks.append([trans_vec, guide_vec, guide_r]) #creating guidepack
+        guidepacks.append((trans_vec, guide_vec, guide_r)) #creating guidepack
     return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
-def trunk_gen(m_p, bd_p, r_p, guide, trunk):
-    spine= spine_gen(m_p, bd_p, r_p, guide, trunk)
-    
-    return spine
+class branch():
+    def __init__(self, pack, m_p, bd_p, br_p, r_p, trunk):
+        self.guide = pack[1]
+        self.mp = [int(bl_math.clamp(m_p[0]//2+1, 4, m_p[0])), pack[1].length, pack[2], m_p[3], m_p[4], bl_math.clamp(m_p[5], 0, m_p[1])]
+        self.brp = br_p
+        self.trunk = trunk
+        self.guidepacks=[]
+        self.spine, self.n = spine_gen(self.mp, bd_p, r_p, self.guide, trunk)
+        self.spine = [vec+pack[0] for vec in self.spine]
 
-#returns newspinelist of the new branches
-def branch_gen(spinelist, branchdata, br_p, number, bd_p, r_p, t_p):
-    newspinelist = []
-    newbranchdata = []
-    newsides = int(bl_math.clamp(branchdata[-1][0][0]//2, 4, branchdata[-1][0][0]))
-    for i in range(len(spinelist[-1])):
-        #THIS CREATES GUIDES FOR ONE BRANCH IN ONE LEVEL
-        guidepacks = guides_gen(spinelist[-1][i], number, branchdata[-1][i], br_p, t_p)
-        for pack in guidepacks:
-            #THIS CREATES THE SUBBRANCHES FOR THIS ONE BRANCH
-            tm_p = [newsides, pack[1].length, pack[2], branchdata[-1][i][3], branchdata[-1][i][4] ,branchdata[-1][i][5]] #last level, i branch, parameter
-            newbranchdata.append(tm_p)
-            r_p[2]+=1 #updating seeds
-            br_p[-1]+=1
-            bd_p[-1]+=1
-            if tm_p[1]<tm_p[5]: #change 'l' if branch is not long enough
-                tm_p[5] = tm_p[1]
-            newspine = trunk_gen(tm_p, bd_p, r_p, pack[1], False)
-            newspinelist.append([vec+pack[0] for vec in newspine])
-    spinelist.append(newspinelist)
-    branchdata.append(newbranchdata)
+    def guidesgen(self, number, t_p):
+
+        self.guidepacks = guides_gen(self.spine, number, self.mp, self.brp, t_p)
 
 # THE MIGHTY TREE GENERATION
 def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     #making radius relative
     m_p[3]*=m_p[2]
-    
+    st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
     #initial trunk
-    spine = trunk_gen(m_p, bd_p, r_p, Vector((0,0,1)), True)
-    spinelist = [[spine]]
-    branchdata = [[m_p]]
+    branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True)]]
     
     #creating the rest of levels
-    if br_p[0] != 0:
-        for i in range(br_p[0]):
-            branch_gen(spinelist, branchdata, br_p, bn_p[i], bd_p, r_p, t_p)
-
-    #if the user doesn't need faces I provide a spine
+    for lev in range(br_p[0]):
+        branchlist.append([])
+        for parent in branchlist[-2]:
+            parent.guidesgen(bn_p[lev], t_p)
+            children = parent.guidepacks
+            for pack in children:
+                r_p[2] +=1
+                bd_p[-1] +=1
+                br_p[-1] +=1
+                branchlist[-1].append(branch(pack, parent.mp, bd_p, br_p, r_p, False))
+    #if the user doesn't need faces I provide only a spine
     if not facebool:
-        spine = []
+        verts = []
         edges =[]
-        for i in spinelist:
-            for k in i:
-                spine += k
-                if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(k))][:-1]
-                else: edges += [(n,n+1) for n in range(len(k))][:-1]
-        spine = [vec*m_p[4] for vec in spine] #scale update
-        return spine, edges, [], []
-
-    #generating verts from spine
-    vertslist = []
-    for i in range(len(spinelist)):
-        level = []
-        for k in range(len(spinelist[i])):
-            level.append(bark_gen(spinelist[i][k], branchdata[i][k], t_p))
-        vertslist.append(level)
-
-    #generating faces and making verts from vertslist
+        for lev in branchlist:
+            for bran in lev:
+                verts.append(bran.spine)
+                if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
+                else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
+        verts = [vec*m_p[4] for vec in verts] #scale update
+        return verts, edges, [], []
+    
     faces=[]
-    verts=[]
-    for i in vertslist:
-        for k in i:
-            verts += k
-    selection = [len(verts) - i for i in range(sum([len(k) for k in vertslist[-1]]))]
-    
-    for i in range(br_p[0]+1):
-        s = branchdata[i][0][0]
-        for spi in spinelist[i]:
-            faces.append(face_gen(s, len(spi)))
-    
+
+    #generating faces, needs branches
+    for lev in range(br_p[0]+1):
+        for bran in branchlist[lev]:
+            faces.append(face_gen(bran.mp[0], bran.n))
+    #combining faces
     while True:
         if len(faces) == 1:
             faces = faces[0]
             break
-        faces[0] += [[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)]
+        faces[0].extend([[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)])
     
-    #flattening the base
-    for i in range(m_p[0]):
-        verts[i][2] = 0
+    #selection
+    num = sum([bran.n for lev in branchlist[:-1] for bran in lev])
+    selection = list(range(num, sum([bran.n for bran in branchlist[-1]])))
+
+
+    #generating verts from spine
+    verts = []
+    for lev in branchlist:
+        for bran in lev:
+            verts.extend(bark_gen(bran.spine, bran.mp, t_p))
+
+    #flattening the base, 
+    for lev in range(m_p[0]):
+        verts[lev][2] = 0
 
     #scaling the tree
     verts = [vec*m_p[4] for vec in verts]
