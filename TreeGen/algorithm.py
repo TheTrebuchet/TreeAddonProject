@@ -171,7 +171,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     m_p[3]*=m_p[2]
     st_pack = ((0,0,0),(0,0,1), m_p[2])
     #initial trunk
-    branchlist = [[branch(st_pack, m_p, bd_p, r_p, True)]]
+    branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True)]]
     
     #creating the rest of levels
     for lev in range(br_p[0]):
