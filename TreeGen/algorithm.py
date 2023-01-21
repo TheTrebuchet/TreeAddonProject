@@ -17,7 +17,6 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, bd_p, l, guide, r, trunk):
-    print(spine)
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
     weight = lambda x, ang: math.sin(ang)*(1-x)*l*len(spine) #it has influences from trunk working corss section, weight of the branch, angle of the branch
     
@@ -62,7 +61,6 @@ def spine_bend(spine, bd_p, l, guide, r, trunk):
     return spine
 
 def spine_gen(m_p, bd_p, r_p, guide, trunk):
-    print(m_p)
     # parameters
     length, r, l = m_p[1], m_p[2], m_p[5]
     n = round(length/l)+1
@@ -156,7 +154,7 @@ def guides_gen(spine, number, m_p, br_p, t_p):
 class branch():
     def __init__(self, pack, m_p, bd_p, br_p, r_p, trunk):
         self.guide = pack[1]
-        self.mp = [int(bl_math.clamp(m_p[0]//2+1, 4, m_p[0])), pack[1].length, pack[2], m_p[3], m_p[4], bl_math.clamp(m_p[5], m_p[0], m_p[5])]
+        self.mp = [int(bl_math.clamp(m_p[0]//2+1, 4, m_p[0])), pack[1].length, pack[2], m_p[3], m_p[4], bl_math.clamp(m_p[5], 0, m_p[1])]
         self.brp = br_p
         self.trunk = trunk
         self.guidepacks=[]
@@ -178,15 +176,14 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     #creating the rest of levels
     for lev in range(br_p[0]):
         branchlist.append([])
-        for parent in branchlist[-1]:
+        for parent in branchlist[-2]:
             parent.guidesgen(bn_p[lev], t_p)
-            children = parent.guidepacks()
+            children = parent.guidepacks
             for pack in children:
                 r_p[2] +=1
                 bd_p[-1] +=1
                 br_p[-1] +=1
                 branchlist[-1].append(branch(pack, parent.mp, bd_p, br_p, r_p, False))
-
     #if the user doesn't need faces I provide only a spine
     if not facebool:
         verts = []
@@ -214,7 +211,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     
     #selection
     num = sum([bran.n for lev in branchlist[:-1] for bran in lev])
-    selection = list(range(num, sum([bran.n() for bran in branchlist[-1]])))
+    selection = list(range(num, sum([bran.n for bran in branchlist[-1]])))
 
 
     #generating verts from spine
