@@ -2,6 +2,7 @@ import bpy
 import bmesh
 from .geogroup import *
 from .algorithm import *
+import time
 
 def parameters():
     tps = bpy.data.window_managers["WinMan"].treegen_props
@@ -40,10 +41,12 @@ class TREEGEN_OT_new(bpy.types.Operator):
 
         m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
-
-        #generates the trunk and lists of lists of stuff
+        
+        st = time.process_time()
+        #generates the trunk and lists of lists of branches
         verts, edges, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
-
+        print(time.process_time()-st)
+        
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
