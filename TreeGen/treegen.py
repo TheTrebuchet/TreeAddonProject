@@ -44,6 +44,7 @@ class TREEGEN_OT_new(bpy.types.Operator):
         
         st = time.process_time()
         #generates the trunk and lists of lists of branches
+        
         verts, edges, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
         print(time.process_time()-st)
         

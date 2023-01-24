@@ -153,16 +153,24 @@ def guides_gen(spine, number, m_p, br_p, t_p):
 #generates a single trunk, whether it will be branch or the main trunk
 class branch():
     def __init__(self, pack, m_p, bd_p, br_p, r_p, trunk):
-        self.guide = pack[1]
-        self.mp = [int(bl_math.clamp(m_p[0]//2+1, 4, m_p[0])), pack[1].length, pack[2], m_p[3], m_p[4], bl_math.clamp(m_p[5], 0, m_p[1])]
+        self.pack = pack
+        self.mp = [m_p[0], self.pack[1].length, self.pack[2], m_p[3], m_p[4], bl_math.clamp(m_p[5], 0, self.pack[1].length/2)]
+        self.bdp = bd_p
         self.brp = br_p
+        self.rp = r_p
         self.trunk = trunk
         self.guidepacks=[]
-        self.spine, self.n = spine_gen(self.mp, bd_p, r_p, self.guide, trunk)
-        self.spine = [vec+pack[0] for vec in self.spine]
+        self.n = 0
+        
+    def generate(self):
 
+        self.spine, self.n = spine_gen(self.mp, self.bdp, self.rp, self.pack[1], self.trunk)
+        self.spine = [vec+self.pack[0] for vec in self.spine]
+        
+        return self
+    
     def guidesgen(self, number, t_p):
-
+        self.childmp = [int(bl_math.clamp(self.mp[0]//2+1, 4, self.mp[0])), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
         self.guidepacks = guides_gen(self.spine, number, self.mp, self.brp, t_p)
 
 # THE MIGHTY TREE GENERATION
@@ -171,7 +179,7 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     m_p[3]*=m_p[2]
     st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
     #initial trunk
-    branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True)]]
+    branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
     
     #creating the rest of levels
     for lev in range(br_p[0]):
@@ -183,7 +191,8 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
                 r_p[2] +=1
                 bd_p[-1] +=1
                 br_p[-1] +=1
-                branchlist[-1].append(branch(pack, parent.mp, bd_p, br_p, r_p, False))
+                branchlist[-1].append(branch(pack, parent.childmp, bd_p, br_p, r_p, False).generate())
+
     #if the user doesn't need faces I provide only a spine
     if not facebool:
         verts = []
