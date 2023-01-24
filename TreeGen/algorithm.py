@@ -174,13 +174,8 @@ class branch():
         self.guidepacks = guides_gen(self.spine, number, self.mp, self.brp, t_p)
 
 # THE MIGHTY TREE GENERATION
-def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
-    #making radius relative
-    m_p[3]*=m_p[2]
-    st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
-    #initial trunk
-    branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
-    
+
+def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
     #creating the rest of levels
     for lev in range(br_p[0]):
         branchlist.append([])
@@ -192,7 +187,10 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
                 bd_p[-1] +=1
                 br_p[-1] +=1
                 branchlist[-1].append(branch(pack, parent.childmp, bd_p, br_p, r_p, False).generate())
+    
+    return branchlist
 
+def toverts(branchlist, facebool, m_p, br_p, t_p):
     #if the user doesn't need faces I provide only a spine
     if not facebool:
         verts = []
@@ -237,3 +235,11 @@ def tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p,facebool):
     verts = [vec*m_p[4] for vec in verts]
     
     return verts, [], faces, selection
+
+def branchinit(verts, m_p, bd_p, br_p, r_p):
+    m_p[3]*=m_p[2]
+    st_pack = (verts[0],(verts[1]-verts[0]).normalized()*m_p[1], m_p[2])
+    bran = branch(st_pack, m_p, bd_p, br_p, r_p, True)
+    bran.n = len(verts)
+    branch.spine = verts
+    return [[bran]]

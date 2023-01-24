@@ -42,11 +42,11 @@ class TREEGEN_OT_new(bpy.types.Operator):
         m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
-        st = time.process_time()
         #generates the trunk and lists of lists of branches
-        
-        verts, edges, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
-        print(time.process_time()-st)
+        m_p[3]*=m_p[2]
+        st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
+        branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
+        verts, edges, faces, selection = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
         
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
@@ -111,8 +111,11 @@ class TREEGEN_OT_update(bpy.types.Operator):
         m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
-        #generates the trunk and lists of lists of stuff
-        verts, edges, faces, selection = tree_gen(m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+        #generates the trunk and lists of lists of branches
+        m_p[3]*=m_p[2]
+        st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
+        branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
+        verts, edges, faces, selection = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
         
         
         #updating mesh, tree update is a temporary object
@@ -136,6 +139,106 @@ class TREEGEN_OT_update(bpy.types.Operator):
         context.object["TreeGenConfig"] = saveconfig()
 
         return {'FINISHED'}
+    
+    class TREEGEN_OT_edit(bpy.types.Operator):
+        """let's the user edit the trunk"""
+        bl_idname = 'object.tree_edit'
+        bl_label = 'edit that trunk'
+        bl_options = {'REGISTER', 'UNDO'}
+
+        def execute(self, context):
+            try: 
+                bpy.context.object["TreeGenConfig"]
+            except: 
+                self.report({"INFO"}, "I can't update an object that isn't a tree")
+                return {'FINISHED'}
+            
+            tps = context.window_manager.treegen_props        
+            
+            selected_obj = bpy.context.object.data
+
+            m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
+            seeds = [br_p[-1], bd_p[-1], r_p[-1]]
+
+            #generates the trunk and lists of lists of stuff
+            trunk = [[]]
+
+            branchlist = outgrow(trunk, m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+
+            verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
+            
+            
+            #updating mesh, tree update is a temporary object
+            t_mesh = bpy.data.meshes.new('tree update')
+            t_mesh.from_pydata(verts,edges,faces)
+
+            bm = bmesh.new()
+            bm.from_mesh(t_mesh)
+
+            bm.to_mesh(selected_obj)
+            bm.free()
+            bpy.data.meshes.remove(t_mesh)
+            for f in selected_obj.polygons:
+                f.use_smooth = True
+            
+            v_group = bpy.context.object.vertex_groups['leaves']
+            v_group.remove([i for i in range(len(verts))])
+            v_group.add(selection, 1.0, 'REPLACE')
+            
+            br_p[-1], bd_p[-1], r_p[-1] = seeds
+            context.object["TreeGenConfig"] = saveconfig()
+
+            return {'FINISHED'}
+
+class TREEGEN_OT_regrow(bpy.types.Operator):
+        """regrows tree from line of points"""
+        bl_idname = 'object.tree_edit'
+        bl_label = 'edit that trunk'
+        bl_options = {'REGISTER', 'UNDO'}
+
+        def execute(self, context):
+            try: 
+                bpy.context.object["TreeGenConfig"]
+            except: 
+                self.report({"INFO"}, "I can't update an object that isn't a tree")
+                return {'FINISHED'}
+            
+            tps = context.window_manager.treegen_props        
+            
+            selected_obj = bpy.context.object.data
+
+            m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
+            seeds = [br_p[-1], bd_p[-1], r_p[-1]]
+
+            #generates the trunk and lists of lists of stuff
+            trunk = branchinit(selected_obj.data.mesh)
+
+            branchlist = outgrow(trunk, m_p, br_p, bn_p, bd_p, r_p, t_p, tps.facebool)
+
+            verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
+            
+            
+            #updating mesh, tree update is a temporary object
+            t_mesh = bpy.data.meshes.new('tree update')
+            t_mesh.from_pydata(verts,edges,faces)
+
+            bm = bmesh.new()
+            bm.from_mesh(t_mesh)
+
+            bm.to_mesh(selected_obj)
+            bm.free()
+            bpy.data.meshes.remove(t_mesh)
+            for f in selected_obj.polygons:
+                f.use_smooth = True
+            
+            v_group = bpy.context.object.vertex_groups['leaves']
+            v_group.remove([i for i in range(len(verts))])
+            v_group.add(selection, 1.0, 'REPLACE')
+            
+            br_p[-1], bd_p[-1], r_p[-1] = seeds
+            context.object["TreeGenConfig"] = saveconfig()
+
+            return {'FINISHED'}
 
 class TREEGEN_OT_sync(bpy.types.Operator):
     """syncs tps property group with custom properties"""
@@ -310,4 +413,4 @@ class TREEGEN_PT_createsubpanel(TREEGEN_PT_createparent, bpy.types.Panel):
     def draw(self,context):
         layout = self.layout
         wm = context.window_manager
-        col = layout.prop_search(wm.treegen_props, 'leafname', context.scene, "objects")
+        layout.prop_search(wm.treegen_props, 'leafname', context.scene, "objects")

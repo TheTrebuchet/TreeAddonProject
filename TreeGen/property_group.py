@@ -42,7 +42,11 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
         name='name of the current tree',
         description='used for updating panel',
         default='',
-        update=leaf_update
+    )
+    editstatus: bpy.props.BoolProperty(
+        name='name of the current tree',
+        description='used for updating panel',
+        default=False,
     )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
