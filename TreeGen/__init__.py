@@ -42,7 +42,10 @@ TREEGEN_OT_default,
 TREEGEN_PG_props,
 TREEGEN_PT_createmain,
 TREEGEN_PT_createsubpanel,
-TREEGEN_OT_leaf)
+TREEGEN_PT_createedit,
+TREEGEN_OT_leaf,
+TREEGEN_OT_draw,
+TREEGEN_OT_regrow)
 
 def register():
     for cls in classes:

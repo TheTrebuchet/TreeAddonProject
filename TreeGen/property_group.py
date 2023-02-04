@@ -2,7 +2,7 @@ import bpy
 import math 
 def tree_update(self, context):
     tps = bpy.data.window_managers['WinMan'].treegen_props
-    if tps.sync_complete: 
+    if tps.ops_complete: 
         bpy.ops.object.tree_update()
 def leaf_update(self,context):
     tps = bpy.data.window_managers['WinMan'].treegen_props
@@ -17,7 +17,7 @@ def leaf_update(self,context):
 
 
 class TREEGEN_PG_props(bpy.types.PropertyGroup):
-    sync_complete: bpy.props.BoolProperty(
+    ops_complete: bpy.props.BoolProperty(
         default=True,
     )
     facebool: bpy.props.BoolProperty(
@@ -39,13 +39,13 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
         update=leaf_update
     )
     treename: bpy.props.StringProperty(
-        name='name of the current tree',
-        description='used for updating panel',
+        name='Tree name',
+        description='Used for updating panel',
         default='',
     )
     editstatus: bpy.props.BoolProperty(
-        name='name of the current tree',
-        description='used for updating panel',
+        name='Custom trunk',
+        description='Used for preventing unwise decision',
         default=False,
     )
     Msides: bpy.props.IntProperty(
@@ -59,7 +59,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     Mlength: bpy.props.FloatProperty(
         name='Height',
         description='Length of the main trunk, scaled down with each branch',
-        default=100.0,
+        default=10.0,
         min=0.1,
         soft_max=200.0,
         update=tree_update
@@ -67,9 +67,9 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     Mradius: bpy.props.FloatProperty(
         name='Max Radius',
         description='The radius TreeGen starts with',
-        default=4,
-        min=0.1,
-        soft_max=32,
+        default=0.44,
+        min=0.01,
+        soft_max=10,
         update=tree_update
     )
     Mtipradius: bpy.props.FloatProperty(
@@ -83,7 +83,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     Mscale: bpy.props.FloatProperty(
         name='Object Scale',
         description='Scale applied after Tree generation',
-        default=0.1,
+        default=1,
         min=0.01,
         soft_max=10,
         update=tree_update
@@ -100,7 +100,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     Rperlin_amount: bpy.props.FloatProperty(
         name='Jiggle Amount',
         description='Simple noise used for small random jiggles of the tree curve',
-        default=0.3,
+        default=0.1,
         min=0.0,
         soft_max=1,
         update=tree_update
@@ -109,7 +109,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     Rperlin_scale: bpy.props.FloatProperty(
         name='Jiggle Scale',
         description='Scale of the noise',
-        default=0.4,
+        default=1,
         min=0.0001,
         soft_max=32,
         update=tree_update
@@ -125,7 +125,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     bends_amount: bpy.props.FloatProperty(
         name='Bending Amount',
         description='Raise this value if you want to bend the Tree curve',
-        default=0.5,
+        default=0.4,
         min=0.0,
         soft_max=10,
         update=tree_update
@@ -143,7 +143,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     bends_correction: bpy.props.FloatProperty(
         name='Correction Amount',
         description='Controls how much the tree can bend towards ground',
-        default=0.2,
+        default=0.5,
         min=0.0,
         soft_max=1,
         update=tree_update
@@ -161,7 +161,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     bends_scale: bpy.props.FloatProperty(
         name='Bending Scale',
         description='Scale of bending noise',
-        default=0.1,
+        default=0.9,
         min=0.01,
         soft_max=10,
         update=tree_update
@@ -213,7 +213,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     branch_maxangle: bpy.props.FloatProperty(
         name='Bottom Angle',
         description='Angle at which the bottom branch grows',
-        default=7/18*math.pi,
+        default=6/18*math.pi,
         min=0.0,
         soft_max=2*math.pi,
         unit = 'ROTATION',
@@ -223,7 +223,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     branch_minangle: bpy.props.FloatProperty(
         name='Top angle',
         description='Angle at which the top branch grows',
-        default=1/6*math.pi,
+        default=3/18*math.pi,
         min=0.0,
         soft_max=2*math.pi,
         unit = 'ROTATION',
@@ -266,7 +266,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     branch_shift: bpy.props.FloatProperty(
         name='General Shape',
         description='Relation between the branch height and length. It can make the tree look more round or cone-shaped',
-        default=0.6,
+        default=0.7,
         min=0.01,
         max=1,
         update=tree_update
@@ -274,7 +274,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     flare_amount: bpy.props.FloatProperty(
         name='Trunk Flare',
         description='Defines each branch\s profile. It can widen up the base or make it a perfect cone',
-        default=0.8,
+        default=1.0,
         min=0.01,
         max=1,
         update=tree_update

@@ -187,7 +187,6 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
                 bd_p[-1] +=1
                 br_p[-1] +=1
                 branchlist[-1].append(branch(pack, parent.childmp, bd_p, br_p, r_p, False).generate())
-    
     return branchlist
 
 def toverts(branchlist, facebool, m_p, br_p, t_p):
@@ -241,5 +240,6 @@ def branchinit(verts, m_p, bd_p, br_p, r_p):
     st_pack = (verts[0],(verts[1]-verts[0]).normalized()*m_p[1], m_p[2])
     bran = branch(st_pack, m_p, bd_p, br_p, r_p, True)
     bran.n = len(verts)
+    print(bran.n)
     branch.spine = verts
     return [[bran]]
