@@ -3,3 +3,4 @@ __pycache__/
 *.zip
 help.py
 Text.py
+*.txt
