@@ -41,11 +41,14 @@ def spine_bend(spine, bd_p, l, guide, r, trunk):
         quat = old_vec.rotation_difference(new_vec)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
     
-    for i in range(lensp):
+    for i in range(lensp-2):
         vec = spine[i] - spine[i-1] #get previous vector
         angle = (Vector((0,0,1)).angle(vec))
-
-        CM = sum([spine[v]*(1-(v+1)/lensp) for v in range(i,lensp)])/((i-lensp)*(i-lensp+1)/(2*lensp))-spine[i]
+        CM_lis = [spine[v]*(1-(v)/lensp) for v in range(i+1,lensp)]
+        CM = Vector((0,0,0))
+        for v in CM_lis:
+            CM += v
+        CM = CM/((lensp-i-1)*(lensp-i)/(2*lensp))-spine[i]
         w_angle = CM[0]**2+CM[1]**2-(r*math.cos(angle))**2
         if w_angle<0: w_angle = 0
         w_angle = weight(i/lensp, math.atan(w_angle**0.5/(CM[2]+r*math.sin(angle))))
