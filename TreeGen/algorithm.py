@@ -60,17 +60,6 @@ def spine_bend(spine, bd_p, l, guide, r, trunk):
         spine = [quat@i for i in spine]
     return spine
 
-def spine_gen(m_p, bd_p, r_p, guide, trunk):
-    # parameters
-    length, r, l = m_p[1], m_p[2], m_p[5]
-    n = round(length/l)+1
-    p_a, p_s, p_seed = r_p
-
-    # spine gen
-    spine = spine_init(n, length, l, p_a, p_s, p_seed, guide)
-    spine = spine_bend(spine, bd_p, l, guide, r, trunk)
-    return spine, n
-
 # BARK
 # number of sides, radius
 def bark_circle(n,r):
@@ -163,11 +152,14 @@ class branch():
         self.n = 0
         
     def generate(self):
-
-        self.spine, self.n = spine_gen(self.mp, self.bdp, self.rp, self.pack[1], self.trunk)
+        self.n = round(self.mp[1]/self.mp[5])+1
+        self.spine = spine_init(self.n, self.mp[1], self.mp[5], self.rp[0], self.rp[1], self.rp[2], self.pack[1])
+        self.spine = spine_bend(self.spine, self.bdp, self.mp[5], self.pack[1], self.mp[2], self.trunk)
         self.spine = [vec+self.pack[0] for vec in self.spine]
-        
         return self
+    
+    def regenerate(self):
+        self.spine = spine_bend(self.spine, self.bdp, self.mp[5], self.pack[1], self.mp[2], self.trunk)
     
     def guidesgen(self, number, t_p):
         self.childmp = [int(bl_math.clamp(self.mp[0]//2+1, 4, self.mp[0])), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
@@ -240,6 +232,6 @@ def branchinit(verts, m_p, bd_p, br_p, r_p):
     st_pack = (verts[0],(verts[1]-verts[0]).normalized()*m_p[1], m_p[2])
     bran = branch(st_pack, m_p, bd_p, br_p, r_p, True)
     bran.n = len(verts)
-    print(bran.n)
-    branch.spine = verts
+    bran.spine = verts
+    bran.regenerate()
     return [[bran]]
