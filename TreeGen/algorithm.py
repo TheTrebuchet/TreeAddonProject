@@ -207,16 +207,15 @@ def toverts(branchlist, facebool, m_p, br_p, t_p):
             break
         faces[0].extend([[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)])
     
-    #selection
-    num = sum([bran.n for lev in branchlist[:-1] for bran in lev])
-    selection = list(range(num, sum([bran.n for bran in branchlist[-1]])))
-
-
-    #generating verts from spine
+    #generating verts from spine and making selection
     verts = []
-    for lev in branchlist:
-        for bran in lev:
+    selection=[0]
+    for lev in range(len(branchlist)):
+        if lev == len(branchlist)-1:
+            selection[0] = len(verts)
+        for bran in branchlist[lev]:
             verts.extend(bark_gen(bran.spine, bran.mp, t_p))
+    selection = list(range(selection[0], len(verts)))
 
     #flattening the base, 
     for lev in range(m_p[0]):
