@@ -444,11 +444,11 @@ class TREEGEN_PT_createedit(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        wm = context.window_manager
         col = layout.column(align=True)
-        tps = bpy.data.window_managers["WinMan"].treegen_props
-        col.label(text="Now you can edit this bezier curve\nI would use the draw tool\nJust supply the regrow tool with a line of points")
-        col.operator('object.tree_regrow', text = 'Create',icon='SCRIPT')
+        col.label(text="Now edit the bezier curve.")
+        col.label(text="After you finish hit regrow")
+        col.label(text="I strongly recommend draw tool")
+        col.operator('object.tree_regrow', text = 'Regrow',icon='SCRIPT')
     
 
 class TREEGEN_PT_createsubpanel(TREEGEN_PT_createparent, bpy.types.Panel):

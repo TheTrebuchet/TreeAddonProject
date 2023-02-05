@@ -17,16 +17,17 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, bd_p, l, guide, r, trunk):
+    lensp = len(spine)
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
-    weight = lambda x, ang: math.sin(ang)*(1-x)*l*len(spine) #it has influences from trunk working corss section, weight of the branch, angle of the branch
+    weight = lambda x, ang: math.sin(ang)*(1-x)*l*lensp #it has influences from trunk working corss section, weight of the branch, angle of the branch
     
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
-    for i in range(1, len(spine)):
+    for i in range(1, lensp):
 
         old_vec = spine[i] - spine[i-1] #get previous vector
         angle = (Vector((0,0,1)).angle(old_vec)) #calculate global z angle
 
-        quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), b_up*angle/(len(spine)-i)) #quat for this step ideal progression
+        quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), b_up*angle/(lensp-i)) #quat for this step ideal progression
         new_vec = quat@old_vec #rotating the vec
         
         bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized() #generate random vector        
@@ -40,14 +41,14 @@ def spine_bend(spine, bd_p, l, guide, r, trunk):
         quat = old_vec.rotation_difference(new_vec)
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
     
-    for i in range(len(spine)):
+    for i in range(lensp):
         vec = spine[i] - spine[i-1] #get previous vector
         angle = (Vector((0,0,1)).angle(vec))
 
-        CM = spine[(len(spine)+i)//2]-spine[i]
+        CM = sum([spine[v]*(1-(v+1)/lensp) for v in range(i,lensp)])/((i-lensp)*(i-lensp+1)/(2*lensp))-spine[i]
         w_angle = CM[0]**2+CM[1]**2-(r*math.cos(angle))**2
         if w_angle<0: w_angle = 0
-        w_angle = weight(i/len(spine), math.atan(w_angle**0.5/(CM[2]+r*math.sin(angle))))
+        w_angle = weight(i/lensp, math.atan(w_angle**0.5/(CM[2]+r*math.sin(angle))))
         
         trans1 = Matrix.Translation(-1*spine[i])
         trans2 = Matrix.Translation(spine[i])
@@ -55,7 +56,7 @@ def spine_bend(spine, bd_p, l, guide, r, trunk):
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
 
     if trunk:
-        CM = Vector([sum([i[0] for i in spine])/len(spine), sum([i[1] for i in spine])/len(spine), sum([i[2] for i in spine])/len(spine)])
+        CM = Vector([sum([i[0] for i in spine])/lensp, sum([i[1] for i in spine])/lensp, sum([i[2] for i in spine])/lensp])
         quat = Quaternion(Vector((CM[1],-CM[0],0)), Vector((0,0,1)).angle(CM)*b_c)
         spine = [quat@i for i in spine]
     return spine
