@@ -86,7 +86,6 @@ class TREEGEN_OT_new(bpy.types.Operator):
         
         #writing properties
         tps.treename = context.object.name
-        tps.editstatus = False
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         context.object["TreeGenConfig"] = saveconfig()
         return {'FINISHED'}
@@ -104,12 +103,25 @@ class TREEGEN_OT_update(bpy.types.Operator):
         except: 
             self.report({"INFO"}, "I can't update an object that isn't a tree")
             return {'FINISHED'}
-        print(checkedit(context))
-        if checkedit(context)==True:
+        
+        tree_obj = bpy.context.object
+        custom_child = [o for o in tree_obj.children if 'custom trunk' in o.name]
+        
+        if len(custom_child)>1:
+            self.report({"INFO"}, "I detected multiple viable trunks in the trees children, leave only one")
             return {'FINISHED'}
+        
+        branchlist = []
+        m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
+        seeds = [br_p[-1], bd_p[-1], r_p[-1]]
+        
+        if len(custom_child)==1:
+            curve = [v.co for v in custom_child[0].data.vertices]
+            if curve[-1].length<curve[0].length:
+                curve.reverse()
+            m_p[3]*=m_p[2]
+            branchlist = branchinit(curve, m_p, bd_p, br_p, r_p)
         else:
-            tps.editstatus=False
-            m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
             m_p[3]*=m_p[2]
             st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
             branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
@@ -120,10 +132,6 @@ class TREEGEN_OT_update(bpy.types.Operator):
             bpy.ops.object.tree_sync()
             tps.treename = context.object.name
         '''
-
-        selected_obj = bpy.context.object
-
-        seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
         #generates the trunk and lists of lists of branches
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
@@ -136,10 +144,10 @@ class TREEGEN_OT_update(bpy.types.Operator):
         bm = bmesh.new()
         bm.from_mesh(t_mesh)
 
-        bm.to_mesh(selected_obj.data)
+        bm.to_mesh(tree_obj.data)
         bm.free()
         bpy.data.meshes.remove(t_mesh)
-        for f in selected_obj.data.polygons:
+        for f in tree_obj.data.polygons:
             f.use_smooth = True
         
         v_group = bpy.context.object.vertex_groups['leaves']
@@ -182,7 +190,6 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
             except: 
                 self.report({"INFO"}, "I can't update an object that isn't a tree")
                 return {'FINISHED'}
-            tps.editstatus=True
             curve = []
             bpy.ops.object.mode_set(mode='OBJECT')
             obj = bpy.context.active_object
@@ -200,13 +207,12 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
             if curve[-1].length<curve[0].length:
                 curve.reverse()
             
-            curve_obj = bpy.context.object
+            curve_obj = bpy.context.active_object
             
             tps.Mlength = sum([(curve[i+1]-curve[i]).length for i in range(len(curve)-1)])
             tps.Mscale=1
             tps.Mvres = len(curve)
             m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
-            print(m_p)
             seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
             #generates the trunk and lists of lists of stuff
@@ -220,12 +226,24 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
             object = bpy.data.objects.new("tree", mesh)
             bpy.context.collection.objects.link(object)
             mesh.from_pydata(verts ,edges, faces)
-            
-            #name of the created object and selecting it
             bpy.ops.object.select_all(action='DESELECT')
             object.select_set(True)
             bpy.context.view_layer.objects.active = object
             bpy.ops.object.shade_smooth()
+
+            #renaming and parenting
+            tree = bpy.context.active_object
+            curve_obj.parent = tree
+            ext=''
+            if len(tree.name.split('.'))>1:
+                ext = '.'+tree.name.split('.')[1]
+            curve_obj.name = 'custom trunk'+ext
+            for m in bpy.data.meshes: 
+                if m.users==0 and m.name == str('trunk curve'+ext):
+                    bpy.data.meshes.remove(m)
+            curve_obj.data.name = 'trunk curve'+ext
+            
+            #name of the created object and selecting it
             object.matrix_world.translation = context.scene.cursor.location
 
             #writing properties

@@ -43,11 +43,6 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
         description='Used for updating panel',
         default='',
     )
-    editstatus: bpy.props.BoolProperty(
-        name='Custom trunk',
-        description='Used for preventing unwise decision',
-        default=False,
-    )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
         description='Number of segments in the circle of the main trunk',
