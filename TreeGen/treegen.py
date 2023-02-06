@@ -170,6 +170,7 @@ class TREEGEN_OT_draw(bpy.types.Operator):
         bpy.ops.transform.translate(value=(0,0,5))
         bpy.ops.transform.resize(value=(3.0, 3.0, 5.0))
         bpy.ops.object.mode_set(mode='OBJECT')
+        context.active_object.matrix_world.translation = context.scene.cursor.location
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
         context.object["TreeGenConfig"]='to be generated'
         bpy.ops.object.mode_set(mode='EDIT')
@@ -206,8 +207,9 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
             
             if curve[-1].length<curve[0].length:
                 curve.reverse()
-            
-            curve_obj = bpy.context.active_object
+            curve = [v-curve[0] for v in curve]
+
+            curve_obj = context.active_object
             
             tps.Mlength = sum([(curve[i+1]-curve[i]).length for i in range(len(curve)-1)])
             tps.Mscale=1
