@@ -192,6 +192,8 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
                 self.report({"INFO"}, "I can't update an object that isn't a tree")
                 return {'FINISHED'}
             curve = []
+            
+            curve_obj = context.active_object
             bpy.ops.object.mode_set(mode='OBJECT')
             obj = bpy.context.active_object
             bpy.ops.object.convert(target='MESH')
@@ -207,9 +209,11 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
             
             if curve[-1].length<curve[0].length:
                 curve.reverse()
-            curve = [v-curve[0] for v in curve]
+            
+            context.scene.cursor.location = curve[0] + curve_obj.location
+            bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+            curve_obj.location = (0,0,0)
 
-            curve_obj = context.active_object
             
             tps.Mlength = sum([(curve[i+1]-curve[i]).length for i in range(len(curve)-1)])
             tps.Mscale=1
@@ -225,17 +229,17 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
             
             #creating the tree
             mesh = bpy.data.meshes.new("tree")
-            object = bpy.data.objects.new("tree", mesh)
-            bpy.context.collection.objects.link(object)
+            tree = bpy.data.objects.new("tree", mesh)
+            bpy.context.collection.objects.link(tree)
             mesh.from_pydata(verts ,edges, faces)
             bpy.ops.object.select_all(action='DESELECT')
-            object.select_set(True)
-            bpy.context.view_layer.objects.active = object
+            tree.select_set(True)
+            bpy.context.view_layer.objects.active = tree
             bpy.ops.object.shade_smooth()
 
             #renaming and parenting
-            tree = bpy.context.active_object
             curve_obj.parent = tree
+            tree.matrix_world.translation = context.scene.cursor.location
             ext=''
             if len(tree.name.split('.'))>1:
                 ext = '.'+tree.name.split('.')[1]
@@ -245,15 +249,13 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
                     bpy.data.meshes.remove(m)
             curve_obj.data.name = 'trunk curve'+ext
             
-            #name of the created object and selecting it
-            object.matrix_world.translation = context.scene.cursor.location
 
             #writing properties
             br_p[-1], bd_p[-1], r_p[-1] = seeds
 
             #adding vertex group for furthest branches
             if selection:
-                v_group = object.vertex_groups.new(name="leaves")
+                v_group = tree.vertex_groups.new(name="leaves")
                 v_group.add(selection, 1.0, 'ADD')
 
             #adding geometry nodes for leaves

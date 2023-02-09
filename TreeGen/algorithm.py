@@ -11,8 +11,7 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
     quat = Vector((0,0,1)).rotation_difference(guide)
     f1 = lambda z : p_a*(noise.noise(Vector([0, p_seed, p_s*z]))-0.5)
     f2 = lambda z : p_a*(noise.noise(Vector([0, p_seed, p_s*(z+length)]))-0.5)
-    spine = [quat@Vector((f1(l*i), f2(l*i), l*i)) for i in range(n)]
-    spine[0] = Vector((0,0,0))
+    spine = [quat@Vector((f1(l*i)-f1(0), f2(l*i)-f2(0), l*i)) for i in range(n)]
     return spine
 
 # bends the spine in a more meaningful way
@@ -192,7 +191,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p):
         edges =[]
         for lev in branchlist:
             for bran in lev:
-                verts.append(bran.spine)
+                verts.extend(bran.spine)
                 if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
                 else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
         verts = [vec*m_p[4] for vec in verts] #scale update
