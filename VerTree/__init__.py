@@ -19,42 +19,42 @@ Created by Jan Kulczycki
 '''
 
 bl_info = {
-    "name": "TreeGen",
+    "name": "VerTree",
     "author": "Jan Kulczycki",
     "version": (0, 1, 0),
     "blender": (3, 3, 0),
     "location": "View3D > Sidebar > Tree Generator (Create Tab)",
     "description": "Procedurally generates a tree at cursor location",
-    "doc_url": "https://treegen-docs.readthedocs.io/en/latest/",
+    "doc_url": "https://vertree-docs.readthedocs.io/en/latest/",
     "category": "Add Object",
 }
 
 import bpy
 
-from .treegen import *
+from .vertree import *
 from .property_group import *
 
 classes = (
-TREEGEN_OT_new,
-TREEGEN_OT_update,
-TREEGEN_OT_sync,
-TREEGEN_OT_default,
-TREEGEN_PG_props,
-TREEGEN_PT_createmain,
-TREEGEN_PT_createsubpanel,
-TREEGEN_PT_createedit,
-TREEGEN_OT_leaf,
-TREEGEN_OT_draw,
-TREEGEN_OT_regrow)
+VERTREE_OT_new,
+VERTREE_OT_update,
+VERTREE_OT_sync,
+VERTREE_OT_default,
+VERTREE_PG_props,
+VERTREE_PT_createmain,
+VERTREE_PT_createsubpanel,
+VERTREE_PT_createedit,
+VERTREE_OT_leaf,
+VERTREE_OT_draw,
+VERTREE_OT_regrow)
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.WindowManager.treegen_props = bpy.props.PointerProperty(type=property_group.TREEGEN_PG_props)
+    bpy.types.WindowManager.vertree_props = bpy.props.PointerProperty(type=property_group.VERTREE_PG_props)
 
 def unregister():
-    del bpy.types.WindowManager.treegen_props
+    del bpy.types.WindowManager.vertree_props
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

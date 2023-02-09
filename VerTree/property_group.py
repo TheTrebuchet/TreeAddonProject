@@ -1,22 +1,22 @@
 import bpy
 import math 
 def tree_update(self, context):
-    tps = bpy.data.window_managers['WinMan'].treegen_props
+    tps = bpy.data.window_managers['WinMan'].vertree_props
     if tps.ops_complete: 
         bpy.ops.object.tree_update()
 def leaf_update(self,context):
-    tps = bpy.data.window_managers['WinMan'].treegen_props
-    bpy.context.object.modifiers["TreeGen"].show_viewport = tps.leafbool
-    bpy.context.object.modifiers["TreeGen"].show_in_editmode = tps.leafbool
+    tps = bpy.data.window_managers['WinMan'].vertree_props
+    bpy.context.object.modifiers["VerTree"].show_viewport = tps.leafbool
+    bpy.context.object.modifiers["VerTree"].show_in_editmode = tps.leafbool
     if tps.leafbool:
         if tps.leafname =='':tps.leafname='basic_leaf'
         bpy.ops.object.tree_leaf()
-        bpy.context.object.modifiers["TreeGen"]["Input_3"] = bpy.data.objects[tps.leafname]
-        bpy.context.object.modifiers["TreeGen"].show_viewport = True
+        bpy.context.object.modifiers["VerTree"]["Input_3"] = bpy.data.objects[tps.leafname]
+        bpy.context.object.modifiers["VerTree"].show_viewport = True
 
 
 
-class TREEGEN_PG_props(bpy.types.PropertyGroup):
+class VERTREE_PG_props(bpy.types.PropertyGroup):
     ops_complete: bpy.props.BoolProperty(
         default=True,
     )
@@ -61,7 +61,7 @@ class TREEGEN_PG_props(bpy.types.PropertyGroup):
     )
     Mradius: bpy.props.FloatProperty(
         name='Max Radius',
-        description='The radius TreeGen starts with',
+        description='The radius VerTree starts with',
         default=0.44,
         min=0.01,
         soft_max=10,

@@ -4,13 +4,13 @@ from .geogroup import *
 from .algorithm import *
 import time
 def checkedit(context):
-    config = context.object["TreeGenConfig"]
+    config = context.object["VerTreeConfig"]
     for i in config.split(','):
         if 'edit' in i:
             if 'True' in i: return True 
             if 'False' in i: return False
 def parameters():
-    tps = bpy.data.window_managers["WinMan"].treegen_props
+    tps = bpy.data.window_managers["WinMan"].vertree_props
     
     # temporary parameters
     scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
@@ -26,7 +26,7 @@ def parameters():
     return m_p, br_p, bn_p, bd_p, r_p, t_p
 
 def saveconfig():
-    tps = bpy.data.window_managers["WinMan"].treegen_props
+    tps = bpy.data.window_managers["WinMan"].vertree_props
     config = ''
     excluded = ['__','rna','sync']
     for new in dir(tps):
@@ -35,14 +35,14 @@ def saveconfig():
     return config
 
 
-class TREEGEN_OT_new(bpy.types.Operator):
+class VERTREE_OT_new(bpy.types.Operator):
     """creates a tree at (0,0,0) according to user panel input"""
     bl_idname = 'object.tree_create'
     bl_label = 'Place a tree'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        tps = context.window_manager.treegen_props
+        tps = context.window_manager.vertree_props
 
         m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
@@ -73,33 +73,33 @@ class TREEGEN_OT_new(bpy.types.Operator):
             v_group.add(selection, 1.0, 'ADD')
 
         #adding geometry nodes for leaves
-        if 'TreeGen_nodegroup' not in bpy.data.node_groups:
-            TreeGen_nodegroup_exec()
-        ng = bpy.data.node_groups['TreeGen_nodegroup']
-        if 'TreeGen' not in bpy.context.object.modifiers:
-            bpy.context.object.modifiers.new(name = 'TreeGen',type = 'NODES')
-        geo_mod = bpy.context.object.modifiers['TreeGen']
+        if 'VerTree_nodegroup' not in bpy.data.node_groups:
+            VerTree_nodegroup_exec()
+        ng = bpy.data.node_groups['VerTree_nodegroup']
+        if 'VerTree' not in bpy.context.object.modifiers:
+            bpy.context.object.modifiers.new(name = 'VerTree',type = 'NODES')
+        geo_mod = bpy.context.object.modifiers['VerTree']
         if not geo_mod.node_group:
             geo_mod.node_group = ng
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_2_use_attribute\"]", modifier_name="TreeGen")
-        bpy.context.object.modifiers["TreeGen"]["Input_2_attribute_name"] = "leaves"
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_2_use_attribute\"]", modifier_name="VerTree")
+        bpy.context.object.modifiers["VerTree"]["Input_2_attribute_name"] = "leaves"
         
         #writing properties
         tps.treename = context.object.name
         br_p[-1], bd_p[-1], r_p[-1] = seeds
-        context.object["TreeGenConfig"] = saveconfig()
+        context.object["VerTreeConfig"] = saveconfig()
         return {'FINISHED'}
         
-class TREEGEN_OT_update(bpy.types.Operator):
+class VERTREE_OT_update(bpy.types.Operator):
     """updates the tree according to user panel input"""
     bl_idname = 'object.tree_update'
     bl_label = 'update the tree object'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        tps = context.window_manager.treegen_props   
+        tps = context.window_manager.vertree_props   
         try: 
-            bpy.context.object["TreeGenConfig"]
+            bpy.context.object["VerTreeConfig"]
         except: 
             self.report({"INFO"}, "I can't update an object that isn't a tree")
             return {'FINISHED'}
@@ -155,11 +155,11 @@ class TREEGEN_OT_update(bpy.types.Operator):
         v_group.add(selection, 1.0, 'REPLACE')
         
         br_p[-1], bd_p[-1], r_p[-1] = seeds
-        context.object["TreeGenConfig"] = saveconfig()
+        context.object["VerTreeConfig"] = saveconfig()
 
         return {'FINISHED'}
     
-class TREEGEN_OT_draw(bpy.types.Operator):
+class VERTREE_OT_draw(bpy.types.Operator):
     """let's the user edit the trunk"""
     bl_idname = 'object.tree_draw'
     bl_label = 'draw a new trunk'
@@ -172,22 +172,22 @@ class TREEGEN_OT_draw(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
         context.active_object.matrix_world.translation = context.scene.cursor.location
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
-        context.object["TreeGenConfig"]='to be generated'
+        context.object["VerTreeConfig"]='to be generated'
         bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
-class TREEGEN_OT_regrow(bpy.types.Operator):
+class VERTREE_OT_regrow(bpy.types.Operator):
         """regrows tree from line of points"""
         bl_idname = 'object.tree_regrow'
         bl_label = 'regrow from existing curve'
         bl_options = {'REGISTER', 'UNDO'}
 
         def execute(self, context):
-            tps = context.window_manager.treegen_props
+            tps = context.window_manager.vertree_props
             tps.ops_complete=False
             try: 
-                bpy.context.object["TreeGenConfig"]
+                bpy.context.object["VerTreeConfig"]
             except: 
                 self.report({"INFO"}, "I can't update an object that isn't a tree")
                 return {'FINISHED'}
@@ -259,24 +259,24 @@ class TREEGEN_OT_regrow(bpy.types.Operator):
                 v_group.add(selection, 1.0, 'ADD')
 
             #adding geometry nodes for leaves
-            if 'TreeGen_nodegroup' not in bpy.data.node_groups:
-                TreeGen_nodegroup_exec()
-            ng = bpy.data.node_groups['TreeGen_nodegroup']
-            if 'TreeGen' not in bpy.context.object.modifiers:
-                bpy.context.object.modifiers.new(name = 'TreeGen',type = 'NODES')
-            geo_mod = bpy.context.object.modifiers['TreeGen']
+            if 'VerTree_nodegroup' not in bpy.data.node_groups:
+                VerTree_nodegroup_exec()
+            ng = bpy.data.node_groups['VerTree_nodegroup']
+            if 'VerTree' not in bpy.context.object.modifiers:
+                bpy.context.object.modifiers.new(name = 'VerTree',type = 'NODES')
+            geo_mod = bpy.context.object.modifiers['VerTree']
             if not geo_mod.node_group:
                 geo_mod.node_group = ng
-            bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_2_use_attribute\"]", modifier_name="TreeGen")
-            bpy.context.object.modifiers["TreeGen"]["Input_2_attribute_name"] = "leaves"
+            bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_2_use_attribute\"]", modifier_name="VerTree")
+            bpy.context.object.modifiers["VerTree"]["Input_2_attribute_name"] = "leaves"
             tps.treename = context.object.name
             
-            context.object["TreeGenConfig"] = saveconfig()
+            context.object["VerTreeConfig"] = saveconfig()
             tps.ops_complete=True
 
             return {'FINISHED'}
 
-class TREEGEN_OT_sync(bpy.types.Operator):
+class VERTREE_OT_sync(bpy.types.Operator):
     """syncs tps property group with custom properties"""
     bl_idname = 'object.tree_sync'
     bl_label = 'sync tree object'
@@ -284,14 +284,14 @@ class TREEGEN_OT_sync(bpy.types.Operator):
 
     def execute(self, context):
         try: 
-            bpy.context.object["TreeGenConfig"]
+            bpy.context.object["VerTreeConfig"]
         except: 
             self.report({"INFO"}, "I can't sync an object that isn't a tree")
             return {'FINISHED'}
         
-        config = context.object["TreeGenConfig"]
+        config = context.object["VerTreeConfig"]
 
-        tps = bpy.data.window_managers["WinMan"].treegen_props
+        tps = bpy.data.window_managers["WinMan"].vertree_props
         config = [i.split('=') for i in config.split(',')]
         excluded = ['__','rna','sync']
         tps.ops_complete = False
@@ -318,14 +318,14 @@ class TREEGEN_OT_sync(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class TREEGEN_OT_default(bpy.types.Operator):
+class VERTREE_OT_default(bpy.types.Operator):
     """returns all values to default"""
     bl_idname = 'object.tree_default'
     bl_label = 'return to defaults'
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        tps = bpy.data.window_managers["WinMan"].treegen_props
+        tps = bpy.data.window_managers["WinMan"].vertree_props
         tps.treename = context.object.name
         tps.ops_complete = False
         excluded = ['__', 'rna', 'sync']
@@ -336,15 +336,15 @@ class TREEGEN_OT_default(bpy.types.Operator):
         bpy.ops.object.tree_update()
         return {'FINISHED'}
 
-class TREEGEN_OT_leaf(bpy.types.Operator):
+class VERTREE_OT_leaf(bpy.types.Operator):
     """handles leaves"""
     bl_idname = 'object.tree_leaf'
     bl_label = 'attach leaves'
     bl_options = {'REGISTER', 'UNDO'}
     def execute(self, context):
-        tps = context.window_manager.treegen_props
+        tps = context.window_manager.vertree_props
         
-        colname = "TreeGenLeaves"
+        colname = "VerTreeLeaves"
         name = tps.leafname
 
         if colname not in [i.name for i in bpy.data.collections]:
@@ -365,23 +365,23 @@ class TREEGEN_OT_leaf(bpy.types.Operator):
                 mesh.from_pydata(verts,[], [[0,1,2,3]])
         return {'FINISHED'}
 
-class TREEGEN_PT_createparent:
+class VERTREE_PT_createparent:
     bl_space_type = "VIEW_3D"  
     bl_region_type = "UI"
     bl_category = "Create"
     bl_context = "objectmode"
     
 
-class TREEGEN_PT_createmain(TREEGEN_PT_createparent, bpy.types.Panel):
+class VERTREE_PT_createmain(VERTREE_PT_createparent, bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation, use with caution"""
-    bl_label = "TreeGen"
+    bl_label = "VerTree"
     bl_space_type = "VIEW_3D"  
     bl_region_type = "UI"
     bl_category = "Create"
     
     '''    @staticmethod
     def poll(self,context):
-        tps = bpy.data.window_managers["WinMan"].treegen_props
+        tps = bpy.data.window_managers["WinMan"].vertree_props
         if tps.treename != context.object.name:
             bpy.ops.object.tree_sync()
             tps.treename = context.object.name
@@ -391,7 +391,7 @@ class TREEGEN_PT_createmain(TREEGEN_PT_createparent, bpy.types.Panel):
         layout = self.layout
         wm = context.window_manager
         col = layout.column(align=True)
-        tps = bpy.data.window_managers["WinMan"].treegen_props
+        tps = bpy.data.window_managers["WinMan"].vertree_props
 
         col.operator('object.tree_create', text = 'Create',icon='SCRIPT')
         col.operator('object.tree_sync', text = 'Sync', icon='FILE_REFRESH')
@@ -400,45 +400,45 @@ class TREEGEN_PT_createmain(TREEGEN_PT_createparent, bpy.types.Panel):
         col.operator('object.tree_draw', text='draw trunk', icon = 'GREASEPENCIL')
         
         col.label(text="Main Settings")
-        col.prop(wm.treegen_props, "leafbool")
-        col.prop(wm.treegen_props, "facebool")
+        col.prop(wm.vertree_props, "leafbool")
+        col.prop(wm.vertree_props, "facebool")
         
         col.label(text="Main Parameters")
-        col.prop(wm.treegen_props, "Msides")
-        col.prop(wm.treegen_props, "Mvres")
-        col.prop(wm.treegen_props, "Mlength")
-        col.prop(wm.treegen_props, "Mradius")
-        col.prop(wm.treegen_props, "Mtipradius")
+        col.prop(wm.vertree_props, "Msides")
+        col.prop(wm.vertree_props, "Mvres")
+        col.prop(wm.vertree_props, "Mlength")
+        col.prop(wm.vertree_props, "Mradius")
+        col.prop(wm.vertree_props, "Mtipradius")
 
         col.label(text="Growth Parameters")
-        col.prop(wm.treegen_props, "bends_amount")
-        col.prop(wm.treegen_props, "bends_scale")
-        col.prop(wm.treegen_props, "bends_up")
-        col.prop(wm.treegen_props, "bends_weight")
-        col.prop(wm.treegen_props, "bends_correction")
+        col.prop(wm.vertree_props, "bends_amount")
+        col.prop(wm.vertree_props, "bends_scale")
+        col.prop(wm.vertree_props, "bends_up")
+        col.prop(wm.vertree_props, "bends_weight")
+        col.prop(wm.vertree_props, "bends_correction")
 
         col.label(text="Branch Parameters")
-        col.prop(wm.treegen_props, "branch_levels")
+        col.prop(wm.vertree_props, "branch_levels")
         for i in range(tps.branch_levels):
-            col.prop(wm.treegen_props, "branch_number"+str(i+1))
-        col.prop(wm.treegen_props, "branch_scaling")
-        col.prop(wm.treegen_props, "branch_minangle")
-        col.prop(wm.treegen_props, "branch_maxangle")
-        col.prop(wm.treegen_props, "branch_height")
+            col.prop(wm.vertree_props, "branch_number"+str(i+1))
+        col.prop(wm.vertree_props, "branch_scaling")
+        col.prop(wm.vertree_props, "branch_minangle")
+        col.prop(wm.vertree_props, "branch_maxangle")
+        col.prop(wm.vertree_props, "branch_height")
         col.label(text="Simple Jiggle")
-        col.prop(wm.treegen_props, "Rperlin_amount")
-        col.prop(wm.treegen_props, "Rperlin_scale")
+        col.prop(wm.vertree_props, "Rperlin_amount")
+        col.prop(wm.vertree_props, "Rperlin_scale")
         col.label(text="Seeds and Variety")
-        col.prop(wm.treegen_props, "Rperlin_seed")
-        col.prop(wm.treegen_props, "bends_seed")
-        col.prop(wm.treegen_props, "branch_seed")
-        col.prop(wm.treegen_props, "branch_variety")
+        col.prop(wm.vertree_props, "Rperlin_seed")
+        col.prop(wm.vertree_props, "bends_seed")
+        col.prop(wm.vertree_props, "branch_seed")
+        col.prop(wm.vertree_props, "branch_variety")
         col.label(text="Scale and Shape")
-        col.prop(wm.treegen_props, "Mscale")
-        col.prop(wm.treegen_props, 'flare_amount')
-        col.prop(wm.treegen_props, 'branch_shift')
+        col.prop(wm.vertree_props, "Mscale")
+        col.prop(wm.vertree_props, 'flare_amount')
+        col.prop(wm.vertree_props, 'branch_shift')
 
-class TREEGEN_PT_createedit(bpy.types.Panel):
+class VERTREE_PT_createedit(bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation"""
     bl_label = "TreeEdit"
     bl_space_type = "VIEW_3D"  
@@ -455,13 +455,13 @@ class TREEGEN_PT_createedit(bpy.types.Panel):
         col.operator('object.tree_regrow', text = 'Regrow',icon='SCRIPT')
     
 
-class TREEGEN_PT_createsubpanel(TREEGEN_PT_createparent, bpy.types.Panel):
+class VERTREE_PT_createsubpanel(VERTREE_PT_createparent, bpy.types.Panel):
     """Creates a Panel in the Object properties window for tree creation"""
     bl_label = "Advanced"
-    bl_parent_id = "TREEGEN_PT_createmain"
+    bl_parent_id = "VERTREE_PT_createmain"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self,context):
         layout = self.layout
         wm = context.window_manager
-        layout.prop_search(wm.treegen_props, 'leafname', context.scene, "objects")
+        layout.prop_search(wm.vertree_props, 'leafname', context.scene, "objects")
