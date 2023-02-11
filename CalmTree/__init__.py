@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2022 Jan Kulczycki
+Copyright (C) 2023 Jan Kulczycki
 jan.kulczycki1@gmail.com
 
 Created by Jan Kulczycki
@@ -19,32 +19,42 @@ Created by Jan Kulczycki
 '''
 
 bl_info = {
-    "name": "TreeGen",
-    "author": "TheTrebuchet",
-    "version": (0, 0, 1),
+    "name": "CalmTree",
+    "author": "Jan Kulczycki",
+    "version": (0, 1, 0),
     "blender": (3, 3, 0),
-    "location": "View3D > Sidebar > Tree Generator (Create Tab)",
-    "description": "Adds a generated tree at cursor",
-    "warning": "still in development",
-    "doc_url": "",
+    "location": "View3D > Sidebar > CalmTree (Create Tab)",
+    "description": "Procedurally generates a tree at cursor location",
+    "doc_url": "https://calmtree.notion.site/Features-Explained-7ae1bdea1f9b4da7a4e383a8d40a55cd",
     "category": "Add Object",
 }
 
 import bpy
 
-from . import treegen
-from . import property_group
+from .calmtree import *
+from .property_group import *
 
-classes = [treegen.TreeGen_new, treegen.TreeGen_update, treegen.TreeGen_sync, property_group.TreeGen_PG, treegen.OBJECT_PT_TreeGenerator]
+classes = (
+CALMTREE_OT_new,
+CALMTREE_OT_update,
+CALMTREE_OT_sync,
+CALMTREE_OT_default,
+CALMTREE_PG_props,
+CALMTREE_PT_createmain,
+CALMTREE_PT_createsubpanel,
+CALMTREE_PT_createedit,
+CALMTREE_OT_leaf,
+CALMTREE_OT_draw,
+CALMTREE_OT_regrow)
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.WindowManager.treegen_props = bpy.props.PointerProperty(type=property_group.TreeGen_PG)
+    bpy.types.WindowManager.calmtree_props = bpy.props.PointerProperty(type=property_group.CALMTREE_PG_props)
 
 def unregister():
-    del bpy.types.WindowManager.treegen_props
+    del bpy.types.WindowManager.calmtree_props
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
