@@ -19,42 +19,42 @@ Created by Jan Kulczycki
 '''
 
 bl_info = {
-    "name": "VerTree",
+    "name": "CalmTree",
     "author": "Jan Kulczycki",
     "version": (0, 1, 0),
     "blender": (3, 3, 0),
-    "location": "View3D > Sidebar > Tree Generator (Create Tab)",
+    "location": "View3D > Sidebar > CalmTree (Create Tab)",
     "description": "Procedurally generates a tree at cursor location",
-    "doc_url": "https://vertree-docs.readthedocs.io/en/latest/",
+    "doc_url": "https://calmtree.notion.site/Features-Explained-7ae1bdea1f9b4da7a4e383a8d40a55cd",
     "category": "Add Object",
 }
 
 import bpy
 
-from .vertree import *
+from .calmtree import *
 from .property_group import *
 
 classes = (
-VERTREE_OT_new,
-VERTREE_OT_update,
-VERTREE_OT_sync,
-VERTREE_OT_default,
-VERTREE_PG_props,
-VERTREE_PT_createmain,
-VERTREE_PT_createsubpanel,
-VERTREE_PT_createedit,
-VERTREE_OT_leaf,
-VERTREE_OT_draw,
-VERTREE_OT_regrow)
+CALMTREE_OT_new,
+CALMTREE_OT_update,
+CALMTREE_OT_sync,
+CALMTREE_OT_default,
+CALMTREE_PG_props,
+CALMTREE_PT_createmain,
+CALMTREE_PT_createsubpanel,
+CALMTREE_PT_createedit,
+CALMTREE_OT_leaf,
+CALMTREE_OT_draw,
+CALMTREE_OT_regrow)
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.WindowManager.vertree_props = bpy.props.PointerProperty(type=property_group.VERTREE_PG_props)
+    bpy.types.WindowManager.calmtree_props = bpy.props.PointerProperty(type=property_group.CALMTREE_PG_props)
 
 def unregister():
-    del bpy.types.WindowManager.vertree_props
+    del bpy.types.WindowManager.calmtree_props
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
