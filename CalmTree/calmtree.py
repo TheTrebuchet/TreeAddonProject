@@ -50,10 +50,12 @@ class CALMTREE_OT_new(bpy.types.Operator):
         #generates the trunk and lists of lists of branches
         m_p[3]*=m_p[2]
         st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
+        st=time.time()
         branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
         verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
-        
+        en=time.time()
+        print(en-st)
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)

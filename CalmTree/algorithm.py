@@ -18,7 +18,7 @@ def spine_init(n, length, l, p_a, p_s, p_seed, guide):
 def spine_bend(spine, bd_p, l, guide, r, trunk):
     lensp = len(spine)
     f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
-    weight = lambda x, ang: math.sin(ang)*(1-x)*l*lensp #it has influences from trunk working corss section, weight of the branch, angle of the branch
+    weight = lambda x, ang: math.sin(ang)*(1-x)*l*lensp #it has influences from trunk working cross section, weight of the branch, angle of the branch
     
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
     for i in range(1, lensp):
@@ -119,11 +119,11 @@ def guides_gen(spine, number, m_p, br_p, t_p):
     guidepacks = []
     br_seed *= number
     # generating branch placements
-    chosen = pseudo_poisson_disc(number, length/radius, br_seed)
+    chosen = pseudo_poisson_disc(number, length, radius, br_seed)
 
     # guide instructions
     for i in range(number):
-        height = chosen[i][1]*(1-start_h)+start_h
+        height = chosen[i][1]*radius/length*(1-start_h)+start_h
         pick = math.floor(n*height)
         trans_vec = spine[pick]*(height*n-pick)+spine[pick]*(pick+1-height*n) #translation vector
 
@@ -132,7 +132,7 @@ def guides_gen(spine, number, m_p, br_p, t_p):
         ang = minang*x+maxang*(1-x)
         ang += random.uniform(-var*ang,var*ang)
 
-        a = chosen[i][0]*2*math.pi
+        a = chosen[i][0]
 
         quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1]) #quaternion from 001 to vector alongside the spine
         dir_vec = Vector((math.sin(ang)*math.cos(a),math.sin(ang)*math.sin(a), math.cos(ang))).normalized() #bent vector from 001

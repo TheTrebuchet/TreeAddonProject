@@ -1,31 +1,36 @@
 from math import ceil, floor
+import math
 import random
-def pseudo_poisson_disc(n, ratio, seed):
+import time
+def pseudo_poisson_disc(n, length, radius, seed):
+    st = time.time()
     result = []
-    m = ceil((n/ratio)**0.5)
-    k = ceil((n*ratio)**0.5)
-    result = [[(i%m+0.5*(i//m%2))/m,(floor(i/m)+0.5)/k] for i in range(m*k)]
-    for i in result:
-        random.seed(seed)
+    for i in range(n):
         seed+=1
-        i[0]+=0.3*random.uniform(-1,1)/m
         random.seed(seed)
+        h = random.uniform(0, length/radius)**0.5*(length/radius)**0.5
         seed+=1
-        i[1]+=0.3*random.uniform(-1,1)/k
-    for i in range(m*k-n):
         random.seed(seed)
-        seed+=1
-        result.pop(random.randint(0,len(result)-1))
+        a = (random.uniform(-math.pi,math.pi))
+        result.append((a,h))
+    en = time.time()
+    print(en-st)
     return result
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    l=200
-    r=10
-    for ratio in range(1,10):
-        xy = pseudo_poisson_disc(200,ratio,1)
-        fig, ax = plt.subplots()
-        ax.scatter([i[0] for i in xy], [i[1] for i in xy])
-        plt.xlim(0,1)
-        plt.ylim(0,1)
-        plt.show()
+    fig = plt.figure()
+    h=200
+    r=2
+    l = (40**2+200**2)**0.5
+    a = r/l
+    plt.plot([0, math.pi*r],[0, l*math.cos(math.pi*a)], c='blue')
+    plt.plot([0, -math.pi*r],[0, l*math.cos(math.pi*a)], c='blue')
+    plt.plot([math.sin(math.pi*2*(-a/2+a*i/100))*l for i in range(0,100)], [math.cos(math.pi*2*(-a/2+a*i/100))*l for i in range(100)], c='blue')
+    xy = pseudo_poisson_disc(200,l,r,1)
+    plt.scatter([math.sin(i[0]*a)*i[1]*r for i in xy], [math.cos(i[0]*a)*i[1]*r for i in xy])
+    plt.xlim(-math.pi*r, math.pi*r)
+    plt.ylim(0,l+10)
+    fig.set_figwidth(math.pi*2*r/50)
+    fig.set_figheight(l/50)
+    plt.show()
