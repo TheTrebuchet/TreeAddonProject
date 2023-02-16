@@ -28,7 +28,7 @@ if __name__ == "__main__":
     plt.plot([0, -math.pi*r],[0, l*math.cos(math.pi*a)], c='blue')
     plt.plot([math.sin(math.pi*2*(-a/2+a*i/100))*l for i in range(0,100)], [math.cos(math.pi*2*(-a/2+a*i/100))*l for i in range(100)], c='blue')
     xy = pseudo_poisson_disc(200,l,r,1)
-    plt.scatter([math.sin(i[0]*a)*i[1]*r for i in xy], [math.cos(i[0]*a)*i[1]*r for i in xy])
+    plt.scatter([math.sin(i[0]*a)*i[1]*r for i in xy], [math.cos(i[0]*a)*i[1]*r for i in xy], s=0.1)
     plt.xlim(-math.pi*r, math.pi*r)
     plt.ylim(0,l+10)
     fig.set_figwidth(math.pi*2*r/50)

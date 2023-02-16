@@ -3,54 +3,54 @@ import random
 from mathutils import Vector, noise, Matrix, Quaternion
 import bl_math
 from .helper import *
-
-# SPINE
-# number of vertices, length
-def spine_init(n, length, l, p_a, p_s, p_seed, guide):
-    # quat rotates the spine, f1 and f2 jiggle the spine
-    quat = Vector((0,0,1)).rotation_difference(guide)
-    f1 = lambda z : p_a*(noise.noise(Vector([0, p_seed, p_s*z]))-0.5)
-    f2 = lambda z : p_a*(noise.noise(Vector([0, p_seed, p_s*(z+length)]))-0.5)
-    spine = [quat@Vector((f1(l*i)-f1(0), f2(l*i)-f2(0), l*i)) for i in range(n)]
-    return spine
+def spine_add(spine, l, length, n, p_a, p_s, p_seed, guide):
+    f1 = lambda z : p_a*(noise.noise((0, p_seed, p_s*z))-0.5)
+    f2 = lambda z : p_a*(noise.noise((0, p_seed, p_s*z+length))-0.5)
+    lensp = len(spine)
+    if lensp<3:
+        spine.append(Vector((0,0,1)).rotation_difference(guide)@Vector((f1(lensp)-f1(0),f2(lensp)-f2(0),l))+spine[-1])
+    else:
+        new_vec = Vector((0,0,1)).rotation_difference(spine[-1]-spine[-2])@Vector((f1(lensp)-f1(0),f2(lensp)-f2(0),l))
+        spine.append(new_vec + spine[-1])
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, bd_p, l, guide, r, trunk):
-    lensp = len(spine)
-    f_noise = lambda b_a, b_seed, i, l, b_s: b_a*noise.noise((0, b_seed, i*l*b_s))
-    weight = lambda x, ang: math.sin(ang)*(1-x)*l*lensp #it has influences from trunk working cross section, weight of the branch, angle of the branch
-    
+def spine_bend(spine, n, bd_p, l, guide):
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
-    for i in range(1, lensp):
-
-        old_vec = spine[i] - spine[i-1] #get previous vector
-        angle = (Vector((0,0,1)).angle(old_vec)) #calculate global z angle
-
-        quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), b_up*angle/(lensp-i)) #quat for this step ideal progression
-        new_vec = quat@old_vec #rotating the vec
-        
-        bend_vec = Vector((f_noise(b_a, b_seed, i, l, b_s), f_noise(b_a, b_seed+10, i, l, b_s), 1)).normalized() #generate random vector        
-        bend_vec = (Vector((0,0,1)).rotation_difference(new_vec))@bend_vec #rotating bend_vec to local direction
-        x = bl_math.clamp(guide.angle(bend_vec,0.0)/math.radians(90))**2 #apply dampening, to be improved
-        new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random (bend_vec) and ideal (new_vec) vectors
-
-        # transformation itself, rotating the remaining branch towards the new vector
-        trans1 = Matrix.Translation(-1*spine[i])
-        trans2 = Matrix.Translation(spine[i])
-        quat = old_vec.rotation_difference(new_vec)
-        spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
+    f_noise = lambda i, l, b_s: b_a*(noise.noise((0, b_seed, i*l*b_s)))
     
-    for i in range(lensp-2):
+    old_vec = spine[-1] - spine[-2] #get previous vector
+    angle = (Vector((0,0,1)).angle(old_vec)) #calculate global angle
+    quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), b_up*angle/(n-len(spine)+1)) #ideal progression
+    new_vec = quat@old_vec
+    
+    bend_vec = Vector((f_noise(len(spine), l, b_s), f_noise(len(spine)+n, l, b_s), 1)).normalized() #generate random vector        
+    bend_vec = (Vector((0,0,1)).rotation_difference(new_vec))@bend_vec #rotating bend_vec to local direction
+    x = bl_math.clamp(guide.angle(bend_vec,0.0)/math.radians(90))**2 #apply dampening, to be improved
+    new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random (bend_vec) and ideal (new_vec) vectors
+
+    # transformation itself, rotating the remaining branch towards the new vector
+    trans1 = Matrix.Translation(-1*spine[-2])
+    trans2 = Matrix.Translation(spine[-2])
+    quat = old_vec.rotation_difference(new_vec)
+    spine[-1] = (trans2@(quat@(trans1@spine[-1])))
+    return spine
+
+def spine_weight(spine, n, l, r, trunk, bd_p):
+    b_c, b_w = bd_p[2], bd_p[4]
+
+    weight = lambda x, ang: math.sin(ang)*(1-x)*l*n #it has influences from trunk working cross section, weight of the branch, angle of the branch
+
+    for i in range(n-2):
         vec = spine[i] - spine[i-1] #get previous vector
         angle = (Vector((0,0,1)).angle(vec))
-        CM_lis = [spine[v]*(1-(v)/lensp) for v in range(i+1,lensp)]
+        CM_lis = [spine[v]*(1-(v)/n) for v in range(i+1,n)]
         CM = Vector((0,0,0))
         for v in CM_lis:
             CM += v
-        CM = CM/((lensp-i-1)*(lensp-i)/(2*lensp))-spine[i]
+        CM = CM/((n-i-1)*(n-i)/(2*n))-spine[i]
         w_angle = CM[0]**2+CM[1]**2-(r*math.cos(angle))**2
         if w_angle<0: w_angle = 0
-        w_angle = weight(i/lensp, math.atan(w_angle**0.5/(CM[2]+r*math.sin(angle))))
+        w_angle = weight(i/n, math.atan(w_angle**0.5/(CM[2]+r*math.sin(angle))))
         
         trans1 = Matrix.Translation(-1*spine[i])
         trans2 = Matrix.Translation(spine[i])
@@ -58,10 +58,12 @@ def spine_bend(spine, bd_p, l, guide, r, trunk):
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
 
     if trunk:
-        CM = Vector([sum([i[0] for i in spine])/lensp, sum([i[1] for i in spine])/lensp, sum([i[2] for i in spine])/lensp])
+        CM = Vector([sum([i[0] for i in spine])/n, sum([i[1] for i in spine])/n, sum([i[2] for i in spine])/n])
+        print(CM)
         quat = Quaternion(Vector((CM[1],-CM[0],0)), Vector((0,0,1)).angle(CM)*b_c)
-        spine = [quat@i for i in spine]
-    return spine
+        print(trunk)
+        print(quat)
+        spine[:] = [quat@i for i in spine]
 
 # BARK
 # number of sides, radius
@@ -153,16 +155,25 @@ class branch():
         self.trunk = trunk
         self.guidepacks=[]
         self.n = 0
+        self.spine=[]
         
     def generate(self):
         self.n = round(self.mp[1]/self.mp[5])+1
-        self.spine = spine_init(self.n, self.mp[1], self.mp[5], self.rp[0], self.rp[1], self.rp[2], self.pack[1])
-        self.spine = spine_bend(self.spine, self.bdp, self.mp[5], self.pack[1], self.mp[2], self.trunk)
+        self.spine = [Vector((0,0,0))]
+        spine_add(self.spine, self.mp[5], self.mp[1], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
+
+        for i in range(self.n-2):
+            spine_add(self.spine, self.mp[5], self.mp[1], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
+            spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1])
+        spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk, self.bdp)
+
         self.spine = [vec+self.pack[0] for vec in self.spine]
         return self
     
     def regenerate(self):
-        self.spine = spine_bend(self.spine, self.bdp, self.mp[5], self.pack[1], self.mp[2], self.trunk)
+        for i in range(self.n-2):
+            spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1])
+        spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
     def guidesgen(self, number, t_p):
         self.childmp = [int(bl_math.clamp(self.mp[0]//2+1, 4, self.mp[0])), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
