@@ -158,9 +158,9 @@ class branch():
     def generate(self):
         self.n = round(self.mp[1]/self.mp[5])+1
         self.spine = [Vector((0,0,0))]
-        spine_add(self.spine, self.mp[5], self.mp[1], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
+        #spine_add(self.spine, self.mp[5], self.mp[1], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
 
-        for i in range(self.n-2):
+        for i in range(self.n-1):
             spine_add(self.spine, self.mp[5], self.mp[1], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
             spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1])
         spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk, self.bdp)
