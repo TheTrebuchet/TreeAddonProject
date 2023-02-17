@@ -3,6 +3,7 @@ import random
 from mathutils import Vector, noise, Matrix, Quaternion
 import bl_math
 from .helper import *
+
 def spine_add(spine, l, length, n, p_a, p_s, p_seed, guide):
     f1 = lambda z : p_a*(noise.noise((0, p_seed, p_s*z))-0.5)
     f2 = lambda z : p_a*(noise.noise((0, p_seed, p_s*z+length))-0.5)
@@ -59,10 +60,7 @@ def spine_weight(spine, n, l, r, trunk, bd_p):
 
     if trunk:
         CM = Vector([sum([i[0] for i in spine])/n, sum([i[1] for i in spine])/n, sum([i[2] for i in spine])/n])
-        print(CM)
         quat = Quaternion(Vector((CM[1],-CM[0],0)), Vector((0,0,1)).angle(CM)*b_c)
-        print(trunk)
-        print(quat)
         spine[:] = [quat@i for i in spine]
 
 # BARK

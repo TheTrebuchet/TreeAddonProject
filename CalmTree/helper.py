@@ -3,7 +3,6 @@ import math
 import random
 import time
 def pseudo_poisson_disc(n, length, radius, seed):
-    st = time.time()
     result = []
     for i in range(n):
         seed+=1
@@ -13,8 +12,6 @@ def pseudo_poisson_disc(n, length, radius, seed):
         random.seed(seed)
         a = (random.uniform(-math.pi,math.pi))
         result.append((a,h))
-    en = time.time()
-    print(en-st)
     return result
 
 if __name__ == "__main__":

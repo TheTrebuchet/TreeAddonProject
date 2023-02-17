@@ -57,6 +57,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
         en=time.time()
         print(en-st)
         #creating the tree
+        st=time.time()
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
         bpy.context.collection.objects.link(object)
@@ -90,6 +91,8 @@ class CALMTREE_OT_new(bpy.types.Operator):
         tps.treename = context.object.name
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         context.object["CalmTreeConfig"] = saveconfig()
+        en=time.time()
+        print(en-st)
         return {'FINISHED'}
         
 class CALMTREE_OT_update(bpy.types.Operator):
