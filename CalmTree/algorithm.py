@@ -4,27 +4,29 @@ from mathutils import Vector, noise, Matrix, Quaternion
 import bl_math
 from .helper import *
 
-def spine_add(spine, l, length, n, p_a, p_s, p_seed, guide):
-    f1 = lambda z : p_a*(noise.noise((0, p_seed, p_s*z))-0.5)
-    f2 = lambda z : p_a*(noise.noise((0, p_seed, p_s*z+length))-0.5)
+def spine_add(spine, l, n, p_a, p_s, p_seed, guide):
+    f1 = lambda z : p_a*l*(noise.noise([0, p_seed, p_s*z])-0.5)
+    f2 = lambda z : p_a*l*(noise.noise([0, p_seed, p_s*(z+n*l)])-0.5)
     lensp = len(spine)
+    print(f1((lensp-1)*l))
+    print(f2((lensp-1)*l))
     if lensp<3:
-        spine.append(Vector((0,0,1)).rotation_difference(guide)@Vector((f1(lensp*l)-f1(0),f2(lensp*l)-f2(0),l))+spine[-1])
+        spine.append(Vector((0,0,1)).rotation_difference(guide)@Vector((f1((lensp-1)*l)-f1(0),f2((lensp-1)*l)-f2(0),l))+spine[-1])
     else:
-        new_vec = Vector((0,0,1)).rotation_difference(spine[-1]-spine[-2])@Vector((f1(lensp*l)-f1(0),f2(lensp*l)-f2(0),l))
+        new_vec = Vector((0,0,1)).rotation_difference(spine[-1]-spine[-2])@Vector((f1((lensp-1)*l)-f1(0),f2((lensp-1)*l)-f2(0),l))
         spine.append(new_vec + spine[-1])
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, n, bd_p, l, guide):
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
-    f_noise = lambda i, b_seed: b_a*(noise.noise((0, b_seed, i*l*b_s)))
+    f_noise = lambda i, b_seed: b_a*noise.noise((0, b_seed, i*l*b_s))
     
-    old_vec = spine[-1] - spine[-2] #get previous vector
+    old_vec = spine[-2] - spine[-3] #get previous vector
     angle = (Vector((0,0,1)).angle(old_vec)) #calculate global angle
     quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), b_up*angle/(n-len(spine)+1)) #ideal progression
     new_vec = quat@old_vec
     
-    bend_vec = Vector((f_noise(len(spine), b_seed), f_noise(len(spine), b_seed+10), 1)).normalized() #generate random vector        
+    bend_vec = Vector((f_noise(len(spine)-2, b_seed), f_noise(len(spine)-2, b_seed+10), 1)).normalized() #generate random vector        
     bend_vec = (Vector((0,0,1)).rotation_difference(new_vec))@bend_vec #rotating bend_vec to local direction
     x = bl_math.clamp(guide.angle(bend_vec,0.0)/math.radians(90))**2 #apply dampening, to be improved
     new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random (bend_vec) and ideal (new_vec) vectors
@@ -39,7 +41,7 @@ def spine_bend(spine, n, bd_p, l, guide):
 def spine_weight(spine, n, l, r, trunk, bd_p):
     b_c, b_w = bd_p[2], bd_p[4]
 
-    weight = lambda x, ang: math.sin(ang)*(1-x)*l*n #it has influences from trunk working cross section, weight of the branch, angle of the branch
+    weight = lambda x, ang: math.sin(ang)*(1-x)*l*n #it has influences from trunk working cross section, weight of the branch (without child-branches), angle of the branch
 
     for i in range(n-2):
         vec = spine[i] - spine[i-1] #get previous vector
@@ -62,7 +64,6 @@ def spine_weight(spine, n, l, r, trunk, bd_p):
         CM = Vector([sum([i[0] for i in spine])/n, sum([i[1] for i in spine])/n, sum([i[2] for i in spine])/n])
         quat = Quaternion(Vector((CM[1],-CM[0],0)), Vector((0,0,1)).angle(CM)*b_c)
         spine[:] = [quat@i for i in spine]
-
 # BARK
 # number of sides, radius
 def bark_circle(n,r):
@@ -158,10 +159,10 @@ class branch():
     def generate(self):
         self.n = round(self.mp[1]/self.mp[5])+1
         self.spine = [Vector((0,0,0))]
-        #spine_add(self.spine, self.mp[5], self.mp[1], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
+        spine_add(self.spine, self.mp[5], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
 
-        for i in range(self.n-1):
-            spine_add(self.spine, self.mp[5], self.mp[1], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
+        while len(self.spine)<self.n:
+            spine_add(self.spine, self.mp[5], self.n, self.rp[0], self.rp[1], self.rp[2], self.pack[1])
             spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1])
         spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk, self.bdp)
 
