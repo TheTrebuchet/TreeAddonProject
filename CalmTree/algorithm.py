@@ -9,22 +9,22 @@ def spine_add(spine, l, length, n, p_a, p_s, p_seed, guide):
     f2 = lambda z : p_a*(noise.noise((0, p_seed, p_s*z+length))-0.5)
     lensp = len(spine)
     if lensp<3:
-        spine.append(Vector((0,0,1)).rotation_difference(guide)@Vector((f1(lensp)-f1(0),f2(lensp)-f2(0),l))+spine[-1])
+        spine.append(Vector((0,0,1)).rotation_difference(guide)@Vector((f1(lensp*l)-f1(0),f2(lensp*l)-f2(0),l))+spine[-1])
     else:
-        new_vec = Vector((0,0,1)).rotation_difference(spine[-1]-spine[-2])@Vector((f1(lensp)-f1(0),f2(lensp)-f2(0),l))
+        new_vec = Vector((0,0,1)).rotation_difference(spine[-1]-spine[-2])@Vector((f1(lensp*l)-f1(0),f2(lensp*l)-f2(0),l))
         spine.append(new_vec + spine[-1])
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, n, bd_p, l, guide):
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
-    f_noise = lambda i, l, b_s: b_a*(noise.noise((0, b_seed, i*l*b_s)))
+    f_noise = lambda i, b_seed: b_a*(noise.noise((0, b_seed, i*l*b_s)))
     
     old_vec = spine[-1] - spine[-2] #get previous vector
     angle = (Vector((0,0,1)).angle(old_vec)) #calculate global angle
     quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), b_up*angle/(n-len(spine)+1)) #ideal progression
     new_vec = quat@old_vec
     
-    bend_vec = Vector((f_noise(len(spine), l, b_s), f_noise(len(spine)+n, l, b_s), 1)).normalized() #generate random vector        
+    bend_vec = Vector((f_noise(len(spine), b_seed), f_noise(len(spine), b_seed+10), 1)).normalized() #generate random vector        
     bend_vec = (Vector((0,0,1)).rotation_difference(new_vec))@bend_vec #rotating bend_vec to local direction
     x = bl_math.clamp(guide.angle(bend_vec,0.0)/math.radians(90))**2 #apply dampening, to be improved
     new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random (bend_vec) and ideal (new_vec) vectors
