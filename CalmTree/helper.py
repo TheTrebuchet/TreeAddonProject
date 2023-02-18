@@ -29,7 +29,7 @@ def ptgen(sd, spine, radius, idx, scale_f1, flare, start_h):
         random.seed(sd+1)
         phi = random.uniform(-math.pi,math.pi)
         
-        npt = Vector((0,0,1)).rotation_difference(pt2-pt)@Vector((radius*sin(phi), radius*cos(phi),0))+origin
+        npt = Vector((0,0,1)).rotation_difference(pt2-pt)@Vector((radius*sin(phi), radius*cos(phi),0)) + origin
         return npt, origin, h
     
 def check(npt, grid, lim, idx, ran):

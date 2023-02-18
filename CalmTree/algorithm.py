@@ -127,7 +127,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     l = m_p[5]
     minang, maxang, start_h, var, scaling, sd = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
-    
+    sd*=100
     k = 7
     grid = [[]]
     orgs = []
@@ -143,6 +143,10 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
         for i in range(k):
             sd+=1
             npt, origin, h = ptgen(sd, spine, dist, idx, scale_f1, flare, start_h)
+            '''random.seed(sd)
+            ang = (h*minang+(1-h)*maxang)*random.uniform(1-var,1+var)
+            npt = Quaternion((npt-origin).cross(spine[idx+1]-spine[idx-1]), ang)@npt+origin
+            npt+=origin'''
             if check(npt, grid, lim, idx, ran):
                 grid[-1].append(npt)
                 orgs.append(origin)
@@ -161,6 +165,13 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))]
 
     guidepacks = [[orgs[i],guides[i], radii(heights[i], guides[i].length)] for i in range(len(orgs))]
+    for pack in guidepacks:
+        random.seed(sd)
+        pack[1]*=random.uniform(1-var, 1+var)
+        sd+=1
+        random.seed(sd)
+        pack[2]*=random.uniform(1-var, 1+var)
+        sd+=1
     return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
