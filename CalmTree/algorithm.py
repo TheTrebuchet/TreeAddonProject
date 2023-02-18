@@ -133,8 +133,10 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     orgs = []
     heights = []
     idx = ceil(start_h*len(spine))
-    ran = ceil((lim/3**0.5)/l)
-    dist = 1/5*length
+    ran = ceil(lim/l)+1
+    print(ran)
+    ran = 20
+    dist = 1/3*length*scaling
     
     while idx<len(spine)-1:
         found = False
@@ -142,9 +144,10 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
             sd+=1
             npt, origin, h = ptgen(sd, spine, dist, idx, scale_f1, flare, start_h)
             if check(npt, grid, lim, idx, ran):
-                grid[idx].append(npt)
+                grid[-1].append(npt)
                 orgs.append(origin)
                 heights.append(h)
+                print(h)
                 found = True
         if not found:
             idx+=1
@@ -155,9 +158,9 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
             
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
     
-    guides = [(sol[i] - orgs[i]).normalized()*lengthten(h[i]) for i in range(len(sol))]
+    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))]
 
-    guidepacks = [[orgs[i],guides[i], radii(h[i], guides[i].length)] for i in range(orgs)]
+    guidepacks = [[orgs[i],guides[i], radii(heights[i], guides[i].length)] for i in range(len(orgs))]
     return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
@@ -193,9 +196,9 @@ class branch():
         spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
         spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
-    def guidesgen(self, number, t_p):
+    def guidesgen(self, density, t_p):
         self.childmp = [int(bl_math.clamp(self.mp[0]//2+1, 4, self.mp[0])), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
-        self.guidepacks = guides_gen(self.spine, number, self.mp, self.brp, t_p)
+        self.guidepacks = guides_gen(self.spine, 1/density, self.mp, self.brp, t_p)
 
 # THE MIGHTY TREE GENERATION
 

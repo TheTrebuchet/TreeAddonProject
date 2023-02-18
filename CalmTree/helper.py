@@ -23,8 +23,8 @@ def ptgen(sd, spine, radius, idx, scale_f1, flare, start_h):
         x = random.random()
         origin = x*pt+(1-x)*pt2
         
-        h = ((x+idx)/ceil(start_h*len(spine)))
-        radius *= scale_f1(h, flare)
+        h = (x+idx)/ceil((1-start_h)*len(spine))
+        radius += scale_f1(h, flare)
         
         random.seed(sd+1)
         phi = random.uniform(-math.pi,math.pi)

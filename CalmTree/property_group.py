@@ -181,8 +181,8 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_number1: bpy.props.FloatProperty(
         name='Branch Quantity 1',
         description='Number of branches in the first level',
-        default=30,
-        min=1,
+        default=1,
+        min=0.001,
         soft_max=100,
         update=tree_update
     )
@@ -190,8 +190,8 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_number2: bpy.props.FloatProperty(
         name='Branch Quantity 2',
         description='Number of branches in the second level',
-        default=5,
-        min=1,
+        default=1,
+        min=0.001,
         soft_max=20,
         update=tree_update
     )
@@ -199,8 +199,8 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_number3: bpy.props.FloatProperty(
         name='Branch Quantity 3',
         description='Number of branches in the third level',
-        default=2,
-        min=1,
+        default=1,
+        min=0.001,
         soft_max=10,
         update=tree_update
     )
