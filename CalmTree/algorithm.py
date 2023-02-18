@@ -121,36 +121,43 @@ def face_gen(s, n):
 
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
-def guides_gen(spine, number, m_p, br_p, t_p):
-    # parameters
+def guides_gen(spine, lim, m_p, br_p, t_p):
     n = len(spine)
     length, radius, tipradius = m_p[1:4]
-    minang, maxang, start_h, var, scaling, br_seed = br_p[1:]
+    l = m_p[5]
+    minang, maxang, start_h, var, scaling, sd = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
-    guidepacks = []
-    br_seed *= number
-    # generating branch placements
-    chosen = pseudo_poisson_disc(number, length, radius, br_seed)
+    
+    k = 7
+    grid = [[]]
+    orgs = []
+    heights = []
+    idx = ceil(start_h*len(spine))
+    ran = ceil((lim/3**0.5)/l)
+    dist = 1/5*length
+    
+    while idx<len(spine)-1:
+        found = False
+        for i in range(k):
+            sd+=1
+            npt, origin, h = ptgen(sd, spine, dist, idx, scale_f1, flare, start_h)
+            if check(npt, grid, lim, idx, ran):
+                grid[idx].append(npt)
+                orgs.append(origin)
+                heights.append(h)
+                found = True
+        if not found:
+            idx+=1
+            grid.append([])
+    
+    radii = lambda h, guide_l: bl_math.clamp(scale_f1(h, flare)*radius*0.8, tipradius, guide_l/length*radius)
+    lengthten = lambda h : length*scaling*scale_f2(h, shift)
+            
+    sol = [v for seg in [lis for lis in grid if lis] for v in seg]
+    
+    guides = [(sol[i] - orgs[i]).normalized()*lengthten(h[i]) for i in range(len(sol))]
 
-    # guide instructions
-    for i in range(number):
-        height = chosen[i][1]*radius/length*(1-start_h)+start_h
-        pick = math.floor(n*height)
-        trans_vec = spine[pick]*(height*n-pick)+spine[pick]*(pick+1-height*n) #translation vector
-
-        random.seed(br_seed+1) #x axis angle
-        x = (height-start_h)/(1-start_h)
-        ang = minang*x+maxang*(1-x)
-        ang += random.uniform(-var*ang,var*ang)
-
-        a = chosen[i][0]
-
-        quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1]) #quaternion from 001 to vector alongside the spine
-        dir_vec = Vector((math.sin(ang)*math.cos(a),math.sin(ang)*math.sin(a), math.cos(ang))).normalized() #bent vector from 001
-        guide_vec = quat @ dir_vec #final guide
-        guide_vec *= length*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var) #guide length update
-        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius) #radius of the new branch between 1% and proportionate of parent
-        guidepacks.append((trans_vec, guide_vec, guide_r)) #creating guidepack
+    guidepacks = [[orgs[i],guides[i], radii(h[i], guides[i].length)] for i in range(orgs)]
     return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
