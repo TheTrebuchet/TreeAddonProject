@@ -204,9 +204,7 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
     for lev in range(br_p[0]):
         branchlist.append([])
         for parent in branchlist[-2]:
-            st = time.time()
             parent.guidesgen(bn_p[lev], t_p)
-            tim += (time.time()-st)
             children = parent.guidepacks
             for pack in children:
                 r_p[2] +=1

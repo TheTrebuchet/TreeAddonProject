@@ -1,5 +1,6 @@
 import bpy
-import math 
+from math import pi
+
 def tree_update(self, context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
     if tps.ops_complete: 
@@ -71,7 +72,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         name='Tip Radius',
         description='The minimum radius a branch can have',
         default=0.015,
-        min=0,
+        min=0.001,
         max=1,
         update=tree_update
     )
@@ -208,9 +209,9 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_maxangle: bpy.props.FloatProperty(
         name='Bottom Angle',
         description='Angle at which the bottom branch grows',
-        default=6/18*math.pi,
+        default=6/18*pi,
         min=0.0,
-        soft_max=2*math.pi,
+        soft_max=2*pi,
         unit = 'ROTATION',
         update=tree_update
     )
@@ -218,9 +219,9 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_minangle: bpy.props.FloatProperty(
         name='Top angle',
         description='Angle at which the top branch grows',
-        default=3/18*math.pi,
+        default=3/18*pi,
         min=0.0,
-        soft_max=2*math.pi,
+        soft_max=2*pi,
         unit = 'ROTATION',
         update=tree_update
     )

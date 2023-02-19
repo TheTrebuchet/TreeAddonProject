@@ -2,7 +2,7 @@ import bpy
 import bmesh
 from .geogroup import *
 from .algorithm import *
-import time
+
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
     for i in config.split(','):
@@ -50,10 +50,8 @@ class CALMTREE_OT_new(bpy.types.Operator):
         #generates the trunk and lists of lists of branches
         m_p[3]*=m_p[2]
         st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
-        st=time.time()
         branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
-        print(time.time()-st)
         verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
@@ -135,10 +133,8 @@ class CALMTREE_OT_update(bpy.types.Operator):
         '''
 
         #generates the trunk and lists of lists of branches
-        st=time.time()
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
         verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
-        print(time.time()-st)
         #updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new('tree update')
         t_mesh.from_pydata(verts,edges,faces)

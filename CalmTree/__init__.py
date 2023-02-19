@@ -25,7 +25,7 @@ bl_info = {
     "blender": (3, 3, 0),
     "location": "View3D > Sidebar > CalmTree (Create Tab)",
     "description": "Procedurally generates a tree at cursor location",
-    "doc_url": "https://calmtree.notion.site/Features-Explained-7ae1bdea1f9b4da7a4e383a8d40a55cd",
+    "doc_url": "https://calmtree.notion.site/Welcome-to-CalmTree-docs-3e43e110732a4bba8bd2f54655787226",
     "category": "Add Object",
 }
 
