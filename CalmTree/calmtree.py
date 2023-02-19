@@ -53,11 +53,9 @@ class CALMTREE_OT_new(bpy.types.Operator):
         st=time.time()
         branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
+        print(time.time()-st)
         verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
-        en=time.time()
-        print(en-st)
         #creating the tree
-        st=time.time()
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
         bpy.context.collection.objects.link(object)
@@ -91,8 +89,6 @@ class CALMTREE_OT_new(bpy.types.Operator):
         tps.treename = context.object.name
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         context.object["CalmTreeConfig"] = saveconfig()
-        en=time.time()
-        print(en-st)
         return {'FINISHED'}
         
 class CALMTREE_OT_update(bpy.types.Operator):
@@ -139,9 +135,10 @@ class CALMTREE_OT_update(bpy.types.Operator):
         '''
 
         #generates the trunk and lists of lists of branches
+        st=time.time()
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
         verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
-        
+        print(time.time()-st)
         #updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new('tree update')
         t_mesh.from_pydata(verts,edges,faces)

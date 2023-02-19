@@ -1,15 +1,9 @@
 import math
+from math import floor, ceil
 import random
-from mathutils import Vector, noise, Matrix, Quaternion
+from mathutils import Vector, noise ,Matrix, Quaternion
 import bl_math
 from .helper import *
-
-def spine_add(spine, l, guide):
-    lensp = len(spine)
-    if lensp<3:
-        spine.append(Vector((0,0,1)).rotation_difference(guide)@Vector((0,0,l))+spine[-1])
-    else:
-        spine.append(l*(2*spine[-1] - spine[-2]).normalized()+spine[-1])
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, n, bd_p, l, guide):
@@ -121,57 +115,48 @@ def face_gen(s, n):
 
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
+
 def guides_gen(spine, lim, m_p, br_p, t_p):
-    n = len(spine)
     length, radius, tipradius = m_p[1:4]
-    l = m_p[5]
     minang, maxang, start_h, var, scaling, sd = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
-    sd*=100
-    k = 7
+    l = m_p[5]
+    spine = spine[floor(start_h*len(spine)):]
+    random.seed(sd)
+    k = 12
     grid = [[]]
     orgs = []
     heights = []
-    idx = ceil(start_h*len(spine))
-    ran = ceil(lim/l)+1
-    print(ran)
-    ran = 20
+    idx = 0
     dist = 1/3*length*scaling
-    
+    ran = 10
     while idx<len(spine)-1:
         found = False
         for i in range(k):
-            sd+=1
-            npt, origin, h = ptgen(sd, spine, dist, idx, scale_f1, flare, start_h)
-            '''random.seed(sd)
-            ang = (h*minang+(1-h)*maxang)*random.uniform(1-var,1+var)
-            npt = Quaternion((npt-origin).cross(spine[idx+1]-spine[idx-1]), ang)@npt+origin
-            npt+=origin'''
+            npt, origin, h = ptgen(spine, dist, idx, scale_f1, flare)
             if check(npt, grid, lim, idx, ran):
                 grid[-1].append(npt)
                 orgs.append(origin)
                 heights.append(h)
-                print(h)
                 found = True
         if not found:
             idx+=1
             grid.append([])
     
-    radii = lambda h, guide_l: bl_math.clamp(scale_f1(h, flare)*radius*0.8, tipradius, guide_l/length*radius)
+    radii = lambda h, guide_l: min(max(scale_f1(h, flare)*radius*0.8, tipradius), guide_l/length*radius)
     lengthten = lambda h : length*scaling*scale_f2(h, shift)
             
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
     
-    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))]
+    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #adjusting length
+    
+    for i in range(len(guides)):
+        h = heights[i]
+        ang = (math.pi/2-(h*minang+(1-h)*maxang))*random.uniform(1-var,1+var)
+        guides[i] = Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i]
+    
+    guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i], guides[i].length)*random.uniform(1-var, 1+var)] for i in range(len(orgs))] #creating guidepacks and radii
 
-    guidepacks = [[orgs[i],guides[i], radii(heights[i], guides[i].length)] for i in range(len(orgs))]
-    for pack in guidepacks:
-        random.seed(sd)
-        pack[1]*=random.uniform(1-var, 1+var)
-        sd+=1
-        random.seed(sd)
-        pack[2]*=random.uniform(1-var, 1+var)
-        sd+=1
     return guidepacks
 
 #generates a single trunk, whether it will be branch or the main trunk
@@ -190,10 +175,10 @@ class branch():
     def generate(self):
         self.n = round(self.mp[1]/self.mp[5])+1
         self.spine = [Vector((0,0,0))]
-        spine_add(self.spine, self.mp[5], self.pack[1])
+        self.spine.append((self.pack[1].normalized())*self.mp[5])
 
         while len(self.spine)<self.n:
-            spine_add(self.spine, self.mp[5], self.pack[1])
+            self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
             spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1])
         spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
         spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk, self.bdp)
@@ -215,16 +200,20 @@ class branch():
 
 def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
     #creating the rest of levels
+    tim = 0
     for lev in range(br_p[0]):
         branchlist.append([])
         for parent in branchlist[-2]:
+            st = time.time()
             parent.guidesgen(bn_p[lev], t_p)
+            tim += (time.time()-st)
             children = parent.guidepacks
             for pack in children:
                 r_p[2] +=1
                 bd_p[-1] +=1
                 br_p[-1] +=1
                 branchlist[-1].append(branch(pack, parent.childmp, bd_p, br_p, r_p, False).generate())
+    print(tim)
     return branchlist
 
 def toverts(branchlist, facebool, m_p, br_p, t_p):
@@ -280,3 +269,13 @@ def branchinit(verts, m_p, bd_p, br_p, r_p):
     bran.spine = verts
     bran.regenerate()
     return [[bran]]
+
+
+if __name__ == "__main__":
+    spine = [Vector((0.0, 0.0, 0.0)), Vector((-0.04053265228867531, 0.1525326669216156, 0.5666670203208923)), Vector((-0.05233679339289665, 0.2162090241909027, 1.1513268947601318)), Vector((0.08932508528232574, 0.07073953002691269, 1.7034058570861816)), Vector((0.3351735472679138, -0.1757250726222992, 2.1775729656219482)), Vector((0.603615939617157, -0.4416947364807129, 2.628371238708496)), Vector((0.9189794659614563, -0.7344887852668762, 3.0294179916381836)), Vector((1.2864696979522705, -1.0440350770950317, 3.3687584400177)), Vector((1.5507733821868896, -1.3234150409698486, 3.813856601715088)), Vector((1.4413506984710693, -1.4571164846420288, 4.376147747039795)), Vector((1.1136771440505981, -1.5123927593231201, 4.861530303955078)), Vector((0.7895124554634094, -1.5705634355545044, 5.3489251136779785)), Vector((0.40334513783454895, -1.6063776016235352, 5.791208267211914)), Vector((-0.05430370569229126, -1.612501621246338, 6.160719394683838)), Vector((-0.49577754735946655, -1.616670846939087, 6.549442768096924)), Vector((-0.767345666885376, -1.5683027505874634, 7.068993091583252)), Vector((-0.6747534275054932, -1.3740949630737305, 7.616468906402588)), Vector((-0.3822815418243408, -1.097188115119934, 8.04518985748291))]
+    mp = [0, 10, 0.44, 0.01*0.44, 1.0, 10/30]
+    brp = [2, math.pi*30/180, math.pi*60/180,0.3, 0.1, 0.3, 1]
+    scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
+    scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
+    tp = [scale_lf1, 1.0, scale_lf2, 0.7]
+    print(guides_gen(spine, 1, mp, brp, tp))
