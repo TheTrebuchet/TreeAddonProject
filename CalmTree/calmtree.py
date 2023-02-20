@@ -2,7 +2,7 @@ import bpy
 import bmesh
 from .geogroup import *
 from .algorithm import *
-import time
+
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
     for i in config.split(','):
@@ -18,12 +18,13 @@ def parameters():
     
     l=tps.Mlength/tps.Mvres
     m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
-    br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
+    br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_horizontal, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
     bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
     bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
     t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
     r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
-    return m_p, br_p, bn_p, bd_p, r_p, t_p
+    e_p = [tps.interp]
+    return m_p, br_p, bn_p, bd_p, r_p, t_p, e_p
 
 def saveconfig():
     tps = bpy.data.window_managers["WinMan"].calmtree_props
@@ -44,18 +45,17 @@ class CALMTREE_OT_new(bpy.types.Operator):
     def execute(self, context):
         tps = context.window_manager.calmtree_props
 
-        m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
+        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
         #generates the trunk and lists of lists of branches
-        st = time.time()
-        m_p[3]*=m_p[2]
+
+        #m_p[3]*=m_p[2]
         st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
         branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
-        verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
-        print(time.time()-st)
-        st = time.time()
+        verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
+        
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
@@ -115,17 +115,17 @@ class CALMTREE_OT_update(bpy.types.Operator):
             return {'FINISHED'}
         
         branchlist = []
-        m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
+        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
         if len(custom_child)==1:
             curve = [v.co for v in custom_child[0].data.vertices]
             if curve[-1].length<curve[0].length:
                 curve.reverse()
-            m_p[3]*=m_p[2]
+            #m_p[3]*=m_p[2]
             branchlist = branchinit(curve, m_p, bd_p, br_p, r_p)
         else:
-            m_p[3]*=m_p[2]
+            #m_p[3]*=m_p[2]
             st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
             branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
         
@@ -138,8 +138,7 @@ class CALMTREE_OT_update(bpy.types.Operator):
 
         #generates the trunk and lists of lists of branches
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
-        verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
-        
+        verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
         #updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new('tree update')
         t_mesh.from_pydata(verts,edges,faces)
@@ -221,14 +220,14 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
             tps.Mlength = sum([(curve[i+1]-curve[i]).length for i in range(len(curve)-1)])
             tps.Mscale=1
             tps.Mvres = len(curve)
-            m_p, br_p, bn_p, bd_p, r_p, t_p = parameters()
+            m_p, br_p, bn_p, bd_p, r_p, t_p, e_p = parameters()
             seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
             #generates the trunk and lists of lists of stuff
             m_p[3]*=m_p[2]
             branchlist = branchinit(curve, m_p, bd_p, br_p, r_p)
             branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
-            verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p)
+            verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
             
             #creating the tree
             mesh = bpy.data.meshes.new("tree")
@@ -367,104 +366,3 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
                 verts = [Vector((1,0,0)),Vector((1,2,0)),Vector((-1,2,0)),Vector((-1,0,0))]
                 mesh.from_pydata(verts,[], [[0,1,2,3]])
         return {'FINISHED'}
-
-class CALMTREE_PT_createparent:
-    bl_space_type = "VIEW_3D"  
-    bl_region_type = "UI"
-    bl_category = "Create"
-    bl_context = "objectmode"
-    
-
-class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
-    """Creates a Panel in the Object properties window for tree creation, use with caution"""
-    bl_label = "CalmTree"
-    bl_space_type = "VIEW_3D"  
-    bl_region_type = "UI"
-    bl_category = "Create"
-    
-    '''    @staticmethod
-    def poll(self,context):
-        tps = bpy.data.window_managers["WinMan"].calmtree_props
-        if tps.treename != context.object.name:
-            bpy.ops.object.tree_sync()
-            tps.treename = context.object.name
-        return True'''
-
-    def draw(self, context):
-        layout = self.layout
-        wm = context.window_manager
-        col = layout.column(align=True)
-        tps = bpy.data.window_managers["WinMan"].calmtree_props
-
-        col.operator('object.tree_create', text = 'Create',icon='SCRIPT')
-        col.operator('object.tree_sync', text = 'Sync', icon='FILE_REFRESH')
-        col.operator('object.tree_default', text = 'Reset to default', icon='LOOP_BACK')
-        col.separator()
-        col.operator('object.tree_draw', text='draw trunk', icon = 'GREASEPENCIL')
-        
-        col.label(text="Main Settings")
-        col.prop(wm.calmtree_props, "leafbool")
-        col.prop(wm.calmtree_props, "facebool")
-        
-        col.label(text="Main Parameters")
-        col.prop(wm.calmtree_props, "Msides")
-        col.prop(wm.calmtree_props, "Mvres")
-        col.prop(wm.calmtree_props, "Mlength")
-        col.prop(wm.calmtree_props, "Mradius")
-        col.prop(wm.calmtree_props, "Mtipradius")
-
-        col.label(text="Growth Parameters")
-        col.prop(wm.calmtree_props, "bends_amount")
-        col.prop(wm.calmtree_props, "bends_scale")
-        col.prop(wm.calmtree_props, "bends_up")
-        col.prop(wm.calmtree_props, "bends_weight")
-        col.prop(wm.calmtree_props, "bends_correction")
-
-        col.label(text="Branch Parameters")
-        col.prop(wm.calmtree_props, "branch_levels")
-        for i in range(tps.branch_levels):
-            col.prop(wm.calmtree_props, "branch_number"+str(i+1))
-        col.prop(wm.calmtree_props, "branch_scaling")
-        col.prop(wm.calmtree_props, "branch_minangle")
-        col.prop(wm.calmtree_props, "branch_maxangle")
-        col.prop(wm.calmtree_props, "branch_height")
-        col.label(text="Simple Jiggle")
-        col.prop(wm.calmtree_props, "Rperlin_amount")
-        col.prop(wm.calmtree_props, "Rperlin_scale")
-        col.label(text="Seeds and Variety")
-        col.prop(wm.calmtree_props, "Rperlin_seed")
-        col.prop(wm.calmtree_props, "bends_seed")
-        col.prop(wm.calmtree_props, "branch_seed")
-        col.prop(wm.calmtree_props, "branch_variety")
-        col.label(text="Scale and Shape")
-        col.prop(wm.calmtree_props, "Mscale")
-        col.prop(wm.calmtree_props, 'flare_amount')
-        col.prop(wm.calmtree_props, 'branch_shift')
-
-class CALMTREE_PT_createedit(bpy.types.Panel):
-    """Creates a Panel in the Object properties window for tree creation"""
-    bl_label = "TreeEdit"
-    bl_space_type = "VIEW_3D"  
-    bl_region_type = "UI"
-    bl_category = "Create"
-    bl_context = "curve_edit"
-
-    def draw(self, context):
-        layout = self.layout
-        col = layout.column(align=True)
-        col.label(text="Now edit the bezier curve.")
-        col.label(text="After you finish hit regrow")
-        col.label(text="I strongly recommend draw tool")
-        col.operator('object.tree_regrow', text = 'Regrow',icon='SCRIPT')
-    
-
-class CALMTREE_PT_createsubpanel(CALMTREE_PT_createparent, bpy.types.Panel):
-    """Creates a Panel in the Object properties window for tree creation"""
-    bl_label = "Advanced"
-    bl_parent_id = "CALMTREE_PT_createmain"
-    bl_options = {"DEFAULT_CLOSED"}
-
-    def draw(self,context):
-        layout = self.layout
-        wm = context.window_manager
-        layout.prop_search(wm.calmtree_props, 'leafname', context.scene, "objects")

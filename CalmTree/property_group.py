@@ -1,5 +1,6 @@
 import bpy
-import math 
+from math import pi
+
 def tree_update(self, context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
     if tps.ops_complete: 
@@ -43,6 +44,14 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         description='Used for updating panel',
         default='',
     )
+    interp: bpy.props.IntProperty(
+        name='Interpolation',
+        description='Adds new segments and smoothes out the tree, virtually no cost',
+        default=0,
+        min=0,
+        max=3,
+        update=tree_update
+    )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
         description='Number of segments in the circle of the main trunk',
@@ -71,7 +80,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         name='Tip Radius',
         description='The minimum radius a branch can have',
         default=0.015,
-        min=0,
+        min=0.001,
         max=1,
         update=tree_update
     )
@@ -178,29 +187,29 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         update=tree_update
     )
 
-    branch_number1: bpy.props.IntProperty(
-        name='Branch Quantity 1',
+    branch_number1: bpy.props.FloatProperty(
+        name='Branch Density 1',
         description='Number of branches in the first level',
-        default=30,
-        min=1,
+        default=1,
+        min=0.001,
         soft_max=100,
         update=tree_update
     )
 
-    branch_number2: bpy.props.IntProperty(
-        name='Branch Quantity 2',
+    branch_number2: bpy.props.FloatProperty(
+        name='Branch Density 2',
         description='Number of branches in the second level',
-        default=5,
-        min=1,
+        default=1,
+        min=0.001,
         soft_max=20,
         update=tree_update
     )
 
-    branch_number3: bpy.props.IntProperty(
-        name='Branch Quantity 3',
+    branch_number3: bpy.props.FloatProperty(
+        name='Branch Density 3',
         description='Number of branches in the third level',
-        default=2,
-        min=1,
+        default=1,
+        min=0.001,
         soft_max=10,
         update=tree_update
     )
@@ -208,9 +217,9 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_maxangle: bpy.props.FloatProperty(
         name='Bottom Angle',
         description='Angle at which the bottom branch grows',
-        default=6/18*math.pi,
+        default=6/18*pi,
         min=0.0,
-        soft_max=2*math.pi,
+        soft_max=2*pi,
         unit = 'ROTATION',
         update=tree_update
     )
@@ -218,9 +227,9 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_minangle: bpy.props.FloatProperty(
         name='Top angle',
         description='Angle at which the top branch grows',
-        default=3/18*math.pi,
+        default=3/18*pi,
         min=0.0,
-        soft_max=2*math.pi,
+        soft_max=2*pi,
         unit = 'ROTATION',
         update=tree_update
     )
@@ -231,6 +240,15 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         default=0.3,
         min=0.0,
         soft_max=0.9,
+        update=tree_update
+    )
+
+    branch_horizontal: bpy.props.FloatProperty(
+        name='Branch Horizontality',
+        description='Defines how much the branches point to the sides.',
+        default=0.1,
+        min=0.0,
+        max=1.0,
         update=tree_update
     )
 
