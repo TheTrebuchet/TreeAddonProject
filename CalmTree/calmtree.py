@@ -49,12 +49,13 @@ class CALMTREE_OT_new(bpy.types.Operator):
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
         #generates the trunk and lists of lists of branches
+
         #m_p[3]*=m_p[2]
         st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
         branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
         verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
-
+        
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
@@ -89,6 +90,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
         tps.treename = context.object.name
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         context.object["CalmTreeConfig"] = saveconfig()
+        print(time.time()-st)
         return {'FINISHED'}
         
 class CALMTREE_OT_update(bpy.types.Operator):
