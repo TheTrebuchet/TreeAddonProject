@@ -44,6 +44,14 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         description='Used for updating panel',
         default='',
     )
+    interp: bpy.props.IntProperty(
+        name='Interpolation',
+        description='Adds new segments and smoothes out the tree, virtually no cost',
+        default=1,
+        min=0,
+        max=6,
+        update=tree_update
+    )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
         description='Number of segments in the circle of the main trunk',

@@ -154,6 +154,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
         h = heights[i]
         ang = (math.pi/2-(h*minang+(1-h)*maxang))*random.uniform(1-var,1+var)
         guides[i] = Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i]
+        print(heights[i], scale_f1(heights[i], flare), radii(h, 1))
     
     guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i], guides[i].length)*random.uniform(1-var, 1+var)] for i in range(len(orgs))] #creating guidepacks and radii
 
@@ -193,8 +194,23 @@ class branch():
         spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
     def guidesgen(self, density, t_p):
-        self.childmp = [int(bl_math.clamp(self.mp[0]//2+1, 4, self.mp[0])), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
+        self.childmp = [int(max(self.mp[0]//2+1, 4)), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
         self.guidepacks = guides_gen(self.spine, 1/density, self.mp, self.brp, t_p)
+    
+    def interpolate(self, lev):
+        if len(self.spine)>3:
+            sp = self.spine
+            a=0.1
+            for l in range(lev):
+                pt = (0.5+a)*sp[1]+(0.5+a)*sp[2]-a*(sp[0]+sp[3])
+                sp.insert(2, pt)
+                i = 3
+                while i<len(sp)-2:
+                    pt = (0.5+a)*sp[i]+(0.5+a)*sp[i+1]-a*(sp[i-2]+sp[i+2])
+                    sp.insert(i+1, pt)
+                    i+=2
+            self.spine = sp
+            self.n = len(sp)
 
 # THE MIGHTY TREE GENERATION
 
@@ -214,13 +230,14 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
     print(tim)
     return branchlist
 
-def toverts(branchlist, facebool, m_p, br_p, t_p):
+def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
     #if the user doesn't need faces I provide only a spine
     if not facebool:
         verts = []
         edges =[]
         for lev in branchlist:
             for bran in lev:
+                if e_p[0]!=0:bran.interpolate(e_p[0])
                 verts.extend(bran.spine)
                 if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
                 else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
@@ -232,6 +249,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p):
     #generating faces, needs branches
     for lev in range(br_p[0]+1):
         for bran in branchlist[lev]:
+            if e_p[0]!=0:bran.interpolate(e_p[0])
             faces.append(face_gen(bran.mp[0], bran.n))
     #combining faces
     while True:

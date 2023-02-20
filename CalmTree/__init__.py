@@ -33,6 +33,7 @@ import bpy
 
 from .calmtree import *
 from .property_group import *
+from .panel import *
 
 classes = (
 CALMTREE_OT_new,

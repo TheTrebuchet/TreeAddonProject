@@ -20,7 +20,7 @@ def ptgen(spine, radius, idx, scale_f1, flare):
         pt2 = spine[idx+1]
         x = random.random()
         origin = x*pt+(1-x)*pt2
-        h = idx/len(spine)+x
+        h = (idx+x)/len(spine)
         radius += scale_f1(h, flare)
         phi = random.uniform(-math.pi,math.pi)
         npt = Vector((0,0,1)).rotation_difference(pt2-pt)@Vector((radius*sin(phi), radius*cos(phi),0)) + origin
