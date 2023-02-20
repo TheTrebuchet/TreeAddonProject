@@ -8,9 +8,18 @@ def tree_update(self, context):
 def leaf_update(self,context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
     bpy.context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
-    bpy.context.object.modifiers["CalmTree"].show_in_editmode = tps.leafbool
+    bpy.context.object.modifiers["CalmTree"].show_render = tps.leafbool
     if tps.leafbool:
         if tps.leafname =='':tps.leafname='basic_leaf'
+        bpy.ops.object.tree_leaf()
+        bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
+def leafbool_update(self,context):
+    switch = True
+    if tps.leafname == '': switch=False
+    tps = bpy.data.window_managers['WinMan'].calmtree_props
+    bpy.context.object.modifiers["CalmTree"].show_viewport = switch
+    bpy.context.object.modifiers["CalmTree"].show_render = switch
+    if switch:
         bpy.ops.object.tree_leaf()
         bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
         bpy.context.object.modifiers["CalmTree"].show_viewport = True
@@ -31,7 +40,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         name='Leaves',
         description='Turns leaves on and off',
         default=False,
-        update=leaf_update,
+        update=leafbool_update,
     )
     leafname: bpy.props.StringProperty(
         name='Leaf Object',
