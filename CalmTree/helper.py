@@ -28,9 +28,7 @@ def ptgen(spine, radius, idx, scale_f1, flare):
         return npt, origin, h
     
 def check(npt, grid, lim, idx, ran):
-    st = max(0, idx - ran)
-    en = min(idx+ran, len(grid))
-    current = [v for lis in grid[st:en] for v in lis]
+    current = [v for lis in grid[max(-ran, -len(grid)):] for v in lis]
     for p in current:
         if abs((npt-p).length) < lim:
             return False

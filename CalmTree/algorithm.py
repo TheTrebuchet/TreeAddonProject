@@ -120,17 +120,21 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     length, radius, tipradius = m_p[1:4]
     minang, maxang, start_h, var, scaling, sd = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
+    
+    if radius == tipradius:
+        return []
+    
     l = m_p[5]
     spine = spine[floor(start_h*len(spine)):]
     random.seed(sd)
-    k = 12
+    k = 8
     grid = [[]]
     orgs = []
     heights = []
-    idx = 0
+    idx = len(spine)-2
     dist = 1/3*length*scaling
     ran = 10
-    while idx<len(spine)-1:
+    while idx>0:
         found = False
         for i in range(k):
             npt, origin, h = ptgen(spine, dist, idx, scale_f1, flare)
@@ -140,7 +144,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
                 heights.append(h)
                 found = True
         if not found:
-            idx+=1
+            idx-=1
             grid.append([])
     
     radii = lambda h, guide_l: min(max(scale_f1(h, flare)*radius*0.8, tipradius), guide_l/length*radius)
@@ -154,9 +158,10 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
         h = heights[i]
         ang = (math.pi/2-(h*minang+(1-h)*maxang))*random.uniform(1-var,1+var)
         guides[i] = Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i]
-        print(heights[i], scale_f1(heights[i], flare), radii(h, 1))
     
-    guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i], guides[i].length)*random.uniform(1-var, 1+var)] for i in range(len(orgs))] #creating guidepacks and radii
+    guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i]/(1-start_h), guides[i].length)] for i in range(len(orgs))] #creating guidepacks and radii
+    for i in range(len(guides)):
+        print(heights[i], radius*0.8*scale_f1(heights[i], flare), guides[i].length/length*radius, guidepacks[i][2])
 
     return guidepacks
 
