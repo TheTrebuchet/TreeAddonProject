@@ -56,7 +56,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     interp: bpy.props.IntProperty(
         name='Interpolation',
         description='Adds new segments and smoothes out the tree, virtually no cost',
-        default=1,
+        default=0,
         min=0,
         max=6,
         update=tree_update
