@@ -8,18 +8,9 @@ def tree_update(self, context):
 def leaf_update(self,context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
     bpy.context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
-    bpy.context.object.modifiers["CalmTree"].show_render = tps.leafbool
+    bpy.context.object.modifiers["CalmTree"].show_in_editmode = tps.leafbool
     if tps.leafbool:
         if tps.leafname =='':tps.leafname='basic_leaf'
-        bpy.ops.object.tree_leaf()
-        bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
-def leafbool_update(self,context):
-    switch = True
-    if tps.leafname == '': switch=False
-    tps = bpy.data.window_managers['WinMan'].calmtree_props
-    bpy.context.object.modifiers["CalmTree"].show_viewport = switch
-    bpy.context.object.modifiers["CalmTree"].show_render = switch
-    if switch:
         bpy.ops.object.tree_leaf()
         bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
         bpy.context.object.modifiers["CalmTree"].show_viewport = True
@@ -40,7 +31,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         name='Leaves',
         description='Turns leaves on and off',
         default=False,
-        update=leafbool_update,
+        update=leaf_update,
     )
     leafname: bpy.props.StringProperty(
         name='Leaf Object',
@@ -58,7 +49,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         description='Adds new segments and smoothes out the tree, virtually no cost',
         default=0,
         min=0,
-        max=6,
+        max=3,
         update=tree_update
     )
     Msides: bpy.props.IntProperty(
@@ -197,7 +188,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     )
 
     branch_number1: bpy.props.FloatProperty(
-        name='Branch Quantity 1',
+        name='Branch Density 1',
         description='Number of branches in the first level',
         default=1,
         min=0.001,
@@ -206,7 +197,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     )
 
     branch_number2: bpy.props.FloatProperty(
-        name='Branch Quantity 2',
+        name='Branch Density 2',
         description='Number of branches in the second level',
         default=1,
         min=0.001,
@@ -215,7 +206,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     )
 
     branch_number3: bpy.props.FloatProperty(
-        name='Branch Quantity 3',
+        name='Branch Density 3',
         description='Number of branches in the third level',
         default=1,
         min=0.001,
@@ -249,6 +240,15 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         default=0.3,
         min=0.0,
         soft_max=0.9,
+        update=tree_update
+    )
+
+    branch_horizontal: bpy.props.FloatProperty(
+        name='Branch Horizontality',
+        description='Defines how much the branches point to the sides.',
+        default=0.1,
+        min=0.0,
+        max=1.0,
         update=tree_update
     )
 

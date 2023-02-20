@@ -85,7 +85,7 @@ def bark_gen(spine, m_p, t_p):
     flare_f, flare_a = t_p[:2]
     n = len(spine)
 
-    scale_list = [bl_math.clamp(flare_f(i/n, flare_a)*radius, tipradius, radius) for i in range(n)]
+    scale_list = [max(flare_f(i/n, flare_a)*radius, tipradius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
     quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
@@ -118,7 +118,7 @@ def face_gen(s, n):
 
 def guides_gen(spine, lim, m_p, br_p, t_p):
     length, radius, tipradius = m_p[1:4]
-    minang, maxang, start_h, var, scaling, sd = br_p[1:]
+    minang, maxang, start_h, horizontal, var, scaling, sd = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
     
     if radius == tipradius:
@@ -137,7 +137,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     while idx>0:
         found = False
         for i in range(k):
-            npt, origin, h = ptgen(spine, dist, idx, scale_f1, flare)
+            npt, origin, h = ptgen(spine, dist, idx, scale_f1, flare, horizontal)
             if check(npt, grid, lim, idx, ran):
                 grid[-1].append(npt)
                 orgs.append(origin)
@@ -152,7 +152,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
             
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
     
-    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #adjusting length
+    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]/(1-start_h)) for i in range(len(sol))] #adjusting length
     
     for i in range(len(guides)):
         h = heights[i]
@@ -236,6 +236,15 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
     return branchlist
 
 def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
+    #TODO quick fix for smallest branches that stay in lower levels
+    for lev in range(len(branchlist)-1):
+        bran_i = 0
+        while bran_i<len(branchlist[lev]):
+            if branchlist[lev][bran_i].mp[2]==branchlist[lev][bran_i].mp[3]:
+                branchlist[-1].insert(0, branchlist[lev].pop(bran_i))
+            else:bran_i+=1
+
+
     #if the user doesn't need faces I provide only a spine
     if not facebool:
         verts = []
@@ -262,7 +271,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
             faces = faces[0]
             break
         faces[0].extend([[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)])
-    
+
     #generating verts from spine and making selection
     verts = []
     selection=[0]

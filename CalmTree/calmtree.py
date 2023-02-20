@@ -18,7 +18,7 @@ def parameters():
     
     l=tps.Mlength/tps.Mvres
     m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
-    br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
+    br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_horizontal, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
     bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
     bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
     t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
@@ -49,7 +49,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
         #generates the trunk and lists of lists of branches
-        m_p[3]*=m_p[2]
+        #m_p[3]*=m_p[2]
         st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
         branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
         branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
@@ -120,10 +120,10 @@ class CALMTREE_OT_update(bpy.types.Operator):
             curve = [v.co for v in custom_child[0].data.vertices]
             if curve[-1].length<curve[0].length:
                 curve.reverse()
-            m_p[3]*=m_p[2]
+            #m_p[3]*=m_p[2]
             branchlist = branchinit(curve, m_p, bd_p, br_p, r_p)
         else:
-            m_p[3]*=m_p[2]
+            #m_p[3]*=m_p[2]
             st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
             branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
         

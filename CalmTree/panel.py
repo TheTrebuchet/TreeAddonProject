@@ -99,5 +99,6 @@ class CALMTREE_PT_createsubpanel(CALMTREE_PT_createparent, bpy.types.Panel):
         layout = self.layout
         wm = context.window_manager
         col = layout.column(align=True)
+        col.prop(wm.calmtree_props, "branch_horizontal")
         col.prop(wm.calmtree_props, "interp")
         layout.prop_search(wm.calmtree_props, 'leafname', context.scene, "objects")

@@ -1,4 +1,4 @@
-from math import sin, cos
+from math import sin, cos, copysign
 import math
 import random
 from mathutils import Vector
@@ -15,7 +15,7 @@ def pseudo_poisson_disc(n, length, radius, seed):
         result.append((a,h))
     return result
 
-def ptgen(spine, radius, idx, scale_f1, flare):
+def ptgen(spine, radius, idx, scale_f1, flare, hor):
         pt = spine[idx]
         pt2 = spine[idx+1]
         x = random.random()
@@ -23,6 +23,12 @@ def ptgen(spine, radius, idx, scale_f1, flare):
         h = (idx+x)/len(spine)
         radius += scale_f1(h, flare)
         phi = random.uniform(-math.pi,math.pi)
+        flat = Vector(((pt2-pt)[0], (pt2-pt)[1], 0))
+        gamma = flat.angle(Vector((0,0,1)))
+        #hor*=(1-abs(math.pi-gamma)/math.pi)
+        theta = copysign(flat.angle(Vector((0,1,0))), flat[0])
+        print(theta)
+        phi = phi*(1-hor)+copysign(hor*math.pi/2, phi)+theta
         npt = Vector((0,0,1)).rotation_difference(pt2-pt)@Vector((radius*sin(phi), radius*cos(phi),0)) + origin
         
         return npt, origin, h
