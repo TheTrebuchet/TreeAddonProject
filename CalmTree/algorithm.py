@@ -6,9 +6,10 @@ import bl_math
 from .helper import *
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, n, bd_p, l, guide):
+def spine_bend(spine, n, bd_p, l, guide, mode):
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
     f_noise = lambda i, b_seed: b_a*noise.noise((0, b_seed, i*l*b_s))
+    print(spine)
     
     old_vec = spine[-2] - spine[-3] #get previous vector
     angle = (Vector((0,0,1)).angle(old_vec)) #calculate global angle
@@ -21,11 +22,12 @@ def spine_bend(spine, n, bd_p, l, guide):
     new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random (bend_vec) and ideal (new_vec) vectors
 
     # transformation itself, rotating the remaining branch towards the new vector
-    trans1 = Matrix.Translation(-1*spine[-2])
-    trans2 = Matrix.Translation(spine[-2])
     quat = old_vec.rotation_difference(new_vec)
-    spine[-1] = (trans2@(quat@(trans1@spine[-1])))
-    return spine
+    if mode == 'quat':
+        return quat
+    elif mode == 'spine':
+        spine[-1] = quat@(spine[-1]-spine[-2])+spine[-2]
+        return spine
 
 def spine_weight(spine, n, l, r, trunk, bd_p):
     b_c, b_w = bd_p[2], bd_p[4]
@@ -53,6 +55,8 @@ def spine_weight(spine, n, l, r, trunk, bd_p):
         CM = Vector([sum([i[0] for i in spine])/n, sum([i[1] for i in spine])/n, sum([i[2] for i in spine])/n])
         quat = Quaternion(Vector((CM[1],-CM[0],0)), Vector((0,0,1)).angle(CM)*b_c)
         spine[:] = [quat@i for i in spine]
+    
+    return spine
 
 def spine_jiggle(spine, l, length, rp):
     p_a, p_s, p_seed = rp
@@ -185,18 +189,19 @@ class branch():
 
         while len(self.spine)<self.n:
             self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
-            spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1])
-        spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
-        spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk, self.bdp)
+            self.spine = spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1], 'spine')
+        self.spine = spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
+        self.spine = spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk, self.bdp)
 
         self.spine = [vec+self.pack[0] for vec in self.spine]
         return self
     
     def regenerate(self):
-        for i in range(self.n-2):
-            spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1])
-        spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
-        spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
+        for i in range(2, self.n-1):
+            quat = spine_bend(self.spine[i-2:i+1], self.n, self.bdp, self.mp[5], self.pack[1], 'quat')
+            self.spine[i:] = [quat@(self.spine[k]-self.spine[i-1])+self.spine[i-1] for k in range(i,len(self.spine))]
+        self.spine = spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
+        self.spine = spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
     def guidesgen(self, density, t_p):
         self.childmp = [int(max(self.mp[0]//2+1, 4)), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]

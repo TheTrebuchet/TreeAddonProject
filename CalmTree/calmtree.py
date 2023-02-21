@@ -90,7 +90,6 @@ class CALMTREE_OT_new(bpy.types.Operator):
         tps.treename = context.object.name
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         context.object["CalmTreeConfig"] = saveconfig()
-        print(time.time()-st)
         return {'FINISHED'}
         
 class CALMTREE_OT_update(bpy.types.Operator):
@@ -118,8 +117,9 @@ class CALMTREE_OT_update(bpy.types.Operator):
         m_p, br_p, bn_p, bd_p, r_p, t_p, e_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
-        if len(custom_child)==1:
-            curve = [v.co for v in custom_child[0].data.vertices]
+        if custom_child:
+            pre_curve = [Vector(v.co) for v in custom_child[0].data.vertices]
+            curve = pre_curve.copy()
             if curve[-1].length<curve[0].length:
                 curve.reverse()
             #m_p[3]*=m_p[2]
