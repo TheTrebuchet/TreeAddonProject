@@ -279,8 +279,8 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_shift: bpy.props.FloatProperty(
         name='General Shape',
         description='Relation between the branch height and length. It can make the tree look more round or cone-shaped',
-        default=0.7,
-        min=0.01,
+        default=0.8,
+        min=-1,
         max=1,
         update=tree_update
     )

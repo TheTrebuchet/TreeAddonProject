@@ -153,19 +153,15 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     
     radii = lambda h, guide_l: min(max(scale_f1(h, flare)*radius*0.8, tipradius), guide_l/length*radius)
     lengthten = lambda h : length*scaling*scale_f2(h, shift)
-            
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
-    
-    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]/(1-start_h)) for i in range(len(sol))] #adjusting length
+    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #adjusting length
     
     for i in range(len(guides)):
         h = heights[i]
         ang = (math.pi/2-(h*minang+(1-h)*maxang))*random.uniform(1-var,1+var)
         guides[i] = Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i]
     
-    guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i]/(1-start_h), guides[i].length)] for i in range(len(orgs))] #creating guidepacks and radii
-    for i in range(len(guides)):
-        print(heights[i], radius*0.8*scale_f1(heights[i], flare), guides[i].length/length*radius, guidepacks[i][2])
+    guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i]/(1-start_h)-start_h, guides[i].length)] for i in range(len(orgs))] #creating guidepacks and radii
 
     return guidepacks
 

@@ -14,7 +14,7 @@ def parameters():
     
     # temporary parameters
     scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
-    scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
+    scale_lf2 = lambda x, a : (4*x*(1-x)*((1-round(a,3)**2)**0.5+1)/(2*(round(a,3)*(2*x-1)+1)))**(0.5+0.5*abs(round(a,3)))  #this one is for branches scale
     
     l=tps.Mlength/tps.Mvres
     m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
