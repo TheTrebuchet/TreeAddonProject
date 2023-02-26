@@ -23,7 +23,7 @@ def parameters():
     bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
     t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
     r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
-    e_p = [tps.interp]
+    e_p = [tps.interp, tps.poisson_qual, tps.poisson_type]
     return m_p, br_p, bn_p, bd_p, r_p, t_p, e_p
 
 def saveconfig():

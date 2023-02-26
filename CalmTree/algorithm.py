@@ -155,7 +155,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     radii = lambda h, guide_l: min(max(scale_f1(h, flare)*radius*0.8, tipradius), guide_l/length*radius)
     lengthten = lambda h : length*scaling*scale_f2(h, shift)
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
-    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #adjusting length
+    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #creating local guides and adjusting length
     
     for i in range(len(guides)):
         h = heights[i]
@@ -238,7 +238,6 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
     return branchlist
 
 def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
-    #TODO quick fix for smallest branches that stay in lower levels
     for lev in range(len(branchlist)-1):
         bran_i = 0
         while bran_i<len(branchlist[lev]):
@@ -247,7 +246,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
             else:bran_i+=1
 
 
-    #if the user doesn't need faces I provide only a spine
+    #IF NOT FACEBOOL
     if not facebool:
         verts = []
         edges =[]
@@ -260,6 +259,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
         verts = [vec*m_p[4] for vec in verts] #scale update
         return verts, edges, [], []
     
+    #FACEBOOL
     faces=[]
 
     #generating faces, needs branches

@@ -52,6 +52,23 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         max=3,
         update=tree_update
     )
+    #((name='Fast', description='Quick but mostly inaccurate algorithm'),(name='Fancy', description='Slower but more advanced algorithm'))
+    poisson_type: bpy.props.EnumProperty(
+        name='Poisson Type',
+        description='Algorithm for new branch placement',
+        default=0,
+        items=((('fast', 'Fast','Quick but mostly inaccurate algorithm'),('fancy', 'Fancy','Slower but more advanced algorithm'))),
+        default='fancy',
+        update=tree_update
+    )
+    poisson_qual: bpy.props.IntProperty(
+        name='Poisson Quality',
+        description='Changes algorithm precision, comes at steep performance cost',
+        default=7,
+        min=1,
+        max=20,
+        update=tree_update
+    )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
         description='Number of segments in the circle of the main trunk',
