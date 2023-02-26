@@ -1,4 +1,4 @@
-from math import sin, cos, copysign
+from math import sin, cos
 import math
 import random
 from mathutils import Vector, Matrix
@@ -10,7 +10,6 @@ def pseudo_poisson_disc(n, length, radius, seed):
         random.seed(seed)
         h = random.uniform(0, length/radius)**0.5*(length/radius)**0.5
         seed+=1
-        random.seed(seed)
         a = (random.uniform(-math.pi,math.pi))
         result.append((a,h))
     return result

@@ -131,13 +131,14 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     l = m_p[5]
     spine = spine[floor(start_h*len(spine)):]
     random.seed(sd)
+    sd+=1
     k = 8
     grid = [[]]
     orgs = []
     heights = []
     idx = len(spine)-2
     dist = 1/3*length*scaling
-    ran = 10
+    ran = ceil(len(spine)/4)
     while idx>0:
         found = False
         for i in range(k):
