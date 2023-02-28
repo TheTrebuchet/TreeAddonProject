@@ -3,13 +3,10 @@ import math
 import random
 from mathutils import Vector, Matrix
 
-def pseudo_poisson_disc(n, length, radius, seed):
+def pseudo_poisson_disc(n, length, radius):
     result = []
     for i in range(n):
-        seed+=1
-        random.seed(seed)
         h = random.uniform(0, length/radius)**0.5*(length/radius)**0.5
-        seed+=1
         a = (random.uniform(-math.pi,math.pi))
         result.append((a,h))
     return result

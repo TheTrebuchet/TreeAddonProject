@@ -7,7 +7,7 @@ class CALMTREE_PT_createparent:
     bl_context = "objectmode"
 
 class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
-    """Creates a Panel in the Object properties window for tree creation, use with caution"""
+    """Creates a Panel for tree creation"""
     bl_label = "CalmTree"
     bl_space_type = "VIEW_3D"  
     bl_region_type = "UI"
@@ -73,7 +73,7 @@ class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
         col.prop(wm.calmtree_props, 'branch_shift')
 
 class CALMTREE_PT_createedit(bpy.types.Panel):
-    """Creates a Panel in the Object properties window for tree creation"""
+    """Creates a Panel for tree creation"""
     bl_label = "TreeEdit"
     bl_space_type = "VIEW_3D"  
     bl_region_type = "UI"
@@ -89,8 +89,8 @@ class CALMTREE_PT_createedit(bpy.types.Panel):
         col.operator('object.tree_regrow', text = 'Regrow',icon='SCRIPT')
     
 
-class CALMTREE_PT_createsubpanel(CALMTREE_PT_createparent, bpy.types.Panel):
-    """Creates a Panel in the Object properties window for tree creation"""
+class CALMTREE_PT_createexperimental(CALMTREE_PT_createparent, bpy.types.Panel):
+    """Creates a Panel for tree creation"""
     bl_label = "Experimental"
     bl_parent_id = "CALMTREE_PT_createmain"
     bl_options = {"DEFAULT_CLOSED"}
@@ -100,5 +100,22 @@ class CALMTREE_PT_createsubpanel(CALMTREE_PT_createparent, bpy.types.Panel):
         wm = context.window_manager
         col = layout.column(align=True)
         col.prop(wm.calmtree_props, "branch_horizontal")
-        col.prop(wm.calmtree_props, "interp")
         layout.prop_search(wm.calmtree_props, 'leafname', context.scene, "objects")
+
+class CALMTREE_PT_createadvanced(CALMTREE_PT_createparent, bpy.types.Panel):
+    """Creates a Panel for tree creation"""
+    bl_label = "Advanced"
+    bl_parent_id = "CALMTREE_PT_createmain"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self,context):
+        layout = self.layout
+        wm = context.window_manager
+        tps = bpy.data.window_managers["WinMan"].calmtree_props
+
+        col = layout.column(align=False)
+        col.prop(wm.calmtree_props, "interp")
+        col.label(text="Branch generation")
+        col.prop(wm.calmtree_props, "poisson_type")
+        if tps.poisson_type=='fancy':
+            col.prop(wm.calmtree_props, "poisson_qual")

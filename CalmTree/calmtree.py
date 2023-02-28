@@ -23,7 +23,7 @@ def parameters():
     bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
     t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
     r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
-    e_p = [tps.interp, tps.poisson_qual, tps.poisson_type]
+    e_p = [tps.interp, tps.poisson_type, tps.poisson_qual]
     return m_p, br_p, bn_p, bd_p, r_p, t_p, e_p
 
 def saveconfig():
@@ -53,7 +53,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
         #m_p[3]*=m_p[2]
         st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
         branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
-        branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
+        branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p)
         verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
         
         #creating the tree
@@ -137,7 +137,7 @@ class CALMTREE_OT_update(bpy.types.Operator):
         '''
 
         #generates the trunk and lists of lists of branches
-        branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
+        branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p)
         verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
         #updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new('tree update')
@@ -226,7 +226,7 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
             #generates the trunk and lists of lists of stuff
             m_p[3]*=m_p[2]
             branchlist = branchinit(curve, m_p, bd_p, br_p, r_p)
-            branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p)
+            branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p)
             verts, edges, faces, selection = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
             
             #creating the tree

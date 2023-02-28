@@ -9,7 +9,6 @@ from .helper import *
 def spine_bend(spine, n, bd_p, l, guide, mode):
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
     f_noise = lambda i, b_seed: b_a*noise.noise((0, b_seed, i*l*b_s))
-    print(spine)
     
     old_vec = spine[-2] - spine[-3] #get previous vector
     angle = (Vector((0,0,1)).angle(old_vec)) #calculate global angle
@@ -120,7 +119,7 @@ def face_gen(s, n):
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
 
-def guides_gen(spine, lim, m_p, br_p, t_p):
+def guides_gen(spine, lim, m_p, br_p, t_p, qual):
     length, radius, tipradius = m_p[1:4]
     minang, maxang, start_h, horizontal, var, scaling, sd = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
@@ -131,8 +130,6 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     l = m_p[5]
     spine = spine[floor(start_h*len(spine)):]
     random.seed(sd)
-    sd+=1
-    k = 8
     grid = [[]]
     orgs = []
     heights = []
@@ -141,7 +138,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     ran = ceil(len(spine)/4)
     while idx>0:
         found = False
-        for i in range(k):
+        for i in range(qual):
             npt, origin, h = ptgen(spine, dist, idx, scale_f1, flare, horizontal)
             if check(npt, grid, lim, idx, ran):
                 grid[-1].append(npt)
@@ -163,10 +160,32 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
         guides[i] = Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i]
     
     guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i]/(1-start_h)-start_h, guides[i].length)] for i in range(len(orgs))] #creating guidepacks and radii
-
     return guidepacks
 
-#generates a single trunk, whether it will be branch or the main trunk
+def fastguides_gen(spine, number, m_p, br_p, t_p):
+    n = len(spine)
+    length, radius, tipradius = m_p[1:4]
+    minang, maxang, start_h, horizontal, var, scaling, br_seed = br_p[1:]
+    scale_f1, flare, scale_f2, shift = t_p
+    guidepacks = []
+    random.seed(br_seed)
+    chosen = pseudo_poisson_disc(number, length, radius)
+    for i in range(number):
+        height = chosen[i][1]*radius/length*(1-start_h)+start_h
+        pick = math.floor(n*height)
+        trans_vec = spine[pick]*(height*n-pick)+spine[pick]*(pick+1-height*n)
+        x = (height-start_h)/(1-start_h)
+        ang = minang*x+maxang*(1-x)
+        ang += random.uniform(-var*ang,var*ang)
+        a = chosen[i][0]
+        quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1])
+        dir_vec = Vector((math.sin(ang)*math.cos(a),math.sin(ang)*math.sin(a), math.cos(ang))).normalized()
+        guide_vec = quat @ dir_vec
+        guide_vec *= length*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var)
+        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius)
+        guidepacks.append((trans_vec, guide_vec, guide_r))
+    return guidepacks
+
 class branch():
     def __init__(self, pack, m_p, bd_p, br_p, r_p, trunk):
         self.pack = pack
@@ -200,9 +219,13 @@ class branch():
         self.spine = spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
         self.spine = spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
-    def guidesgen(self, density, t_p):
+    def guidesgen(self, density, t_p, typ, qual):
         self.childmp = [int(max(self.mp[0]//2+1, 4)), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
-        self.guidepacks = guides_gen(self.spine, 1/density, self.mp, self.brp, t_p)
+        if typ == 'fancy':
+            self.guidepacks = guides_gen(self.spine, 1/density, self.mp, self.brp, t_p, qual)
+        elif typ == 'fast':
+            num = lambda d, l: ceil((2.2*l+11)*d**(1.37*l**0.1))
+            self.guidepacks = fastguides_gen(self.spine, num(density, self.mp[1]), self.mp, self.brp, t_p)
     
     def interpolate(self, lev):
         if len(self.spine)>3:
@@ -221,20 +244,19 @@ class branch():
 
 # THE MIGHTY TREE GENERATION
 
-def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
+def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p):
     #creating the rest of levels
-    tim = 0
     for lev in range(br_p[0]):
         branchlist.append([])
         for parent in branchlist[-2]:
-            parent.guidesgen(bn_p[lev], t_p)
+            parent.guidesgen(bn_p[lev], t_p, e_p[1], e_p[2])
             children = parent.guidepacks
+            print(len(children), parent.mp[1], bn_p[lev])
             for pack in children:
                 r_p[2] +=1
                 bd_p[-1] +=1
                 br_p[-1] +=1
                 branchlist[-1].append(branch(pack, parent.childmp, bd_p, br_p, r_p, False).generate())
-    print(tim)
     return branchlist
 
 def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
