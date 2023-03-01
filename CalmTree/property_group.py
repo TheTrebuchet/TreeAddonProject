@@ -15,7 +15,15 @@ def leaf_update(self,context):
     bpy.context.object.modifiers["CalmTree"].show_render = tps.leafbool
 def leafname_update(self,context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
-    bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
+    name = tps.leafname
+    if not name:
+        tps.leafbool=False
+    elif name:
+        bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
+        if context.object.modifiers["CalmTree"].show_viewport == True:
+            context.object.modifiers["CalmTree"].show_viewport = False
+            context.object.modifiers["CalmTree"].show_viewport = True
+
 
 
 
