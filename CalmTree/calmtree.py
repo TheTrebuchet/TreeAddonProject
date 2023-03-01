@@ -352,18 +352,17 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         if colname not in [i.name for i in bpy.data.collections]:
             col = bpy.data.collections.new(colname)
             bpy.context.scene.collection.children.link(col)
+        else:
+            col = bpy.data.collections[colname]
 
-        if name != 'basic_leaf':
-            ob = bpy.data.objects[name]
-            ob.users_collection[0].objects.unlink(ob)
-            bpy.data.collections[colname].link(ob)
-
-        elif 'basic_leaf' in [o.name for o in bpy.data.objects] and name =='basic_leaf':
-            col.objects.link(bpy.data.objects['basic_leaf'])
-        elif 'basic_leaf' not in [o.name for o in bpy.data.objects] and name =='basic_leaf':
+        if name =='basic_leaf' and 'basic_leaf' not in [o.name for o in bpy.data.objects]:
             mesh = bpy.data.meshes.new(name)
             object = bpy.data.objects.new(name, mesh)
             col.objects.link(object)
             verts = [Vector((1,0,0)),Vector((1,2,0)),Vector((-1,2,0)),Vector((-1,0,0))]
             mesh.from_pydata(verts,[], [[0,1,2,3]])
+        else: 
+            ob = bpy.data.objects[name]
+            ob.users_collection[0].objects.unlink(ob)
+            col.objects.link(ob)
         return {'FINISHED'}

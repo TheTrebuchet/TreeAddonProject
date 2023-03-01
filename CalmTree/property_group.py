@@ -44,7 +44,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         update=leaf_update,
     )
     leafname: bpy.props.StringProperty(
-        name='Leaf Object',
+        name='Leaf',
         description='object used to create leaves, x is width, y is length',
         default='',
         update=leafname_update
@@ -62,7 +62,6 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         max=3,
         update=tree_update
     )
-    #((name='Fast', description='Quick but mostly inaccurate algorithm'),(name='Fancy', description='Slower but more advanced algorithm'))
     poisson_type: bpy.props.EnumProperty(
         name='Type',
         description='Algorithm for new branch placement',
@@ -181,7 +180,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
 
     bends_weight: bpy.props.FloatProperty(
         name='Weight Factor',
-        description='Raise this value to weigh down heavy branches, same as it would happen naturally. If your tree falls down, it means it is too heavy, either lower weight or raise the correction amount',
+        description='Used to weigh down heavy branches. If your tree falls down, it means it is too heavy, lower weight or raise the correction amount',
         default=0.1,
         min=0.0,
         soft_max=1,
