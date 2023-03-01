@@ -350,19 +350,19 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         name = tps.leafname
 
         if colname not in [i.name for i in bpy.data.collections]:
-            collection = bpy.data.collections.new(colname)
-            bpy.context.scene.collection.children.link(collection)
+            col = bpy.data.collections.new(colname)
 
-        for col in bpy.data.collections:
-            if col.name == colname and name not in [o.name for o in col.objects]:
-                if name in [o.name for o in bpy.data.objects]:
-                    object = bpy.data.objects[name]
-                    bpy.context.scene.collection.objects.unlink(object)
-                    col.objects.link(object)
-                    break
-                mesh = bpy.data.meshes.new(name)
-                object = bpy.data.objects.new(name, mesh)
-                col.objects.link(object)
-                verts = [Vector((1,0,0)),Vector((1,2,0)),Vector((-1,2,0)),Vector((-1,0,0))]
-                mesh.from_pydata(verts,[], [[0,1,2,3]])
+        if name != 'basic_leaf':
+            ob = bpy.data.objects[name]
+            ob.users_collection[0].objects.unlink(ob)
+            bpy.data.collections[colname]
+
+        elif 'basic_leaf' in [o.name for o in bpy.data.objects] and name =='basic leaf':
+            col.objects.link(bpy.data.objects['basic_leaf'])
+        elif 'basic_leaf' not in [o.name for o in bpy.data.objects] and name =='basic leaf':
+            mesh = bpy.data.meshes.new(name)
+            object = bpy.data.objects.new(name, mesh)
+            col.objects.link(object)
+            verts = [Vector((1,0,0)),Vector((1,2,0)),Vector((-1,2,0)),Vector((-1,0,0))]
+            mesh.from_pydata(verts,[], [[0,1,2,3]])
         return {'FINISHED'}

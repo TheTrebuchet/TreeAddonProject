@@ -7,13 +7,15 @@ def tree_update(self, context):
         bpy.ops.object.tree_update()
 def leaf_update(self,context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
-    bpy.context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
-    bpy.context.object.modifiers["CalmTree"].show_in_editmode = tps.leafbool
     if tps.leafbool:
         if tps.leafname =='':tps.leafname='basic_leaf'
         bpy.ops.object.tree_leaf()
         bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
-        bpy.context.object.modifiers["CalmTree"].show_viewport = True
+    bpy.context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
+    bpy.context.object.modifiers["CalmTree"].show_render = tps.leafbool
+def leafname_update(self,context):
+    tps = bpy.data.window_managers['WinMan'].calmtree_props
+    bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
 
 
 
@@ -37,7 +39,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         name='Leaf Object',
         description='object used to create leaves, x is width, y is length',
         default='',
-        update=leaf_update
+        update=leafname_update
     )
     treename: bpy.props.StringProperty(
         name='Tree name',
