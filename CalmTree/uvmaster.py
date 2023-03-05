@@ -11,16 +11,22 @@ class CALMTREE_OT_uv(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.object.editmode_toggle(True)
         info = [list(l) for l in bpy.context.object["CalmTreeLog"]]
+        cam = context.scene.camera
+        if not cam: 
+            self.report({"INFO"}, "This won't work without camera in the scene")
+            return{'FINISHED'}
+        loc = bpy.context.scene.camera.location
+
+        obj = bpy.context.object
+        me = obj.data
+        
         for bran in info:
             start = bran[0]
             sides = bran[2]
-            loc = bpy.context.scene.camera.location
-
-            obj = bpy.context.object
-            me = obj.data
+            
 
             base = [(v.co-loc).length for v in me.vertices[start:start+sides-1]]
-            stidx = base.index(min(base))+start
+            stidx = base.index(max(base))+start
 
             bran.append(stidx)
             index = [stidx,stidx+sides] # here the index you want select please change 
