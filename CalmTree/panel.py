@@ -3,15 +3,15 @@ import bpy
 class CALMTREE_PT_createparent:
     bl_space_type = "VIEW_3D"  
     bl_region_type = "UI"
-    bl_category = "Create"
+    bl_category = "CalmTree"
     bl_context = "objectmode"
 
 class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
     """Creates a Panel for tree creation"""
-    bl_label = "CalmTree"
-    bl_space_type = "VIEW_3D"  
+    bl_label = "CalmTree Generator"
+    bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "Create"
+    bl_category = "CalmTree"
     
     '''    @staticmethod
     def poll(self,context):
@@ -32,7 +32,7 @@ class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
         col.operator('object.tree_default', text = 'Reset to default', icon='LOOP_BACK')
         col.separator()
         col.operator('object.tree_draw', text='draw trunk', icon = 'GREASEPENCIL')
-        col.operator('object.tree_uv', text='uv')
+        
         
         col.label(text="Main Settings")
         col.prop(wm.calmtree_props, "leafbool")
@@ -78,7 +78,7 @@ class CALMTREE_PT_createedit(bpy.types.Panel):
     bl_label = "TreeEdit"
     bl_space_type = "VIEW_3D"  
     bl_region_type = "UI"
-    bl_category = "Create"
+    bl_category = "CalmTree"
     bl_context = "curve_edit"
 
     def draw(self, context):
@@ -100,8 +100,7 @@ class CALMTREE_PT_createexperimental(CALMTREE_PT_createparent, bpy.types.Panel):
         layout = self.layout
         wm = context.window_manager
         col = layout.column(align=True)
-        col.prop(wm.calmtree_props, "branch_horizontal")
-        layout.prop_search(wm.calmtree_props, 'leafname', context.scene, "objects")
+        
 
 class CALMTREE_PT_createadvanced(CALMTREE_PT_createparent, bpy.types.Panel):
     """Creates a Panel for tree creation"""
@@ -114,9 +113,31 @@ class CALMTREE_PT_createadvanced(CALMTREE_PT_createparent, bpy.types.Panel):
         wm = context.window_manager
         tps = bpy.data.window_managers["WinMan"].calmtree_props
 
-        col = layout.column(align=False)
+        col = layout.column(align=True)
         col.prop(wm.calmtree_props, "interp")
+        col.prop(wm.calmtree_props, "branch_horizontal")
         col.label(text="Branch generation")
         col.prop(wm.calmtree_props, "poisson_type")
         if tps.poisson_type=='fancy':
             col.prop(wm.calmtree_props, "poisson_qual")
+
+class CALMTREE_PT_materialsparent:
+    bl_space_type = "VIEW_3D"  
+    bl_region_type = "UI"
+    bl_category = "CalmTree"
+    bl_context = "objectmode"
+
+class CALMTREE_PT_materialsmain(CALMTREE_PT_materialsparent, bpy.types.Panel):
+    """Creates a Panel for tree creation"""
+    bl_label = "CalmTree Materials"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "CalmTree"
+    
+    def draw(self, context):
+        wm = context.window_manager
+        layout = self.layout
+        col = layout.column(align=True)
+        col.label(text="UV Tools")
+        col.operator('object.tree_uv', text='UV from Camera', icon = 'UV')
+        layout.prop_search(wm.calmtree_props, 'leafname', context.scene, "objects")
