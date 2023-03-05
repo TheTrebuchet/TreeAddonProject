@@ -32,6 +32,7 @@ class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
         col.operator('object.tree_default', text = 'Reset to default', icon='LOOP_BACK')
         col.separator()
         col.operator('object.tree_draw', text='draw trunk', icon = 'GREASEPENCIL')
+        col.operator('object.tree_uv', text='uv')
         
         col.label(text="Main Settings")
         col.prop(wm.calmtree_props, "leafbool")

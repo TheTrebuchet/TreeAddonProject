@@ -34,6 +34,7 @@ import bpy
 from .calmtree import *
 from .property_group import *
 from .panel import *
+from .uvmaster import *
 
 classes = (
 CALMTREE_OT_new,
@@ -47,7 +48,8 @@ CALMTREE_PT_createexperimental,
 CALMTREE_PT_createedit,
 CALMTREE_OT_leaf,
 CALMTREE_OT_draw,
-CALMTREE_OT_regrow)
+CALMTREE_OT_regrow,
+CALMTREE_OT_uv)
 
 def register():
     for cls in classes:

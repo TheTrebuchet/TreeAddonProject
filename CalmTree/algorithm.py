@@ -284,12 +284,13 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
     
     #FACEBOOL
     faces=[]
-
-    #generating faces, needs branches
+    
+    #generating faces
     for lev in range(br_p[0]+1):
         for bran in branchlist[lev]:
             if e_p[0]!=0:bran.interpolate(e_p[0])
             faces.append(face_gen(bran.mp[0], bran.n))
+            
     #combining faces
     while True:
         if len(faces) == 1:
@@ -300,12 +301,19 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
     #generating verts from spine and making selection
     verts = []
     selection=[0]
+    info=[]
     for lev in range(len(branchlist)):
         if lev == len(branchlist)-1:
             selection[0] = len(verts)
         for bran in branchlist[lev]:
+            info.append([0,bran.mp[0]*bran.n-1, bran.mp[0]])
             verts.extend(bark_gen(bran.spine, bran.mp, t_p))
+    
     selection = list(range(selection[0], len(verts)))
+    
+    for i in range(1,len(info)):
+        info[i][0]=info[i-1][1]+1
+        info[i][1]+=info[i][0]
 
     #flattening the base, 
     for lev in range(m_p[0]):
@@ -314,7 +322,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
     #scaling the tree
     verts = [vec*m_p[4] for vec in verts]
     
-    return verts, [], faces, selection
+    return verts, [], faces, selection, info
 
 def branchinit(verts, m_p, bd_p, br_p, r_p):
     m_p[3]*=m_p[2]
