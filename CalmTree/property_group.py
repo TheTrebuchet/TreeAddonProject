@@ -8,18 +8,15 @@ def tree_update(self, context):
 def leaf_update(self,context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
     if tps.leafbool:
-        if tps.leafname =='':tps.leafname='basic_leaf'
         bpy.ops.object.tree_leaf()
-        bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
-    bpy.context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
-    bpy.context.object.modifiers["CalmTree"].show_render = tps.leafbool
+        context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafchoice]
+    context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
+    context.object.modifiers["CalmTree"].show_render = tps.leafbool
 def leafname_update(self,context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
-    name = tps.leafname
-    if not name:
-        tps.leafbool=False
-    elif name:
-        bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
+    if tps.leafbool:
+        bpy.ops.object.tree_leaf()
+        context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafchoice]
         if context.object.modifiers["CalmTree"].show_viewport == True:
             context.object.modifiers["CalmTree"].show_viewport = False
             context.object.modifiers["CalmTree"].show_viewport = True
@@ -43,10 +40,21 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         default=False,
         update=leaf_update,
     )
-    leafname: bpy.props.StringProperty(
+    leafchoice: bpy.props.EnumProperty(
         name='Leaf',
-        description='object used to create leaves, x is width, y is length',
-        default='',
+        description='Leaf option',
+        items=((('plane','Plane','just a rectangle'),
+                ('basic','Basic leaf','just a rectangle'),
+                ('birch','Brich','Birch leaf'),
+                ('elm','Elm','Elm leaf'),
+                ('magnolia','Magnolia','magnolia leaf'),
+                ('oak','Oak','Oak leaf'),
+                ('redalder','Red Alder','Red Alder leaf'),
+                ('sycamore','Sycamore','Sycamore leaf'),
+                ('tulip','Tulip Tree','Tulip leaf'),
+                ('willow','Willow','Willow leaf'),
+                ('custom','Custom','Custom object'))),
+        default='basic',
         update=leafname_update
     )
     treename: bpy.props.StringProperty(

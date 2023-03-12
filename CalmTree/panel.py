@@ -137,7 +137,11 @@ class CALMTREE_PT_materialsmain(CALMTREE_PT_materialsparent, bpy.types.Panel):
     def draw(self, context):
         wm = context.window_manager
         layout = self.layout
+        tps = bpy.data.window_managers["WinMan"].calmtree_props
         col = layout.column(align=True)
         col.label(text="UV Tools")
         col.operator('object.tree_uv', text='UV from Camera', icon = 'UV')
-        layout.prop_search(wm.calmtree_props, 'leafname', context.scene, "objects")
+        col.operator('object.tree_leafimport', text='Import Leaves')
+        layout.prop(wm.calmtree_props, 'leafchoice')
+        if tps.leafchoice == 'custom':            
+            col.label(text="head over to geogroup tab!")
