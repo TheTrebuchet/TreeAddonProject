@@ -280,6 +280,8 @@ def leafnode_node_group():
     leafnode.links.new(math_004.outputs[0], math_006.inputs[0])
     #math_005.Value -> math_006.Value
     leafnode.links.new(math_005.outputs[0], math_006.inputs[1])
+    #group_input.Color -> reroute_002.Input
+    leafnode.links.new(group_input.outputs[0], reroute_002.inputs[0])
     #group_input.Value -> math_002.Value
     leafnode.links.new(group_input.outputs[1], math_002.inputs[1])
     #reroute_001.Output -> math_004.Value
@@ -300,8 +302,6 @@ def leafnode_node_group():
     leafnode.links.new(mix.outputs[2], diffuse_bsdf.inputs[0])
     #mix.Result -> translucent_bsdf.Color
     leafnode.links.new(mix.outputs[2], translucent_bsdf.inputs[0])
-    #group_input.Color -> reroute_002.Input
-    leafnode.links.new(group_input.outputs[0], reroute_002.inputs[0])
     #reroute_003.Output -> bright_contrast.Color
     leafnode.links.new(reroute_003.outputs[0], bright_contrast.inputs[0])
     #separate_xyz_001.X -> vector_math.Vector
