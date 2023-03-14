@@ -47,7 +47,7 @@ CALMTREE_PT_createadvanced,
 CALMTREE_PT_materialsmain,
 CALMTREE_PT_createedit,
 CALMTREE_OT_leaf,
-CALMTREE_OT_leafimport,
+CALMTREE_OT_leafmaterials,
 CALMTREE_OT_draw,
 CALMTREE_OT_regrow,
 CALMTREE_OT_uv)

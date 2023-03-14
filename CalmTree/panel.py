@@ -141,7 +141,7 @@ class CALMTREE_PT_materialsmain(CALMTREE_PT_materialsparent, bpy.types.Panel):
         col = layout.column(align=True)
         col.label(text="UV Tools")
         col.operator('object.tree_uv', text='UV from Camera', icon = 'UV')
-        col.operator('object.tree_leafimport', text='Import Leaves')
         layout.prop(wm.calmtree_props, 'leafchoice')
         if tps.leafchoice == 'custom':            
             col.label(text="head over to geogroup tab!")
+        col.operator('object.tree_leafmat', text='Leaf Mat')

@@ -3,6 +3,7 @@ import bmesh
 import os
 from .geogroup import *
 from .algorithm import *
+from .leafgroup import *
 
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
@@ -367,12 +368,15 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
             col.objects.link(ob)
         return {'FINISHED'}
     
-class CALMTREE_OT_leafimport(bpy.types.Operator):
-    """handles leafes import"""
-    bl_idname = 'object.tree_leafimport'
-    bl_label = 'import leaves'
+class CALMTREE_OT_leafmaterials(bpy.types.Operator):
+    """handles leaves materials"""
+    bl_idname = 'object.tree_leafmat'
+    bl_label = 'add leaf mat'
     bl_options = {'REGISTER', 'UNDO'}
     def execute(self,context):
-
-        
+        mat = bpy.data.materials.new(name = "leaf")
+        mat.use_nodes = True
+        rgb = (0.1369853913784027, 0.1911628544330597, 0.009205194190144539, 1.0)
+        leafnode_node_group()
+        leaf_node_group(mat, rgb)
         return {'FINISHED'}
