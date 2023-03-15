@@ -274,8 +274,8 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
             geo_mod = bpy.context.object.modifiers['CalmTree']
             if not geo_mod.node_group:
                 geo_mod.node_group = ng
-            bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_2_use_attribute\"]", modifier_name="CalmTree")
-            bpy.context.object.modifiers["CalmTree"]["Input_2_attribute_name"] = "leaves"
+            bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_1_use_attribute\"]", modifier_name="CalmTree")
+            bpy.context.object.modifiers["CalmTree"]["Input_1_attribute_name"] = "leaves"
             tps.treename = context.object.name
             
             context.object["CalmTreeConfig"] = saveconfig()
@@ -354,6 +354,14 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         directory = os.path.dirname(script_file)
         colname = "CalmTreeLeaves"
         name = tps.leafchoice
+        maatbool = tps.leafmatbool
+
+        def matgen():
+            mat = bpy.data.materials.new(name = "leaf")
+            mat.use_nodes = True
+            rgb = (0.1369853913784027, 0.1911628544330597, 0.009205194190144539, 1.0)
+            leafnode_node_group()
+            leaf_node_group(mat, rgb)
 
         bpy.ops.object.select_all(action='DESELECT')
         if colname not in [i.name for i in bpy.data.collections]:
