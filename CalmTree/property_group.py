@@ -37,7 +37,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     leafmatbool: bpy.props.BoolProperty(
         name='Stock material',
         description='updates leaves to stock material',
-        default=False,
+        default=True,
         update=leaf_update,
     )
     leafchoice: bpy.props.EnumProperty(
