@@ -86,8 +86,8 @@ class CALMTREE_OT_new(bpy.types.Operator):
         geo_mod = bpy.context.object.modifiers['CalmTree']
         if not geo_mod.node_group:
             geo_mod.node_group = ng
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_2_use_attribute\"]", modifier_name="CalmTree")
-        bpy.context.object.modifiers["CalmTree"]["Input_2_attribute_name"] = "leaves"
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_1_use_attribute\"]", modifier_name="CalmTree")
+        bpy.context.object.modifiers["CalmTree"]["Input_1_attribute_name"] = "leaves"
         
         #writing properties
         tps.treename = context.object.name

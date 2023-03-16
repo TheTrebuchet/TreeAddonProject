@@ -10,17 +10,11 @@ def leaf_update(self,context):
     if tps.leafbool:
         bpy.ops.object.tree_leaf()
         context.object.modifiers["CalmTree"]["Input_2"] = bpy.data.objects[tps.leafchoice]
+    if context.object.modifiers["CalmTree"].show_viewport == True:
+        context.object.modifiers["CalmTree"].show_viewport = False
+        context.object.modifiers["CalmTree"].show_viewport = True
     context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
     context.object.modifiers["CalmTree"].show_render = tps.leafbool
-def leafname_update(self,context):
-    tps = bpy.data.window_managers['WinMan'].calmtree_props
-    if tps.leafbool:
-        bpy.ops.object.tree_leaf()
-        context.object.modifiers["CalmTree"]["Input_2"] = bpy.data.objects[tps.leafchoice]
-        if context.object.modifiers["CalmTree"].show_viewport == True:
-            context.object.modifiers["CalmTree"].show_viewport = False
-            context.object.modifiers["CalmTree"].show_viewport = True
-
 
 
 
@@ -42,7 +36,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     )
     leafmatbool: bpy.props.BoolProperty(
         name='Stock material',
-        description='updates currently selected tree leaf to stock material',
+        description='updates leaves to stock material',
         default=False,
         update=leaf_update,
     )
@@ -61,7 +55,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
                 ('willow','Willow','Willow leaf'),
                 ('custom','Custom','Custom object'))),
         default='basic',
-        update=leafname_update
+        update=leaf_update
     )
     treename: bpy.props.StringProperty(
         name='Tree name',

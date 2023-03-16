@@ -149,7 +149,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p, qual):
             idx-=1
             grid.append([])
     
-    radii = lambda h, guide_l: min(max(scale_f1(h, flare)*radius*0.8, tipradius), guide_l/length*radius)
+    radii = lambda h, guide_l: min(max(scale_f1(h*(1-start_h)+start_h, flare)*radius*0.8, tipradius), guide_l/length*radius)
     lengthten = lambda h : length*scaling*scale_f2(h, shift)
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
     guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #creating local guides and adjusting length
@@ -220,7 +220,7 @@ class branch():
         self.spine = spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
     def guidesgen(self, density, t_p, typ, qual):
-        self.childmp = [int(max(self.mp[0]//2+1, 4)), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
+        self.childmp = [int(max(self.mp[0]//2+1, 3)), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
         if typ == 'fancy':
             self.guidepacks = guides_gen(self.spine, 1/density, self.mp, self.brp, t_p, qual)
         elif typ == 'fast':
