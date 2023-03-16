@@ -356,12 +356,23 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         name = tps.leafchoice
         maatbool = tps.leafmatbool
 
-        def matgen():
+        def matgen(name):
             mat = bpy.data.materials.new(name = "leaf")
             mat.use_nodes = True
+            if 'leafnode' not in [n.name for n in bpy.data.node_groups]:
+                leafnode_node_group()
+            rgb = {'basic':(),
+                   'birch':(),
+                   'elm':(),
+                   'magnolia':(),
+                   'oak':(),
+                   'redalder':(),
+                   'sycamore':(),
+                   'tuliptree':(),
+                   'willow':()}
             rgb = (0.1369853913784027, 0.1911628544330597, 0.009205194190144539, 1.0)
-            leafnode_node_group()
-            leaf_node_group(mat, rgb)
+            
+            leaf_node_group(mat, rgb[name])
 
         bpy.ops.object.select_all(action='DESELECT')
         if colname not in [i.name for i in bpy.data.collections]:
