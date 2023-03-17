@@ -354,25 +354,26 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         directory = os.path.dirname(script_file)
         colname = "CalmTreeLeaves"
         name = tps.leafchoice
-        maatbool = tps.leafmatbool
-
-        def matgen(name):
-            mat = bpy.data.materials.new(name = "leaf")
-            mat.use_nodes = True
+        matbool = tps.leafmatbool
+        
+        rgb = {'basic':(0.1369853913784027, 0.1911628544330597, 0.009205194190144539, 1.0),
+               'birch':(0.11697068810462952, 0.2422812283039093, 0.0024282161612063646, 1.0),
+               'elm':(0.12477181106805801, 0.27049776911735535, 0.16202937066555023, 1.0),
+               'magnolia':(0.03954625129699707, 0.1499597728252411, 0.0, 1.0),
+               'oak':(0.17144110798835754, 0.32314327359199524, 0.0, 1.0),
+               'redalder':(0.10424429923295975, 0.19119800627231598, 0.055753905326128006, 1.0),
+               'sycamore':(0.09305897355079651, 0.17464742064476013, 0.005181516520678997, 1.0),
+               'tuliptree':(0.16826941072940826, 0.3049874007701874, 0.03433980047702789, 1.0),
+               'willow':(0.27049776911735535, 0.45641112327575684, 0.014443845488131046, 1.0)}
+        
+        if matbool:
             if 'leafnode' not in [n.name for n in bpy.data.node_groups]:
                 leafnode_node_group()
-            rgb = {'basic':(),
-                   'birch':(),
-                   'elm':(),
-                   'magnolia':(),
-                   'oak':(),
-                   'redalder':(),
-                   'sycamore':(),
-                   'tuliptree':(),
-                   'willow':()}
-            rgb = (0.1369853913784027, 0.1911628544330597, 0.009205194190144539, 1.0)
-            
-            leaf_node_group(mat, rgb[name])
+                
+            if name not in [m.name for m in bpy.data.materials]:
+                mat = bpy.data.materials.new(name)
+                mat.use_nodes = True
+                leaf_node_group(mat, rgb[name])
 
         bpy.ops.object.select_all(action='DESELECT')
         if colname not in [i.name for i in bpy.data.collections]:
@@ -380,11 +381,15 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
             bpy.context.scene.collection.children.link(col)
         else:
             col = bpy.data.collections[colname]
+
         if name not in [o.name for o in bpy.data.objects]:
             bpy.ops.import_scene.fbx(filepath = directory+'/assets/'+name+'.fbx')
             ob = bpy.data.objects[name]
             ob.users_collection[0].objects.unlink(ob)
             col.objects.link(ob)
+            if matbool:
+                if ob.data.materials: ob.data.materials[0] = mat
+                else: ob.data.materials.append(mat)
         return {'FINISHED'}
     
 class CALMTREE_OT_leafmaterials(bpy.types.Operator):
