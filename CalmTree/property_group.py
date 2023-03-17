@@ -156,7 +156,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         name='Jiggle Seed',
         default=1,
         min=1,
-        update=tree_update
+        update=tree_update,
     )
 
     bends_amount: bpy.props.FloatProperty(
