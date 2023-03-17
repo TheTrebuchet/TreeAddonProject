@@ -162,7 +162,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     bends_amount: bpy.props.FloatProperty(
         name='Bending Amount',
         description='Raise this value if you want to bend the Tree curve',
-        default=0.2
+        default=0.2,
         min=0.0,
         soft_max=10,
         update=tree_update
