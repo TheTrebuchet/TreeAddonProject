@@ -32,7 +32,7 @@ bl_info = {
 import bpy
 
 from .calmtree import *
-from .property_group import *
+from .propertygroup import *
 from .panel import *
 from .uvmaster import *
 
@@ -56,7 +56,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.WindowManager.calmtree_props = bpy.props.PointerProperty(type=property_group.CALMTREE_PG_props)
+    bpy.types.WindowManager.calmtree_props = bpy.props.PointerProperty(type=propertygroup.CALMTREE_PG_props)
 
 def unregister():
     del bpy.types.WindowManager.calmtree_props

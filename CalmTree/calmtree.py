@@ -3,7 +3,7 @@ import bmesh
 import os
 from .geogroup import *
 from .algorithm import *
-from .leafgroup import *
+from .leafmat import *
 
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
