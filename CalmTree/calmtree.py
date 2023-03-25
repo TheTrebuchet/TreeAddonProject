@@ -4,6 +4,7 @@ import os
 from .geogroup import *
 from .algorithm import *
 from .leafmat import *
+from .barkmat import *
 
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
@@ -352,6 +353,7 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         tps = context.window_manager.calmtree_props
         script_file = os.path.realpath(__file__)
         directory = os.path.dirname(script_file)
+        treeob = bpy.context.object
         colname = "CalmTreeLeaves"
         name = tps.leafchoice
         matbool = tps.leafmatbool
@@ -374,6 +376,14 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
                 mat = bpy.data.materials.new(name)
                 mat.use_nodes = True
                 leaf_node_group(mat, rgb[name])
+            
+            if 'barknode' not in [n.name for n in bpy.data.node_groups]:
+                barkgroup_node_group()
+
+            if 'CalmTreeBark' not in [m.name for m in bpy.data.materials]:
+                barkmat = bpy.data.materials.new('CalmTreeBark')
+                barkmat.use_nodes = True
+                calmtree_bark_node_group(barkmat)
 
         bpy.ops.object.select_all(action='DESELECT')
         if colname not in [i.name for i in bpy.data.collections]:
@@ -390,17 +400,8 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
             if matbool:
                 if ob.data.materials: ob.data.materials[0] = mat
                 else: ob.data.materials.append(mat)
-        return {'FINISHED'}
-    
-class CALMTREE_OT_leafmaterials(bpy.types.Operator):
-    """handles leaves materials"""
-    bl_idname = 'object.tree_leafmat'
-    bl_label = 'add leaf mat'
-    bl_options = {'REGISTER', 'UNDO'}
-    def execute(self,context):
-        mat = bpy.data.materials.new(name = "leaf")
-        mat.use_nodes = True
-        rgb = (0.1369853913784027, 0.1911628544330597, 0.009205194190144539, 1.0)
-        leafnode_node_group()
-        leaf_node_group(mat, rgb)
+                if treeob.data.materials: treeob.data.materials[0] = barkmat
+                else: treeob.data.materials.append(barkmat)
+
+
         return {'FINISHED'}
