@@ -144,4 +144,4 @@ class CALMTREE_PT_materialsmain(CALMTREE_PT_materialsparent, bpy.types.Panel):
         layout.prop(wm.calmtree_props, 'leafchoice')
         if tps.leafchoice == 'custom':            
             col.label(text="head over to geogroup tab!")
-        col.prop(wm.calmtree_props, "leafmatbool")
+        col.prop(wm.calmtree_props, "matbool")

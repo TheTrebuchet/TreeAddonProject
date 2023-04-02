@@ -95,6 +95,9 @@ class CALMTREE_OT_new(bpy.types.Operator):
         br_p[-1], bd_p[-1], r_p[-1] = seeds
         context.object["CalmTreeConfig"] = saveconfig()
         context.object["CalmTreeLog"] = info
+        
+        if tps.leafbool: bpy.ops.object.tree_leaf()
+        
         return {'FINISHED'}
         
 class CALMTREE_OT_update(bpy.types.Operator):
@@ -356,38 +359,6 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         treeob = bpy.context.object
         colname = "CalmTreeLeaves"
         name = tps.leafchoice
-        matbool = tps.leafmatbool
-        
-        rgb = {'basic':(0.1369853913784027, 0.1911628544330597, 0.009205194190144539, 1.0),
-               'birch':(0.11697068810462952, 0.2422812283039093, 0.0024282161612063646, 1.0),
-               'elm':(0.12477181106805801, 0.27049776911735535, 0.16202937066555023, 1.0),
-               'magnolia':(0.03954625129699707, 0.1499597728252411, 0.0, 1.0),
-               'oak':(0.17144110798835754, 0.32314327359199524, 0.0, 1.0),
-               'redalder':(0.10424429923295975, 0.19119800627231598, 0.055753905326128006, 1.0),
-               'sycamore':(0.09305897355079651, 0.17464742064476013, 0.005181516520678997, 1.0),
-               'tuliptree':(0.16826941072940826, 0.3049874007701874, 0.03433980047702789, 1.0),
-               'willow':(0.27049776911735535, 0.45641112327575684, 0.014443845488131046, 1.0)}
-        
-        if matbool:
-            if 'leafnode' not in [n.name for n in bpy.data.node_groups]:
-                leafnode_node_group()
-                
-            if name not in [m.name for m in bpy.data.materials]:
-                mat = bpy.data.materials.new(name)
-                mat.use_nodes = True
-                leaf_node_group(mat, rgb[name])
-            
-            if 'barknode' not in [n.name for n in bpy.data.node_groups]:
-                barkgroup_node_group()
-
-            if 'CalmTreeBark' not in [m.name for m in bpy.data.materials]:
-                barkmat = bpy.data.materials.new('CalmTreeBark')
-                barkmat.use_nodes = True
-                calmtree_bark_node_group(barkmat)
-            else: barkmat = bpy.data.materials["CalmTreeBark"]
-            
-            if treeob.data.materials: treeob.data.materials[0] = barkmat
-            else: treeob.data.materials.append(barkmat)
 
         bpy.ops.object.select_all(action='DESELECT')
         if colname not in [i.name for i in bpy.data.collections]:
@@ -397,14 +368,73 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
             col = bpy.data.collections[colname]
 
         if name not in [o.name for o in bpy.data.objects]:
-            print(name)
             bpy.ops.import_scene.fbx(filepath = directory+'/assets/'+name+'.fbx')
             ob = bpy.data.objects[name]
             ob.users_collection[0].objects.unlink(ob)
             col.objects.link(ob)
-            if matbool:
-                if ob.data.materials: ob.data.materials[0] = mat
-                else: ob.data.materials.append(mat)
+
+        bpy.ops.object.select_all(action='DESELECT')
+        treeob.select_set(True)
+        bpy.context.view_layer.objects.active = treeob
+
+
+        return {'FINISHED'}
+    
+class CALMTREE_OT_mat(bpy.types.Operator):
+    """handles stock materials"""
+    bl_idname = 'object.tree_mat'
+    bl_label = 'add stock materials if checked'
+    bl_options = {'REGISTER', 'UNDO'}
+    def execute(self, context):
+        try: 
+            context.object["CalmTreeConfig"]
+        except: 
+            self.report({"INFO"}, "I can't update an object that isn't a tree")
+            return {'FINISHED'}
+        tps = context.window_manager.calmtree_props
+        script_file = os.path.realpath(__file__)
+        directory = os.path.dirname(script_file)
+        treeob = bpy.context.object
+
+        if 'barknode' not in [n.name for n in bpy.data.node_groups]:
+            barkgroup_node_group()
+
+        if 'CalmTreeBark' not in [m.name for m in bpy.data.materials]:
+            barkmat = bpy.data.materials.new('CalmTreeBark')
+            barkmat.use_nodes = True
+            calmtree_bark_node_group(barkmat)
+        else: barkmat = bpy.data.materials["CalmTreeBark"]
+        
+        if treeob.data.materials: treeob.data.materials[0] = barkmat
+        else: treeob.data.materials.append(barkmat)
+
+        if 'CalmTree' not in treeob.modifiers:
+            return {'FINISHED'}
+        
+        rgb = {'basic':(0.1369853913784027, 0.1911628544330597, 0.009205194190144539, 1.0),
+                'birch':(0.11697068810462952, 0.2422812283039093, 0.0024282161612063646, 1.0),
+                'elm':(0.12477181106805801, 0.27049776911735535, 0.16202937066555023, 1.0),
+                'magnolia':(0.03954625129699707, 0.1499597728252411, 0.0, 1.0),
+                'oak':(0.17144110798835754, 0.32314327359199524, 0.0, 1.0),
+                'redalder':(0.10424429923295975, 0.19119800627231598, 0.055753905326128006, 1.0),
+                'sycamore':(0.09305897355079651, 0.17464742064476013, 0.005181516520678997, 1.0),
+                'tuliptree':(0.16826941072940826, 0.3049874007701874, 0.03433980047702789, 1.0),
+                'willow':(0.27049776911735535, 0.45641112327575684, 0.014443845488131046, 1.0)}
+        
+        if 'leafnode' not in [n.name for n in bpy.data.node_groups]:
+            leafnode_node_group()
+
+        leafob = treeob.modifiers["CalmTree"]["Input_2"]
+        leafname = leafob.name
+
+        if leafname not in [m.name for m in bpy.data.materials]:
+            mat = bpy.data.materials.new(leafname)
+            mat.use_nodes = True
+            leaf_node_group(mat, rgb[leafname])
+        else: mat = bpy.data.materials[leafname]
+
+        if leafob.data.materials: leafob.data.materials[0] = mat
+        else: leafob.data.materials.append(mat)
 
         bpy.ops.object.select_all(action='DESELECT')
         treeob.select_set(True)

@@ -29,7 +29,7 @@ def CalmTree_nodegroup_exec():
 
     #input Rotation Variety
     calmtree_nodegroup.inputs.new("NodeSocketFloat", "Rotation Variety")
-    calmtree_nodegroup.inputs[5].default_value = 0.20000000298023224
+    calmtree_nodegroup.inputs[5].default_value = 0.5
     calmtree_nodegroup.inputs[5].min_value = 0.0
     calmtree_nodegroup.inputs[5].max_value = 3.14
 

@@ -10,11 +10,18 @@ def leaf_update(self,context):
     if tps.leafbool:
         bpy.ops.object.tree_leaf()
         context.object.modifiers["CalmTree"]["Input_2"] = bpy.data.objects[tps.leafchoice]
+        bpy.ops.object.tree_mat()
     if context.object.modifiers["CalmTree"].show_viewport == True:
         context.object.modifiers["CalmTree"].show_viewport = False
         context.object.modifiers["CalmTree"].show_viewport = True
     context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
     context.object.modifiers["CalmTree"].show_render = tps.leafbool
+
+def matupdate(self,context):
+    tps = bpy.data.window_managers['WinMan'].calmtree_props
+    if tps.matbool:
+        bpy.ops.object.tree_mat()
+
 
 
 
@@ -34,10 +41,10 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         default=False,
         update=leaf_update,
     )
-    leafmatbool: bpy.props.BoolProperty(
+    matbool: bpy.props.BoolProperty(
         name='Stock material',
         description='updates leaves to stock material',
-        default=True,
+        default=False,
         update=leaf_update,
     )
     leafchoice: bpy.props.EnumProperty(
