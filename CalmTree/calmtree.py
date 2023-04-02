@@ -97,6 +97,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
         context.object["CalmTreeLog"] = info
         
         if tps.leafbool: bpy.ops.object.tree_leaf()
+        if tps.matbool: bpy.ops.object.tree_mat()
         
         return {'FINISHED'}
         
@@ -358,7 +359,7 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         directory = os.path.dirname(script_file)
         treeob = bpy.context.object
         colname = "CalmTreeLeaves"
-        name = tps.leafchoice
+        leafname = tps.leafchoice
 
         bpy.ops.object.select_all(action='DESELECT')
         if colname not in [i.name for i in bpy.data.collections]:
@@ -367,12 +368,13 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
         else:
             col = bpy.data.collections[colname]
 
-        if name not in [o.name for o in bpy.data.objects]:
-            bpy.ops.import_scene.fbx(filepath = directory+'/assets/'+name+'.fbx')
-            ob = bpy.data.objects[name]
-            ob.users_collection[0].objects.unlink(ob)
-            col.objects.link(ob)
-
+        if leafname not in [o.name for o in bpy.data.objects]:
+            bpy.ops.import_scene.fbx(filepath = directory+'/assets/'+leafname+'.fbx')
+            ob = bpy.data.objects[leafname]
+            if leafname not in [o.name for o in bpy.data.collections[colname].objects]:
+                ob.users_collection[0].objects.unlink(ob)
+                col.objects.link(ob)
+        treeob.modifiers["CalmTree"]["Input_2"] = bpy.data.objects[leafname]
         bpy.ops.object.select_all(action='DESELECT')
         treeob.select_set(True)
         bpy.context.view_layer.objects.active = treeob
@@ -391,9 +393,6 @@ class CALMTREE_OT_mat(bpy.types.Operator):
         except: 
             self.report({"INFO"}, "I can't update an object that isn't a tree")
             return {'FINISHED'}
-        tps = context.window_manager.calmtree_props
-        script_file = os.path.realpath(__file__)
-        directory = os.path.dirname(script_file)
         treeob = bpy.context.object
 
         if 'barknode' not in [n.name for n in bpy.data.node_groups]:
