@@ -2,6 +2,9 @@ import bpy
 #initialize leaf node group
 def leafnode_node_group():
     leafnode= bpy.data.node_groups.new(type = "ShaderNodeTree", name = "leafnode")
+    leafnode.inputs.new("NodeSocketColor", "Color")
+    leafnode.inputs.new("NodeSocketFloat", "Bars")
+    leafnode.inputs.new("NodeSocketFloat", "Width")
 
     #initialize leafnode nodes
     #node Reroute.001
@@ -59,6 +62,7 @@ def leafnode_node_group():
 
     #node Group Output
     group_output = leafnode.nodes.new("NodeGroupOutput")
+    leafnode.outputs.new("NodeSocketShader", "Out")
 
     #node Translucent BSDF
     translucent_bsdf = leafnode.nodes.new("ShaderNodeBsdfTranslucent")

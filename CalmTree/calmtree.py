@@ -384,6 +384,10 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
                 barkmat = bpy.data.materials.new('CalmTreeBark')
                 barkmat.use_nodes = True
                 calmtree_bark_node_group(barkmat)
+            else: barkmat = bpy.data.materials["CalmTreeBark"]
+            
+            if treeob.data.materials: treeob.data.materials[0] = barkmat
+            else: treeob.data.materials.append(barkmat)
 
         bpy.ops.object.select_all(action='DESELECT')
         if colname not in [i.name for i in bpy.data.collections]:
@@ -393,6 +397,7 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
             col = bpy.data.collections[colname]
 
         if name not in [o.name for o in bpy.data.objects]:
+            print(name)
             bpy.ops.import_scene.fbx(filepath = directory+'/assets/'+name+'.fbx')
             ob = bpy.data.objects[name]
             ob.users_collection[0].objects.unlink(ob)
@@ -400,8 +405,10 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
             if matbool:
                 if ob.data.materials: ob.data.materials[0] = mat
                 else: ob.data.materials.append(mat)
-                if treeob.data.materials: treeob.data.materials[0] = barkmat
-                else: treeob.data.materials.append(barkmat)
+
+        bpy.ops.object.select_all(action='DESELECT')
+        treeob.select_set(True)
+        bpy.context.view_layer.objects.active = treeob
 
 
         return {'FINISHED'}

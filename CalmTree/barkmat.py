@@ -2,6 +2,16 @@ import bpy
 
 def barkgroup_node_group():
     barkgroup= bpy.data.node_groups.new(type = "ShaderNodeTree", name = "BarkGroup")
+    barkgroup.inputs.new("NodeSocketFloat", "Scale")
+    barkgroup.inputs.new("NodeSocketFloat", "Hue")
+    barkgroup.inputs.new("NodeSocketFloat", "Saturation")
+    barkgroup.inputs.new("NodeSocketFloat", "Brightness")
+    barkgroup.inputs.new("NodeSocketVector", "UV Map")
+    barkgroup.inputs.new("NodeSocketFloat", "Large Displacement")
+    barkgroup.inputs.new("NodeSocketFloat", "Small Displacement")
+    barkgroup.outputs.new("NodeSocketColor", "Color")
+    barkgroup.outputs.new("NodeSocketFloat", "Roughness")
+    barkgroup.outputs.new("NodeSocketFloat", "Displacement")
 
     #initialize barkgroup nodes
     #node Vector Math.004

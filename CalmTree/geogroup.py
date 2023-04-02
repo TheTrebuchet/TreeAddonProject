@@ -23,7 +23,7 @@ def CalmTree_nodegroup_exec():
 
     #input Distance Min
     calmtree_nodegroup.inputs.new("NodeSocketFloatDistance", "Distance Min")
-    calmtree_nodegroup.inputs[4].default_value = 0.1
+    calmtree_nodegroup.inputs[4].default_value = 0.01
     calmtree_nodegroup.inputs[4].min_value = 0.0
     calmtree_nodegroup.inputs[4].max_value = 100
 
