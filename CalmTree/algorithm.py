@@ -280,7 +280,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
                 if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
                 else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
         verts = [vec*m_p[4] for vec in verts] #scale update
-        return verts, edges, [], []
+        return verts, edges, [], [], []
     
     #FACEBOOL
     faces=[]

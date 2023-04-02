@@ -22,9 +22,6 @@ def matupdate(self,context):
     if tps.matbool:
         bpy.ops.object.tree_mat()
 
-
-
-
 class CALMTREE_PG_props(bpy.types.PropertyGroup):
     ops_complete: bpy.props.BoolProperty(
         default=True,
