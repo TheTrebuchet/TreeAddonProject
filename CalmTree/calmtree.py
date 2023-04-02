@@ -38,6 +38,19 @@ def saveconfig():
                 config += new + '=' +str(getattr(tps, new)) + ','
     return config
 
+def geonode():
+    if 'CalmTree_nodegroup' not in bpy.data.node_groups:
+            CalmTree_nodegroup_exec()
+    ng = bpy.data.node_groups['CalmTree_nodegroup']
+    if 'CalmTree' not in bpy.context.object.modifiers:
+        bpy.context.object.modifiers.new(name = 'CalmTree',type = 'NODES')
+    geo_mod = bpy.context.object.modifiers['CalmTree']
+    if not geo_mod.node_group:
+        geo_mod.node_group = ng
+    bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_1_use_attribute\"]", modifier_name="CalmTree")
+    bpy.context.object.modifiers["CalmTree"]["Input_1_attribute_name"] = "leaves"
+
+
 
 class CALMTREE_OT_new(bpy.types.Operator):
     """creates a tree at (0,0,0) according to user panel input"""
@@ -79,16 +92,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
             v_group.add(selection, 1.0, 'ADD')
 
         #adding geometry nodes for leaves
-        if 'CalmTree_nodegroup' not in bpy.data.node_groups:
-            CalmTree_nodegroup_exec()
-        ng = bpy.data.node_groups['CalmTree_nodegroup']
-        if 'CalmTree' not in bpy.context.object.modifiers:
-            bpy.context.object.modifiers.new(name = 'CalmTree',type = 'NODES')
-        geo_mod = bpy.context.object.modifiers['CalmTree']
-        if not geo_mod.node_group:
-            geo_mod.node_group = ng
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_1_use_attribute\"]", modifier_name="CalmTree")
-        bpy.context.object.modifiers["CalmTree"]["Input_1_attribute_name"] = "leaves"
+        
         
         #writing properties
         tps.treename = context.object.name
@@ -96,7 +100,11 @@ class CALMTREE_OT_new(bpy.types.Operator):
         context.object["CalmTreeConfig"] = saveconfig()
         context.object["CalmTreeLog"] = info
         
-        if tps.leafbool: bpy.ops.object.tree_leaf()
+        if tps.leafbool:
+            geonode() 
+            bpy.ops.object.tree_leaf()
+            context.object.modifiers["CalmTree"].show_viewport = False
+            context.object.modifiers["CalmTree"].show_viewport = True
         if tps.matbool: bpy.ops.object.tree_mat()
         
         return {'FINISHED'}
@@ -370,10 +378,13 @@ class CALMTREE_OT_leaf(bpy.types.Operator):
 
         if leafname not in [o.name for o in bpy.data.objects]:
             bpy.ops.import_scene.fbx(filepath = directory+'/assets/'+leafname+'.fbx')
-            ob = bpy.data.objects[leafname]
-            if leafname not in [o.name for o in bpy.data.collections[colname].objects]:
-                ob.users_collection[0].objects.unlink(ob)
-                col.objects.link(ob)
+        ob = bpy.data.objects[leafname]
+        if leafname not in [o.name for o in bpy.data.collections[colname].objects]:
+            if ob.users_collection: ob.users_collection[0].objects.unlink(ob)
+            col.objects.link(ob)
+
+        if 'CalmTree' not in [m.name for m in treeob.modifiers]: geonode()
+
         treeob.modifiers["CalmTree"]["Input_2"] = bpy.data.objects[leafname]
         bpy.ops.object.select_all(action='DESELECT')
         treeob.select_set(True)
