@@ -21,7 +21,7 @@ Created by Jan Kulczycki
 bl_info = {
     "name": "CalmTree",
     "author": "Jan Kulczycki",
-    "version": (0, 0, 4),
+    "version": (0, 0, 6),
     "blender": (3, 3, 0),
     "location": "View3D > Sidebar > CalmTree (Create Tab)",
     "description": "Procedurally generates a tree at cursor location",
