@@ -21,7 +21,7 @@ Created by Jan Kulczycki
 bl_info = {
     "name": "CalmTree",
     "author": "Jan Kulczycki",
-    "version": (0, 1, 0),
+    "version": (0, 0, 7),
     "blender": (3, 3, 0),
     "location": "View3D > Sidebar > CalmTree (Create Tab)",
     "description": "Procedurally generates a tree at cursor location",
@@ -32,8 +32,9 @@ bl_info = {
 import bpy
 
 from .calmtree import *
-from .property_group import *
+from .propertygroup import *
 from .panel import *
+from .uvmaster import *
 
 classes = (
 CALMTREE_OT_new,
@@ -42,17 +43,20 @@ CALMTREE_OT_sync,
 CALMTREE_OT_default,
 CALMTREE_PG_props,
 CALMTREE_PT_createmain,
-CALMTREE_PT_createsubpanel,
+CALMTREE_PT_createadvanced,
+CALMTREE_PT_materialsmain,
 CALMTREE_PT_createedit,
 CALMTREE_OT_leaf,
+CALMTREE_OT_mat,
 CALMTREE_OT_draw,
-CALMTREE_OT_regrow)
+CALMTREE_OT_regrow,
+CALMTREE_OT_uv)
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.WindowManager.calmtree_props = bpy.props.PointerProperty(type=property_group.CALMTREE_PG_props)
+    bpy.types.WindowManager.calmtree_props = bpy.props.PointerProperty(type=propertygroup.CALMTREE_PG_props)
 
 def unregister():
     del bpy.types.WindowManager.calmtree_props

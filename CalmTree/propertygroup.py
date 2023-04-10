@@ -7,15 +7,20 @@ def tree_update(self, context):
         bpy.ops.object.tree_update()
 def leaf_update(self,context):
     tps = bpy.data.window_managers['WinMan'].calmtree_props
-    bpy.context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
-    bpy.context.object.modifiers["CalmTree"].show_in_editmode = tps.leafbool
     if tps.leafbool:
-        if tps.leafname =='':tps.leafname='basic_leaf'
         bpy.ops.object.tree_leaf()
-        bpy.context.object.modifiers["CalmTree"]["Input_3"] = bpy.data.objects[tps.leafname]
-        bpy.context.object.modifiers["CalmTree"].show_viewport = True
+        if tps.matbool:
+            bpy.ops.object.tree_mat()
+    if 'CalmTree' in context.object.modifiers:
+        if context.object.modifiers["CalmTree"].show_viewport == True:
+            context.object.modifiers["CalmTree"].show_viewport = False
+            context.object.modifiers["CalmTree"].show_viewport = True
+        context.object.modifiers["CalmTree"].show_viewport = tps.leafbool
+        context.object.modifiers["CalmTree"].show_render = tps.leafbool
 
-
+def mat_update(self,context):
+    tps = bpy.data.window_managers['WinMan'].calmtree_props
+    if tps.matbool: bpy.ops.object.tree_mat()
 
 class CALMTREE_PG_props(bpy.types.PropertyGroup):
     ops_complete: bpy.props.BoolProperty(
@@ -33,10 +38,27 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         default=False,
         update=leaf_update,
     )
-    leafname: bpy.props.StringProperty(
-        name='Leaf Object',
-        description='object used to create leaves, x is width, y is length',
-        default='',
+    matbool: bpy.props.BoolProperty(
+        name='Stock material',
+        description='updates leaves to stock material',
+        default=False,
+        update=mat_update,
+    )
+    leafchoice: bpy.props.EnumProperty(
+        name='Leaf',
+        description='Leaf option',
+        items=((('plane','Plane','just a rectangle'),
+                ('basic','Basic leaf','just a rectangle'),
+                ('birch','Brich','Birch leaf'),
+                ('elm','Elm','Elm leaf'),
+                ('magnolia','Magnolia','magnolia leaf'),
+                ('oak','Oak','Oak leaf'),
+                ('redalder','Red Alder','Red Alder leaf'),
+                ('sycamore','Sycamore','Sycamore leaf'),
+                ('tulip','Tulip Tree','Tulip leaf'),
+                ('willow','Willow','Willow leaf'),
+                ('custom','Custom','Custom object'))),
+        default='basic',
         update=leaf_update
     )
     treename: bpy.props.StringProperty(
@@ -52,6 +74,21 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         max=3,
         update=tree_update
     )
+    poisson_type: bpy.props.EnumProperty(
+        name='Type',
+        description='Algorithm for new branch placement',
+        items=((('fast', 'Fast','Quick but mostly inaccurate algorithm'),('fancy', 'Fancy','Slower but more advanced algorithm'))),
+        default='fancy',
+        update=tree_update
+    )
+    poisson_qual: bpy.props.IntProperty(
+        name='Quality',
+        description='Changes algorithm precision, comes at steep performance cost',
+        default=4,
+        min=1,
+        max=20,
+        update=tree_update
+    )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
         description='Number of segments in the circle of the main trunk',
@@ -63,7 +100,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     Mlength: bpy.props.FloatProperty(
         name='Height',
         description='Length of the main trunk, scaled down with each branch',
-        default=10.0,
+        default=7.0,
         min=0.1,
         soft_max=200.0,
         update=tree_update
@@ -71,7 +108,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     Mradius: bpy.props.FloatProperty(
         name='Max Radius',
         description='The radius CalmTree starts with',
-        default=0.44,
+        default=0.25,
         min=0.01,
         soft_max=10,
         update=tree_update
@@ -79,7 +116,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     Mtipradius: bpy.props.FloatProperty(
         name='Tip Radius',
         description='The minimum radius a branch can have',
-        default=0.015,
+        default=0.005,
         min=0.001,
         max=1,
         update=tree_update
@@ -123,13 +160,13 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         name='Jiggle Seed',
         default=1,
         min=1,
-        update=tree_update
+        update=tree_update,
     )
 
     bends_amount: bpy.props.FloatProperty(
         name='Bending Amount',
         description='Raise this value if you want to bend the Tree curve',
-        default=0.4,
+        default=0.2,
         min=0.0,
         soft_max=10,
         update=tree_update
@@ -138,7 +175,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     bends_up: bpy.props.FloatProperty(
         name='Tip Bending',
         description='Tendency of the branch to grow upwards',
-        default=0.3,
+        default=0.2,
         min=-1.0,
         max=1.0,
         update=tree_update
@@ -147,7 +184,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     bends_correction: bpy.props.FloatProperty(
         name='Correction Amount',
         description='Controls how much the tree can bend towards ground',
-        default=0.5,
+        default=0.3,
         min=0.0,
         soft_max=1,
         update=tree_update
@@ -155,8 +192,8 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
 
     bends_weight: bpy.props.FloatProperty(
         name='Weight Factor',
-        description='Raise this value to weigh down heavy branches, same as it would happen naturally. If your tree falls down, it means it is too heavy, either lower weight or raise the correction amount',
-        default=0.1,
+        description='Used to weigh down heavy branches. If your tree falls down, it means it is too heavy, lower weight or raise the correction amount',
+        default=0.4,
         min=0.0,
         soft_max=1,
         update=tree_update
@@ -165,7 +202,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     bends_scale: bpy.props.FloatProperty(
         name='Bending Scale',
         description='Scale of bending noise',
-        default=0.9,
+        default=1.5,
         min=0.01,
         soft_max=10,
         update=tree_update
@@ -190,7 +227,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_number1: bpy.props.FloatProperty(
         name='Branch Density 1',
         description='Number of branches in the first level',
-        default=1,
+        default=1.2,
         min=0.001,
         soft_max=100,
         update=tree_update
@@ -217,7 +254,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_maxangle: bpy.props.FloatProperty(
         name='Bottom Angle',
         description='Angle at which the bottom branch grows',
-        default=6/18*pi,
+        default=70/360*2*pi,
         min=0.0,
         soft_max=2*pi,
         unit = 'ROTATION',
@@ -227,7 +264,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_minangle: bpy.props.FloatProperty(
         name='Top angle',
         description='Angle at which the top branch grows',
-        default=3/18*pi,
+        default=20/360*2*pi,
         min=0.0,
         soft_max=2*pi,
         unit = 'ROTATION',
@@ -237,7 +274,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_height: bpy.props.FloatProperty(
         name='Branching Height',
         description='Relative height at which branches start growing',
-        default=0.3,
+        default=0.25,
         min=0.0,
         soft_max=0.9,
         update=tree_update
@@ -279,8 +316,8 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     branch_shift: bpy.props.FloatProperty(
         name='General Shape',
         description='Relation between the branch height and length. It can make the tree look more round or cone-shaped',
-        default=0.7,
-        min=0.01,
+        default=0.5,
+        min=-1,
         max=1,
         update=tree_update
     )

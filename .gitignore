@@ -4,3 +4,4 @@ __pycache__/
 help.py
 Text.py
 *.txt
+/assets_temporary

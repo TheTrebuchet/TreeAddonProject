@@ -9,7 +9,6 @@ from .helper import *
 def spine_bend(spine, n, bd_p, l, guide, mode):
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
     f_noise = lambda i, b_seed: b_a*noise.noise((0, b_seed, i*l*b_s))
-    print(spine)
     
     old_vec = spine[-2] - spine[-3] #get previous vector
     angle = (Vector((0,0,1)).angle(old_vec)) #calculate global angle
@@ -120,7 +119,7 @@ def face_gen(s, n):
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
 
-def guides_gen(spine, lim, m_p, br_p, t_p):
+def guides_gen(spine, lim, m_p, br_p, t_p, qual):
     length, radius, tipradius = m_p[1:4]
     minang, maxang, start_h, horizontal, var, scaling, sd = br_p[1:]
     scale_f1, flare, scale_f2, shift = t_p
@@ -131,16 +130,15 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
     l = m_p[5]
     spine = spine[floor(start_h*len(spine)):]
     random.seed(sd)
-    k = 8
     grid = [[]]
     orgs = []
     heights = []
     idx = len(spine)-2
     dist = 1/3*length*scaling
-    ran = 10
+    ran = ceil(len(spine)/4)
     while idx>0:
         found = False
-        for i in range(k):
+        for i in range(qual):
             npt, origin, h = ptgen(spine, dist, idx, scale_f1, flare, horizontal)
             if check(npt, grid, lim, idx, ran):
                 grid[-1].append(npt)
@@ -151,25 +149,43 @@ def guides_gen(spine, lim, m_p, br_p, t_p):
             idx-=1
             grid.append([])
     
-    radii = lambda h, guide_l: min(max(scale_f1(h, flare)*radius*0.8, tipradius), guide_l/length*radius)
+    radii = lambda h, guide_l: min(max(scale_f1(h*(1-start_h)+start_h, flare)*radius*0.8, tipradius), guide_l/length*radius)
     lengthten = lambda h : length*scaling*scale_f2(h, shift)
-            
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
-    
-    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]/(1-start_h)) for i in range(len(sol))] #adjusting length
+    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #creating local guides and adjusting length
     
     for i in range(len(guides)):
         h = heights[i]
         ang = (math.pi/2-(h*minang+(1-h)*maxang))*random.uniform(1-var,1+var)
         guides[i] = Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i]
     
-    guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i]/(1-start_h), guides[i].length)] for i in range(len(orgs))] #creating guidepacks and radii
-    for i in range(len(guides)):
-        print(heights[i], radius*0.8*scale_f1(heights[i], flare), guides[i].length/length*radius, guidepacks[i][2])
-
+    guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i]/(1-start_h)-start_h, guides[i].length)] for i in range(len(orgs))] #creating guidepacks and radii
     return guidepacks
 
-#generates a single trunk, whether it will be branch or the main trunk
+def fastguides_gen(spine, number, m_p, br_p, t_p):
+    n = len(spine)
+    length, radius, tipradius = m_p[1:4]
+    minang, maxang, start_h, horizontal, var, scaling, br_seed = br_p[1:]
+    scale_f1, flare, scale_f2, shift = t_p
+    guidepacks = []
+    random.seed(br_seed)
+    chosen = pseudo_poisson_disc(number, length, radius)
+    for i in range(number):
+        height = chosen[i][1]*radius/length*(1-start_h)+start_h
+        pick = math.floor(n*height)
+        trans_vec = spine[pick]*(height*n-pick)+spine[pick]*(pick+1-height*n)
+        x = (height-start_h)/(1-start_h)
+        ang = minang*x+maxang*(1-x)
+        ang += random.uniform(-var*ang,var*ang)
+        a = chosen[i][0]
+        quat = Vector((0,0,1)).rotation_difference(spine[pick]-spine[pick-1])
+        dir_vec = Vector((math.sin(ang)*math.cos(a),math.sin(ang)*math.sin(a), math.cos(ang))).normalized()
+        guide_vec = quat @ dir_vec
+        guide_vec *= length*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var)
+        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius)
+        guidepacks.append((trans_vec, guide_vec, guide_r))
+    return guidepacks
+
 class branch():
     def __init__(self, pack, m_p, bd_p, br_p, r_p, trunk):
         self.pack = pack
@@ -203,9 +219,13 @@ class branch():
         self.spine = spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
         self.spine = spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
-    def guidesgen(self, density, t_p):
-        self.childmp = [int(max(self.mp[0]//2+1, 4)), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
-        self.guidepacks = guides_gen(self.spine, 1/density, self.mp, self.brp, t_p)
+    def guidesgen(self, density, t_p, typ, qual):
+        self.childmp = [int(max(self.mp[0]//2+1, 3)), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
+        if typ == 'fancy':
+            self.guidepacks = guides_gen(self.spine, 1/density, self.mp, self.brp, t_p, qual)
+        elif typ == 'fast':
+            num = lambda d, l: ceil((2.2*l+11)*d**(1.37*l**0.1))
+            self.guidepacks = fastguides_gen(self.spine, num(density, self.mp[1]), self.mp, self.brp, t_p)
     
     def interpolate(self, lev):
         if len(self.spine)>3:
@@ -224,24 +244,23 @@ class branch():
 
 # THE MIGHTY TREE GENERATION
 
-def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p):
+def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p):
     #creating the rest of levels
-    tim = 0
     for lev in range(br_p[0]):
         branchlist.append([])
         for parent in branchlist[-2]:
-            parent.guidesgen(bn_p[lev], t_p)
+            parent.guidesgen(bn_p[lev], t_p, e_p[1], e_p[2])
             children = parent.guidepacks
             for pack in children:
                 r_p[2] +=1
                 bd_p[-1] +=1
                 br_p[-1] +=1
                 branchlist[-1].append(branch(pack, parent.childmp, bd_p, br_p, r_p, False).generate())
-    print(tim)
+        br_p[3]=br_p[3]**2 #temporary workaround
+    br_p[3]=br_p[3]**((0.5)**br_p[0]) 
     return branchlist
 
 def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
-    #TODO quick fix for smallest branches that stay in lower levels
     for lev in range(len(branchlist)-1):
         bran_i = 0
         while bran_i<len(branchlist[lev]):
@@ -250,7 +269,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
             else:bran_i+=1
 
 
-    #if the user doesn't need faces I provide only a spine
+    #IF NOT FACEBOOL
     if not facebool:
         verts = []
         edges =[]
@@ -261,15 +280,17 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
                 if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
                 else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
         verts = [vec*m_p[4] for vec in verts] #scale update
-        return verts, edges, [], []
+        return verts, edges, [], [], []
     
+    #FACEBOOL
     faces=[]
-
-    #generating faces, needs branches
+    
+    #generating faces
     for lev in range(br_p[0]+1):
         for bran in branchlist[lev]:
             if e_p[0]!=0:bran.interpolate(e_p[0])
             faces.append(face_gen(bran.mp[0], bran.n))
+            
     #combining faces
     while True:
         if len(faces) == 1:
@@ -280,12 +301,19 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
     #generating verts from spine and making selection
     verts = []
     selection=[0]
+    info=[]
     for lev in range(len(branchlist)):
         if lev == len(branchlist)-1:
             selection[0] = len(verts)
         for bran in branchlist[lev]:
+            info.append([0,bran.mp[0]*bran.n-1, bran.mp[0]])
             verts.extend(bark_gen(bran.spine, bran.mp, t_p))
+    
     selection = list(range(selection[0], len(verts)))
+    
+    for i in range(1,len(info)):
+        info[i][0]=info[i-1][1]+1
+        info[i][1]+=info[i][0]
 
     #flattening the base, 
     for lev in range(m_p[0]):
@@ -294,7 +322,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
     #scaling the tree
     verts = [vec*m_p[4] for vec in verts]
     
-    return verts, [], faces, selection
+    return verts, [], faces, selection, info
 
 def branchinit(verts, m_p, bd_p, br_p, r_p):
     m_p[3]*=m_p[2]
