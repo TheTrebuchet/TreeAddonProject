@@ -26,6 +26,14 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     ops_complete: bpy.props.BoolProperty(
         default=True,
     )
+    engine: bpy.props.EnumProperty(
+        name='Engine',
+        description='Main tree generation Engine',
+        items=((('classic', 'Classic', 'Good for simple trees'),
+               ('dynamic', 'Dynamic', 'Good for complex trees with splits, like bonsai'))),
+        default='classic',
+        update=leaf_update
+    )
     facebool: bpy.props.BoolProperty(
         name='Faces',
         description='Switches between bark and spine',

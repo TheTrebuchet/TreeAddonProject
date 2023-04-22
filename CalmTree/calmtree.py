@@ -3,8 +3,10 @@ import bmesh
 import os
 from .geogroup import *
 from .algorithm import *
+from .generative import *
 from .leafmat import *
 from .barkmat import *
+
 
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
@@ -66,11 +68,14 @@ class CALMTREE_OT_new(bpy.types.Operator):
         
         #generates the trunk and lists of lists of branches
 
-        #m_p[3]*=m_p[2]
-        st_pack = (Vector((0,0,0)),Vector((0,0,1))*m_p[1], m_p[2])
-        branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
-        branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p)
-        verts, edges, faces, selection, info = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
+        if tps.engine=='classic':
+            st_pack = (Vector((0,0,0)),Vector((0,0,m_p[1])), m_p[2])
+            branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
+            branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p)
+            verts, edges, faces, selection, info = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
+        elif tps.engine=='dynamic':
+            pass
+
         
 
         #creating the tree
