@@ -1,11 +1,12 @@
 from .algorithm import *
 
 class guide():
-    def __init__(self,origin,h,direct,r):
+    def __init__(self,origin,surface,h,r,l):
         self.origin = origin
         self.h = h
-        self.direct = direct
+        self.surface = surface
         self.r = r
+        self.direct = surface-origin
 
 class branch():
     def __init__(self, pack, m_p, bd_p, br_p, r_p, trunk):
@@ -33,7 +34,7 @@ class branch():
         self.spine = [vec+self.pack[0] for vec in self.spine]
         return self
     
-    def generate_complete(self, density, t_p, qual):
+    def generate_complete(self, lim, t_p, qual,Ythr):
         length, radius, tipradius= self.mp[1:4]
         l = self.mp[5]
         minang, maxang, start_h, hor, var, scaling, sd = self.brp[1:]
@@ -42,6 +43,7 @@ class branch():
 
         allbrans=[]
         total = 0
+        localdist = 0
         self.spine = [Vector((0,0,0))]
         self.spine.append((self.pack[1].normalized())*l)
         
@@ -50,12 +52,25 @@ class branch():
                 pt1=self.spine[-1]
                 pt2=self.spine[-2]
                 h = random.random()
-                r = scale_f1(total+h*l, flare)
-                origin = h*pt1+(1-h)*pt2
+                H = (h*l+total)/length
+                r = scale_f1(H, flare)*radius
+                origin = (1-h)*pt1+h*pt2
                 phi = random.uniform(-math.pi,math.pi)
-                npt = Vector((0,0,1)).rotation_difference(pt1-pt2)@Vector((r*sin(phi), r*cos(phi),0))
-                npt+=origin
-                if npt-allbrans[-1].surface>1/density: allbrans.append(guide(origin,h,npt,r))
+                npt = Vector((0,0,1)).rotation_difference(pt1-pt2)@Vector((r*sin(phi), r*cos(phi),0))+origin
+                if npt-allbrans[-1].surface>lim:
+                    status = 'True'
+                    R = min(max(scale_f2(start_h+H*(1-start_h),shift)*radius/length,tipradius),0.8*r)
+                    allbrans.append(guide(origin,npt,H,R))
+                    self.spine[-1]=origin
+                    continue
+            if status:
+                total+=h*l
+                current = allbrans[-1]
+                if current.R/scale_f1(current.H, flare)*radius<Ythr:
+                    
+                else:
+                    pass
+            else:total+=l
                 
                 #
                     #random h based on density
@@ -67,14 +82,13 @@ class branch():
         #if the branch got generated and requirement is met
             #shorten the new fragment
             #get rotation vector and generate branch and new segment
-        self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
-        self.spine = spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1], 'spine')
+            self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
+            self.spine = spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1], 'spine')
+
         #weight everything
         #jiggle everything
         self.n = len(spine)
-        #return 
-
-
+        self.spine = [vec+self.pack[0] for vec in self.spine]
 
         return self
     
