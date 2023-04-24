@@ -1,5 +1,12 @@
 from .algorithm import *
 
+class guide():
+    def __init__(self,origin,h,direct,r):
+        self.origin = origin
+        self.h = h
+        self.direct = direct
+        self.r = r
+
 class branch():
     def __init__(self, pack, m_p, bd_p, br_p, r_p, trunk):
         self.pack = pack
@@ -26,29 +33,45 @@ class branch():
         self.spine = [vec+self.pack[0] for vec in self.spine]
         return self
     
-    def generate_dyn(self):
-        self.n = round(self.mp[1]/self.mp[5])+1
+    def generate_complete(self, density, t_p, qual):
+        length, radius, tipradius= self.mp[1:4]
+        l = self.mp[5]
+        minang, maxang, start_h, hor, var, scaling, sd = self.brp[1:]
+        scale_f1, flare, scale_f2, shift = t_p
+        dist = 1/3*length*scaling
+
+        allbrans=[]
+        total = 0
         self.spine = [Vector((0,0,0))]
-        self.spine.append((self.pack[1].normalized())*self.mp[5])
-        random.seed(self.bdp[5])
-        for i in range(self.n):
-            self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
-            self.spine = spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1], 'spine')
-            #generate a branch
-                #random try
-                    #random h
+        self.spine.append((self.pack[1].normalized())*l)
+        
+        while total<length:
+            for i in range(qual):
+                pt1=self.spine[-1]
+                pt2=self.spine[-2]
+                h = random.random()
+                r = scale_f1(total+h*l, flare)
+                origin = h*pt1+(1-h)*pt2
+                phi = random.uniform(-math.pi,math.pi)
+                npt = Vector((0,0,1)).rotation_difference(pt1-pt2)@Vector((r*sin(phi), r*cos(phi),0))
+                npt+=origin
+                if npt-allbrans[-1].surface>1/density: allbrans.append(guide(origin,h,npt,r))
+                
+                #
+                    #random h based on density
                     #get l and r from funcs
                     #get angle from funcs and IF REQUIREMENT radii ratio
-                    #return r, l, ang
-                #check with local group, maintain it based on density
-                #add if ok
-                #repeat qual times
-            #for branch in the newly added
-                #IF REQUIREMENT IS MET
-                    #add points where there are branches 
-                    #rotate the upper part accordingly (radii ratio*amount)
+                    #return h, r, l, ang (from stem)
+                    #check with local group, maintain it based on density
+                    #add for the first ok
+        #if the branch got generated and requirement is met
+            #shorten the new fragment
+            #get rotation vector and generate branch and new segment
+        self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
+        self.spine = spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1], 'spine')
         #weight everything
         #jiggle everything
+        self.n = len(spine)
         #return 
 
 

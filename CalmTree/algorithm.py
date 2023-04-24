@@ -127,7 +127,6 @@ def guides_gen(spine, lim, m_p, br_p, t_p, qual):
     if radius == tipradius:
         return []
     
-    l = m_p[5]
     spine = spine[floor(start_h*len(spine)):]
     random.seed(sd)
     grid = [[]]
