@@ -28,8 +28,9 @@ def parameters():
     bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
     t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
     r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
-    e_p = [tps.interp, tps.poisson_type, tps.poisson_qual, tps.Ythreshold]
-    return m_p, br_p, bn_p, bd_p, r_p, t_p, e_p
+    e_p = [tps.interp, tps.poisson_type, tps.poisson_qual]
+    d_p = [tps.Ythreshold]
+    return m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p
 
 def saveconfig():
     tps = bpy.data.window_managers["WinMan"].calmtree_props
@@ -63,20 +64,20 @@ class CALMTREE_OT_new(bpy.types.Operator):
     def execute(self, context):
         tps = context.window_manager.calmtree_props
 
-        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p = parameters()
+        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
         #generates the trunk and lists of lists of branches
-
+        st_pack = (Vector((0,0,0)),Vector((0,0,m_p[1])), m_p[2])
         if tps.engine=='classic':
-            st_pack = (Vector((0,0,0)),Vector((0,0,m_p[1])), m_p[2])
             branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
             branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p)
             verts, edges, faces, selection, info = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
-        elif tps.engine=='dynamic':
-            pass
-
         
+        elif tps.engine=='dynamic':
+            branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate_complete()]]
+            branchlist = dynamic_outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p)
+            verts, edges, faces, selection, info = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p, d_p)
 
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
@@ -136,7 +137,7 @@ class CALMTREE_OT_update(bpy.types.Operator):
             return {'FINISHED'}
         
         branchlist = []
-        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p = parameters()
+        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parameters()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
         if custom_child:
@@ -243,7 +244,7 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
             tps.Mlength = sum([(curve[i+1]-curve[i]).length for i in range(len(curve)-1)])
             tps.Mscale=1
             tps.Mvres = len(curve)
-            m_p, br_p, bn_p, bd_p, r_p, t_p, e_p = parameters()
+            m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parameters()
             seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
             #generates the trunk and lists of lists of stuff
