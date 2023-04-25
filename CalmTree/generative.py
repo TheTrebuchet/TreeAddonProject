@@ -10,6 +10,8 @@ class guide():
     def redirect(self,quat):
         self.surface = (self.surface-self.origin)@quat+self.origin
         self.direct = self.surface-self.origin
+    def generate(self,normal,f2,sth):
+        return [self.origin,self.direct*normal*f2(self.H*(1-sth)+sth),self.R]
 
 
 class branch():
@@ -92,7 +94,7 @@ class branch():
         #jiggle everything
         self.n = len(spine)
         self.spine = [vec+self.pack[0] for vec in self.spine]
-
+        self.guidepacks = [g.generate(length*scaling,scale_f2,start_h) for g in allbrans]
         return self
     
     def regenerate(self):
