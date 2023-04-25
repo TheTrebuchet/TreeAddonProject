@@ -1,12 +1,16 @@
 from .algorithm import *
 
 class guide():
-    def __init__(self,origin,surface,h,r,l):
+    def __init__(self,origin,surface,H,R):
         self.origin = origin
-        self.h = h
+        self.H = H
         self.surface = surface
-        self.r = r
+        self.R = R
         self.direct = surface-origin
+    def redirect(self,quat):
+        self.surface = (self.surface-self.origin)@quat+self.origin
+        self.direct = self.surface-self.origin
+
 
 class branch():
     def __init__(self, pack, m_p, bd_p, br_p, r_p, trunk):
@@ -57,31 +61,30 @@ class branch():
                 origin = (1-h)*pt1+h*pt2
                 phi = random.uniform(-math.pi,math.pi)
                 npt = Vector((0,0,1)).rotation_difference(pt1-pt2)@Vector((r*sin(phi), r*cos(phi),0))+origin
-                if npt-allbrans[-1].surface>lim:
-                    status = 'True'
-                    R = min(max(scale_f2(start_h+H*(1-start_h),shift)*radius/length,tipradius),0.8*r)
-                    allbrans.append(guide(origin,npt,H,R))
-                    self.spine[-1]=origin
+                if npt-allbrans[-1].surface>lim: #check for valid branches
+                    status = True 
+                    R = min(max(scale_f2(start_h+H*(1-start_h),shift)*radius/length,tipradius),0.8*r) #radius of the branch
+                    allbrans.append(guide(origin,npt,H,R)) #adding new guide object
                     continue
             if status:
-                total+=h*l
-                current = allbrans[-1]
-                if current.R/scale_f1(current.H, flare)*radius<Ythr:
+                current = allbrans[-1] 
+                self.spine[-1]=current.origin
+                ratio = current.R/(scale_f1(current.H, flare)*radius) #ratio of tree and branch radii 
+                total+=h*l #updating total
+                ang = current.H*minang+(1-current.H)*maxang
+                axis = (self.spine[-1]-self.spine[-2]).cross(current.direct) 
+                if ratio<Ythr: #checking whether spine should bend
+                    quatM = Quaternion(axis,ang*ratio)
+                    quatB = Quaternion(axis,(math.pi/2-ang)+ratio*ang)
                     
+                    self.spine.append(l*((self.spine[-1] - self.spine[-2])@quatM.normalized())+self.spine[-1])
+                    self.spine[-1]=(self.spine[-1]-self.spine[-2])@quatM+self.spine[-2]
+                    current.redirect(quatB)
                 else:
-                    pass
-            else:total+=l
-                
-                #
-                    #random h based on density
-                    #get l and r from funcs
-                    #get angle from funcs and IF REQUIREMENT radii ratio
-                    #return h, r, l, ang (from stem)
-                    #check with local group, maintain it based on density
-                    #add for the first ok
-        #if the branch got generated and requirement is met
-            #shorten the new fragment
-            #get rotation vector and generate branch and new segment
+                    total+=l
+                    quat = Quaternion(axis,(math.pi/2-ang))
+                    current.redirect(quat)
+            status = False
             self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
             self.spine = spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1], 'spine')
 
