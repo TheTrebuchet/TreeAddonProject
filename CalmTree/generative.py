@@ -165,6 +165,7 @@ def dynamic_outgrow(tobuild, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p):
         # else
             # generate
         #append branch object to ready
+        pass
 
     return ready
 
