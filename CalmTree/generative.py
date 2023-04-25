@@ -11,7 +11,7 @@ class guide():
         self.surface = (self.surface-self.origin)@quat+self.origin
         self.direct = self.surface-self.origin
     def generate(self,normal,f2,sth):
-        return [self.origin,self.direct*normal*f2(self.H*(1-sth)+sth),self.R]
+        return [self.origin,self.direct*normal*f2(self.H*(1-sth)+sth),self.R, self.H]
 
 
 class branch():
@@ -48,7 +48,7 @@ class branch():
         dist = 1/3*length*scaling
 
         allbrans=[]
-        total = 0
+        total = l
         localdist = 0
         self.spine = [Vector((0,0,0))]
         self.spine.append((self.pack[1].normalized())*l)
@@ -144,6 +144,29 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p):
         br_p[3]=br_p[3]**2 #temporary workaround
     br_p[3]=br_p[3]**((0.5)**br_p[0]) 
     return branchlist
+
+def dynamic_outgrow(tobuild, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p):
+    qual = e_p[2]
+    Ythr = d_p[0]
+    ready = []
+    sides = tobuild[-1].mp[0]
+    while tobuild:
+        # get guidepack
+        # get its H value
+        # create a branch object
+        # adjust mp[0] from sides
+        # adjust brp[3] from H
+
+        # if the branch qualifies
+            # generate_complete
+            # get guidepacks from that branch
+            # add the parents H value to each guidepack
+            # append to tobuild
+        # else
+            # generate
+        #append branch object to ready
+
+    return ready
 
 def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
     for lev in range(len(branchlist)-1):
