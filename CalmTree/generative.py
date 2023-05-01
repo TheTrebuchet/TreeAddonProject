@@ -25,6 +25,7 @@ class branch():
         self.guidepacks=[]
         self.n = 0
         self.spine=[]
+        self.H = 0
         
     def generate(self):
         self.n = round(self.mp[1]/self.mp[5])+1
@@ -40,12 +41,11 @@ class branch():
         self.spine = [vec+self.pack[0] for vec in self.spine]
         return self
     
-    def generate_complete(self, lim, t_p, qual,Ythr):
+    def generate_complete(self, lim, t_p, qual, Ythr):
         length, radius, tipradius= self.mp[1:4]
         l = self.mp[5]
         minang, maxang, start_h, hor, var, scaling, sd = self.brp[1:]
         scale_f1, flare, scale_f2, shift = t_p
-        dist = 1/3*length*scaling
 
         allbrans=[]
         total = l
@@ -58,15 +58,15 @@ class branch():
                 pt1=self.spine[-1]
                 pt2=self.spine[-2]
                 h = random.random()
-                H = (h*l+total)/length
-                r = scale_f1(H, flare)*radius
+                h_loc = (h*l+total)/length
+                r = scale_f1(h_loc, flare)*radius
                 origin = (1-h)*pt1+h*pt2
                 phi = random.uniform(-math.pi,math.pi)
                 npt = Vector((0,0,1)).rotation_difference(pt1-pt2)@Vector((r*sin(phi), r*cos(phi),0))+origin
-                if npt-allbrans[-1].surface>lim: #check for valid branches
+                if npt-allbrans[-1].surface>lim(h_loc*(1-self.H)+self.H): #check for valid branches
                     status = True 
-                    R = min(max(scale_f2(start_h+H*(1-start_h),shift)*radius/length,tipradius),0.8*r) #radius of the branch
-                    allbrans.append(guide(origin,npt,H,R)) #adding new guide object
+                    R = min(max(scale_f2(start_h+h_loc*(1-start_h),shift)*radius/length,tipradius),0.8*r) #radius of the branch
+                    allbrans.append(guide(origin,npt,h_loc,R)) #adding new guide object
                     continue
             if status:
                 current = allbrans[-1] 
@@ -94,8 +94,7 @@ class branch():
         #jiggle everything
         self.n = len(spine)
         self.spine = [vec+self.pack[0] for vec in self.spine]
-        self.guidepacks = [g.generate(length*scaling,scale_f2,start_h) for g in allbrans]
-        return self
+        self.guidepacks = [g.generate(length*(1-self.H),scale_f2,start_h) for g in allbrans]
     
     def regenerate(self):
         for i in range(2, self.n-1):
@@ -145,27 +144,28 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p):
     br_p[3]=br_p[3]**((0.5)**br_p[0]) 
     return branchlist
 
-def dynamic_outgrow(tobuild, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p):
-    qual = e_p[2]
-    Ythr = d_p[0]
+def dynamic_outgrow(ready, lim, m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p):
     ready = []
-    sides = tobuild[-1].mp[0]
+    tobuild = [ready[0].guidepacks]
+    
     while tobuild:
-        # get guidepack
-        # get its H value
-        # create a branch object
-        # adjust mp[0] from sides
-        # adjust brp[3] from H
+        gp = tobuild.pop(0)
+        tmp = m_p.copy()
+        tmp[0] = max(4,round(m_p[0]*gp[2]/m_p[2])) #adjusting sides
+        tbrp = br_p.copy()
+        tbrp[3] = tbrp[3]**2 #workaround for making branches grow earlier
+        bran = branch(gp, tmp, bd_p, tbrp, r_p, False)
+        bran.H = gp[3]
 
-        # if the branch qualifies
-            # generate_complete
-            # get guidepacks from that branch
-            # add the parents H value to each guidepack
-            # append to tobuild
-        # else
-            # generate
-        #append branch object to ready
-        pass
+        if bran.H>d_p[1]:
+            bran.generate_complete(lim, t_p, e_p[2],d_p[0])
+            packs = bran.guidepacks
+            for p in packs: p[3]=p[3]*(1-bran.H)+bran.H
+            tobuild.extend(packs)
+        else:
+            bran.generate()
+        
+        ready.append(bran)
 
     return ready
 
@@ -241,3 +241,6 @@ def branchinit(verts, m_p, bd_p, br_p, r_p):
     bran.spine = verts
     bran.regenerate()
     return [[bran]]
+
+def toverts_dynamic(branchlist, facebool, m_p, br_p, t_p, e_p):
+    pass

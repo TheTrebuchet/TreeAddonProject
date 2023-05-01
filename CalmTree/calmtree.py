@@ -29,7 +29,7 @@ def parameters():
     t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
     r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
     e_p = [tps.interp, tps.poisson_type, tps.poisson_qual]
-    d_p = [tps.Ythreshold]
+    d_p = [tps.Ythreshold, tps.Tthreshhold]
     return m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p
 
 def saveconfig():
@@ -75,9 +75,11 @@ class CALMTREE_OT_new(bpy.types.Operator):
             verts, edges, faces, selection, info = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p)
         
         elif tps.engine=='dynamic':
-            branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate_complete()]]
-            branchlist = dynamic_outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p)
-            verts, edges, faces, selection, info = toverts(branchlist, tps.facebool, m_p, br_p, t_p, e_p, d_p)
+            lim = lambda x: x*bn_p[0]+(1-x)*bn_p[1]
+            branchlist = [branch(st_pack, m_p, bd_p, br_p, r_p, True)]
+            branchlist[0].generate_complete(lim, t_p, e_p[2], d_p[0])
+            branchlist = dynamic_outgrow(branchlist, m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p)
+            verts, edges, faces, selection, info = toverts_dynamic(branchlist, tps.facebool, m_p, br_p, t_p, e_p, d_p)
 
         #creating the tree
         mesh = bpy.data.meshes.new("tree")
