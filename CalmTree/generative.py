@@ -170,6 +170,7 @@ def dynamic_outgrow(ready, lim, m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p):
     return ready
 
 def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
+    #reorganising branchlist
     for lev in range(len(branchlist)-1):
         bran_i = 0
         while bran_i<len(branchlist[lev]):
