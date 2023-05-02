@@ -97,6 +97,22 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         max=20,
         update=tree_update
     )
+    Ythreshold: bpy.props.FloatProperty(
+        name='Split limit',
+        description='Ratio of radii on branch split that permits geometry change',
+        default=0.7,
+        min=0.0,
+        max=1,
+        update=tree_update
+    )
+    Tthreshold: bpy.props.FloatProperty(
+        name='Branch Termination',
+        description='Part of the tree after which no new branches occur',
+        default=0.1,
+        min=0.0,
+        max=1,
+        update=tree_update
+    )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
         description='Number of segments in the circle of the main trunk',

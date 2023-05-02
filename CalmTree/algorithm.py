@@ -82,13 +82,13 @@ def bark_circle(n,r):
             circle.append(Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
-def bark_gen(spine, m_p, t_p):
+def bark_gen(spine, m_p, t_p, H=0):
     # parameters
     sides, radius, tipradius = m_p[0], m_p[2], m_p[3]
     flare_f, flare_a = t_p[:2]
     n = len(spine)
 
-    scale_list = [max(flare_f(i/n, flare_a)*radius, tipradius) for i in range(n)]
+    scale_list = [max(flare_f(i/n*(1-H)+H, flare_a)/flare_f(H,flare_a)*radius, tipradius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
     quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])

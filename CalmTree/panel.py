@@ -37,6 +37,7 @@ class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
         col.label(text="Main Settings")
         col.prop(wm.calmtree_props, "leafbool")
         col.prop(wm.calmtree_props, "facebool")
+        col.prop(wm.calmtree_props, "engine")
         
         col.label(text="Main Parameters")
         col.prop(wm.calmtree_props, "Msides")
@@ -49,20 +50,31 @@ class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
         col.prop(wm.calmtree_props, "bends_amount")
         col.prop(wm.calmtree_props, "bends_scale")
         col.prop(wm.calmtree_props, "bends_up")
-        col.prop(wm.calmtree_props, "bends_weight")
+        if tps.engine=='classic':
+            col.prop(wm.calmtree_props, "bends_weight")
         col.prop(wm.calmtree_props, "bends_correction")
 
+        
         col.label(text="Branch Parameters")
-        col.prop(wm.calmtree_props, "branch_levels")
-        for i in range(tps.branch_levels):
-            col.prop(wm.calmtree_props, "branch_number"+str(i+1))
-        col.prop(wm.calmtree_props, "branch_scaling")
-        col.prop(wm.calmtree_props, "branch_minangle")
-        col.prop(wm.calmtree_props, "branch_maxangle")
-        col.prop(wm.calmtree_props, "branch_height")
-        col.label(text="Simple Jiggle")
-        col.prop(wm.calmtree_props, "Rperlin_amount")
-        col.prop(wm.calmtree_props, "Rperlin_scale")
+        if tps.engine=='classic':
+            col.prop(wm.calmtree_props, "branch_levels")
+            for i in range(tps.branch_levels):
+                col.prop(wm.calmtree_props, "branch_number"+str(i+1))
+            col.prop(wm.calmtree_props, "branch_scaling")
+            col.prop(wm.calmtree_props, "branch_minangle")
+            col.prop(wm.calmtree_props, "branch_maxangle")
+            col.prop(wm.calmtree_props, "branch_height")
+            col.label(text="Simple Jiggle")
+            col.prop(wm.calmtree_props, "Rperlin_amount")
+            col.prop(wm.calmtree_props, "Rperlin_scale")
+        if tps.engine=='dynamic':
+            col.prop(wm.calmtree_props, 'branch_number1')
+            col.prop(wm.calmtree_props, 'branch_number2')
+            col.prop(wm.calmtree_props, "branch_minangle")
+            col.prop(wm.calmtree_props, "branch_maxangle")
+            col.prop(wm.calmtree_props, "branch_height")
+            col.prop(wm.calmtree_props, "Ythreshold")
+            col.prop(wm.calmtree_props, "Tthreshold")
         col.label(text="Seeds and Variety")
         col.prop(wm.calmtree_props, "Rperlin_seed")
         col.prop(wm.calmtree_props, "bends_seed")

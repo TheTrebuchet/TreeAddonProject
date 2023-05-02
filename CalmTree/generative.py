@@ -8,7 +8,7 @@ class guide():
         self.R = R
         self.direct = surface-origin
     def redirect(self,quat):
-        self.surface = (self.surface-self.origin)@quat+self.origin
+        self.surface = quat@(self.surface-self.origin)+self.origin
         self.direct = self.surface-self.origin
     def generate(self,normal,f2,sth):
         return [self.origin,self.direct*normal*f2(self.H*(1-sth)+sth),self.R, self.H]
@@ -26,7 +26,6 @@ class branch():
         self.n = 0
         self.spine=[]
         self.H = 0
-        
     def generate(self):
         self.n = round(self.mp[1]/self.mp[5])+1
         self.spine = [Vector((0,0,0))]
@@ -41,19 +40,32 @@ class branch():
         self.spine = [vec+self.pack[0] for vec in self.spine]
         return self
     
-    def generate_complete(self, lim, t_p, qual, Ythr):
+    def generate_dynamic(self, lim, t_p, qual, Ythr):
         length, radius, tipradius= self.mp[1:4]
         l = self.mp[5]
         minang, maxang, start_h, hor, var, scaling, sd = self.brp[1:]
         scale_f1, flare, scale_f2, shift = t_p
 
-        allbrans=[]
-        total = l
-        localdist = 0
+        total = start_h*length//l*l
         self.spine = [Vector((0,0,0))]
         self.spine.append((self.pack[1].normalized())*l)
-        
-        while total<length:
+
+        for i in range(int(start_h*length//l)):
+            self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
+            self.spine = spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1], 'spine')
+
+        pt1=self.spine[-1]
+        pt2=self.spine[-2]
+        h = random.random()
+        h_loc = (h*l+total)/length
+        r = scale_f1(h_loc, flare)*radius
+        origin = (1-h)*pt1+h*pt2
+        phi = random.uniform(-math.pi,math.pi)
+        npt = Vector((0,0,1)).rotation_difference(pt1-pt2)@Vector((r*sin(phi), r*cos(phi),0))+origin
+        R = min(max(scale_f2(start_h+h_loc*(1-start_h),shift)*radius/length,tipradius),0.8*r) #radius of the branch
+        allbrans = [guide(origin,npt,h_loc,R)] #adding new guide object
+        found=True
+        while total<length*(1-self.H):
             for i in range(qual):
                 pt1=self.spine[-1]
                 pt2=self.spine[-2]
@@ -64,31 +76,35 @@ class branch():
                 phi = random.uniform(-math.pi,math.pi)
                 npt = Vector((0,0,1)).rotation_difference(pt1-pt2)@Vector((r*sin(phi), r*cos(phi),0))+origin
                 if npt-allbrans[-1].surface>lim(h_loc*(1-self.H)+self.H): #check for valid branches
-                    status = True 
+                    found = True 
                     R = min(max(scale_f2(start_h+h_loc*(1-start_h),shift)*radius/length,tipradius),0.8*r) #radius of the branch
                     allbrans.append(guide(origin,npt,h_loc,R)) #adding new guide object
                     continue
-            if status:
+            if found:
                 current = allbrans[-1] 
                 self.spine[-1]=current.origin
                 ratio = current.R/(scale_f1(current.H, flare)*radius) #ratio of tree and branch radii 
                 total+=h*l #updating total
                 ang = current.H*minang+(1-current.H)*maxang
-                axis = (self.spine[-1]-self.spine[-2]).cross(current.direct) 
-                if ratio<Ythr: #checking whether spine should bend
-                    quatM = Quaternion(axis,ang*ratio)
+                axis = (self.spine[-1]-self.spine[-2]).cross(current.direct)
+                if ratio>Ythr: #checking whether spine should bend
+                    quatM = Quaternion(axis,ang*ratio/2)
                     quatB = Quaternion(axis,(math.pi/2-ang)+ratio*ang)
                     
-                    self.spine.append(l*((self.spine[-1] - self.spine[-2])@quatM.normalized())+self.spine[-1])
-                    self.spine[-1]=(self.spine[-1]-self.spine[-2])@quatM+self.spine[-2]
+                    self.spine.append(l*(quatM@(self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
                     current.redirect(quatB)
+                    print('found qualified')
                 else:
-                    total+=l
                     quat = Quaternion(axis,(math.pi/2-ang))
                     current.redirect(quat)
-            status = False
-            self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
+                    self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
+                    print('found but not qualified')
+            else:
+                self.spine.append(self.mp[5]*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
+                print('not found')
+            print(self.spine)
             self.spine = spine_bend(self.spine, self.n, self.bdp, self.mp[5], self.pack[1], 'spine')
+            print(total, length*(1-self.H))
 
         #weight everything
         #jiggle everything
@@ -144,7 +160,7 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p):
     br_p[3]=br_p[3]**((0.5)**br_p[0]) 
     return branchlist
 
-def dynamic_outgrow(ready, lim, m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p):
+def outgrow_dynamic(ready, lim, m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p):
     ready = []
     tobuild = [ready[0].guidepacks]
     
@@ -158,7 +174,7 @@ def dynamic_outgrow(ready, lim, m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p):
         bran.H = gp[3]
 
         if bran.H>d_p[1]:
-            bran.generate_complete(lim, t_p, e_p[2],d_p[0])
+            bran.generate_dynamic(lim, t_p, e_p[2],d_p[0])
             packs = bran.guidepacks
             for p in packs: p[3]=p[3]*(1-bran.H)+bran.H
             tobuild.extend(packs)
@@ -243,5 +259,52 @@ def branchinit(verts, m_p, bd_p, br_p, r_p):
     bran.regenerate()
     return [[bran]]
 
-def toverts_dynamic(branchlist, facebool, m_p, br_p, t_p, e_p):
-    pass
+def toverts_dynamic(branchlist, facebool, m_p, br_p, t_p, e_p, d_p):
+    if not facebool:
+        verts = []
+        edges = []
+        for bran in branchlist:
+            if e_p[0]:bran.interpolate(e_p[0])
+            verts.extend(bran.spine)
+            if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
+            else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
+        verts = [vec*m_p[4] for vec in verts] #scale update
+        return verts, edges, [], [], []
+    
+    #FACEBOOL
+    faces=[]
+    
+    #generating faces
+    for bran in branchlist:
+        if e_p[0]:bran.interpolate(e_p[0])
+        faces.append(face_gen(bran.mp[0], bran.n))
+            
+    #combining faces
+    while True:
+        if len(faces) == 1:
+            faces = faces[0]
+            break
+        faces[0].extend([[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)])
+
+    # generating verts from spine and making info, selection
+    # info should be [startingvert, lastvert, sides]
+    # selection should be verts that should have leaves
+    trunk = branchlist[0]
+    verts = [bark_gen(bran.spine, bran.mp, t_p, bran.H)]
+    selection = list(range(round((trunk.n-1)*(1-d_p[1]))*trunk.mp[0],(trunk.n-1)*trunk.mp[0]))
+    info = [0,bran.mp[0]*bran.n-1, bran.mp[0]]
+    for bran in branchlist[1:]:
+        verts.append(bark_gen(bran.spine, bran.mp, t_p, bran.H))
+        info.append([info[-1][0]+1,bran.mp[0]*bran.n-1+info[-1][0], bran.mp[0]])
+        start = round((bran.n-1)*(1-d_p[1]))*bran.mp[0]+verts[-1]+1
+        end = (bran.n-1)*bran.mp[0]+verts[-1]
+        selection.extend(list(range(start,end)))
+
+    #flattening the base
+    quat = (trunk.spine[1]-trunk.spine[0]).rotation_difference(Vector((0,0,1)))
+    for i in range(trunk.mp[0]):verts[i]=quat@verts[i]
+
+    #scaling the tree
+    verts = [vec*m_p[4] for vec in verts]
+    
+    return verts, [], faces, selection, info    
