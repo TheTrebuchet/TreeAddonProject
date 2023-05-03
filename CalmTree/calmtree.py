@@ -78,7 +78,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
             lim = lambda x: x*bn_p[0]+(1-x)*bn_p[1]
             branchlist = [branch(st_pack, m_p, bd_p, br_p, r_p, True)]
             branchlist[0].generate_dynamic(lim, t_p, e_p[2], d_p[0])
-            branchlist = outgrow_dynamic(branchlist, m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p)
+            branchlist = outgrow_dynamic(branchlist, lim, m_p, br_p, bd_p, r_p, t_p, e_p, d_p)
             verts, edges, faces, selection, info = toverts_dynamic(branchlist, tps.facebool, m_p, br_p, t_p, e_p, d_p)
 
         #creating the tree
