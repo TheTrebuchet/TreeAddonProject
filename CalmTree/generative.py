@@ -1,20 +1,20 @@
 from .algorithm import *
 
-def guidetry(spine, l, total, length, prog, stlen, f1, flare, radius):
+def guidetry(spine, l, total, length, prog, stlen, f1, flare, trunkradius):
     pt1=spine[-1]
     pt2=spine[-2]
     h = random.random()
     hloc = (h*l+total)/length
     hglob = (h*l+total+prog)/(length+prog)
     hst = (h*l+total+prog-stlen)/(length+prog-stlen)
-    r = f1(hglob, flare)*radius
+    r = f1(hglob, flare)*trunkradius
     origin = (1-h)*pt1+h*pt2
     phi = random.uniform(-math.pi,math.pi)
     npt = Vector((0,0,1)).rotation_difference(pt1-pt2)@Vector((r*sin(phi), r*cos(phi),0))+origin
     return origin, npt, hloc, hglob, hst, r, h
 
 class guide():
-    def __init__(self,origin,surface,Hloc,Hglob,R):
+    def __init__(self, origin, surface, Hloc, Hglob, R):
         self.origin = origin
         self.Hloc = Hloc
         self.Hglob = Hglob
@@ -22,10 +22,9 @@ class guide():
         self.R = R
         self.direct = surface-origin
     def redirect(self,quat):
-        self.surface = quat@(self.surface-self.origin)+self.origin
-        self.direct = (self.surface-self.origin).normalized()
-    def generate(self,length,prog):
-        return [self.origin,self.direct*length*(1-self.Hloc),self.R, self.Hloc*length+prog]
+        self.direct = (quat@self.direct).normalized()
+    def generate(self, length, prog, scale_f2, shift):
+        return [self.origin,self.direct*length*scale_f2(self.Hglob,shift),self.R, self.Hloc*length+prog]
 
 
 class branch():
@@ -54,7 +53,7 @@ class branch():
         self.spine = [vec+self.pack[0] for vec in self.spine]
         return self
     
-    def generate_dynamic(self, lim, t_p, qual, Ythr, Tthr, startlength):
+    def generate_dynamic(self, lim, t_p, qual, Ythr, Tthr, startlength,trunkradius):
         length, radius, tipradius= self.mp[1:4]
         l = self.mp[5]
         minang, maxang, start_h, hor, var, scaling, sd = self.brp[1:]
@@ -63,21 +62,18 @@ class branch():
         self.spine = [self.pack[0]]
         self.spine.append((self.pack[1].normalized())*l+self.spine[0])
         total = l
-        if startlength>self.progress:
-            while total<startlength:
+        if startlength>self.progress+l:
+            while total+self.progress<startlength:
                 total+=l
                 self.spine.append(l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
                 self.spine = spine_bend(self.spine, self.n, self.bdp, l, self.pack[1], 'spine')
-
-        origin, npt, hloc, hglob, hst, r, h = guidetry(spine, l, total, length, self.progress, startlength, scale_f1, flare, radius)
-        R = min(max(scale_f2(hglob,shift)*radius/length,tipradius),0.8*r) #radius of the branch
-        allbrans = [guide(origin, npt, hloc, hglob, R)] #adding new guide object
-        found=True
         
-        while total<length-l:
+        allbrans = [guide(self.pack[0], self.pack[0], 0, 0, 0)] #adding new guide object
+        found=False
+        while total<length:
             if length-total>Tthr:
                 for i in range(qual):
-                    origin, npt, hloc, hglob, hst, r, h = guidetry(spine, l, total, length, self.progress, startlength, scale_f1, flare, radius)
+                    origin, npt, hloc, hglob, hst, r, h = guidetry(self.spine, l, total, length, self.progress, startlength, scale_f1, flare, trunkradius)
                     if (npt-allbrans[-1].surface).length>lim(hloc): #check for valid branches
                         found = True
                         R = min(max(scale_f2(hst,shift)*radius/length,tipradius),0.8*r) #radius of the branch, made from previous relation of 0.8 of parent
@@ -85,7 +81,7 @@ class branch():
                         continue
             if found:
                 current = allbrans[-1]
-                ratio = current.R/(scale_f1(current.Hglob, flare)*radius) #ratio of tree and branch radii 
+                ratio = current.R/(scale_f1(current.Hglob, flare)*trunkradius) #ratio of tree and branch radii 
                 ang = current.Hloc*minang+(1-current.Hloc)*maxang
                 axis = (self.spine[-1]-self.spine[-2]).cross(current.direct)
                 if ratio>Ythr: #checking whether spine should bend
@@ -95,24 +91,21 @@ class branch():
                     self.spine.append(l*(quatM@(self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
                     current.redirect(quatB)
                     total+=h*l #updating total
-                    print('found qualified')
                 else:
                     quat = Quaternion(axis,-(math.pi/2-ang))
                     current.redirect(quat)
                     self.spine.append(l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
                     total +=l
-                    print('found but not qualified')
             else:
                 self.spine.append(l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
                 total+=l
-                print('not found')
             found=False
             self.spine = spine_bend(self.spine, self.n, self.bdp, l, self.pack[1], 'spine')
 
         #weight everything
         #jiggle everything
         self.n = len(self.spine)
-        self.guidepacks = [g.generate(length,self.progress) for g in allbrans]
+        self.guidepacks = [g.generate(length,self.progress, scale_f2, shift) for g in allbrans[1:]]
     
     def regenerate(self):
         for i in range(2, self.n-1):
@@ -165,16 +158,17 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p):
 def outgrow_dynamic(ready, lim, m_p, br_p, bd_p, r_p, t_p, e_p, d_p):
     tobuild = ready[0].guidepacks.copy()
     startlength = m_p[1]*br_p[3]
+    trunkradius = m_p[2]
     while tobuild:
         gp = tobuild.pop(0)
         tmp = m_p.copy()
         tmp[0] = max(4,round(m_p[0]*gp[2]/m_p[2])) #adjusting sides
         tbrp = br_p.copy()
         bran = branch(gp, tmp, bd_p, tbrp, r_p, False)
-        bran.H = gp[3]
+        bran.progress = gp[3]
 
         if bran.mp[1]>d_p[1]:
-            bran.generate_dynamic(lim, t_p, e_p[2],d_p[0],d_p[1], startlength)
+            bran.generate_dynamic(lim, t_p, e_p[2],d_p[0],d_p[1], startlength, trunkradius)
             tobuild.extend(bran.guidepacks)
         else:
             bran.generate()
