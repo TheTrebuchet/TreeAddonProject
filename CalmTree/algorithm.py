@@ -6,13 +6,15 @@ import bl_math
 from .helper import *
 
 # bends the spine in a more meaningful way
-def spine_bend(spine, n, bd_p, l, guide, mode):
+def spine_bend(spine, n, bd_p, l, guide, quatmode=False, nfactor=False):
     b_a, b_up, b_c, b_s, b_w, b_seed = bd_p
     f_noise = lambda i, b_seed: b_a*noise.noise((0, b_seed, i*l*b_s))
-    
     old_vec = spine[-2] - spine[-3] #get previous vector
     angle = (Vector((0,0,1)).angle(old_vec)) #calculate global angle
-    quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), b_up*angle/(n-len(spine)+1)) #ideal progression
+    progress = 0
+    if nfactor: progress = b_up*angle/n
+    else: progress = b_up*angle/(n-len(spine)+1)
+    quat = Quaternion(Vector((old_vec[1], -old_vec[0],0)), progress) #ideal progression
     new_vec = quat@old_vec
     
     bend_vec = Vector((f_noise(len(spine)-2, b_seed), f_noise(len(spine)-2, b_seed+10), 1)).normalized() #generate random vector        
@@ -22,11 +24,10 @@ def spine_bend(spine, n, bd_p, l, guide, mode):
 
     # transformation itself, rotating the remaining branch towards the new vector
     quat = old_vec.rotation_difference(new_vec)
-    if mode == 'quat':
+    if quatmode:
         return quat
-    elif mode == 'spine':
-        spine[-1] = quat@(spine[-1]-spine[-2])+spine[-2]
-        return spine
+    spine[-1] = quat@(spine[-1]-spine[-2])+spine[-2]
+    return spine
 
 def spine_weight(spine, n, l, r, trunk, bd_p):
     b_c, b_w = bd_p[2], bd_p[4]
