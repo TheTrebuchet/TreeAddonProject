@@ -112,7 +112,7 @@ class branch():
             print(total)
         print('done')
         #weight everything
-        #jiggle everything
+        self.spine = spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
         self.n = len(self.spine)
         self.guidepacks = [g.generate(length) for g in allbrans[1:]]
         print('branch finished')
