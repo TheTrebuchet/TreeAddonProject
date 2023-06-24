@@ -6,3 +6,4 @@ Text.py
 *.txt
 /assets_temporary
 *help.md
+*.src*
