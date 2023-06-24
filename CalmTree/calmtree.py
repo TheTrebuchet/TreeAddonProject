@@ -7,9 +7,24 @@ from .generative import *
 from .leafmat import *
 from .barkmat import *
 
-class param():
-    def __init__(self, *args):
-        pass
+class global_pars():
+    def __init__(self):
+        tps = bpy.data.window_managers["WinMan"].calmtree_props
+
+        # temporary parameters
+        scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
+        scale_lf2 = lambda x, a : (4*x*(1-x)*((1-a**2)**0.5+1)/(2*(a*(2*x-1)+1)))**(0.5+0.5*abs(a))  #this one is for branches scale
+        
+        l=tps.Mlength/tps.Mvres
+        self.m_p = [tps.Msides, tps.Mlength, tps.Mradius, tps.Mtipradius, tps.Mscale, l]
+        self.br_p = [tps.branch_levels, tps.branch_minangle, tps.branch_maxangle, tps.branch_height, tps.branch_horizontal, tps.branch_variety, tps.branch_scaling, tps.branch_seed]
+        self.bn_p = [tps.branch_number1, tps.branch_number2, tps.branch_number3]
+        self.bd_p = [tps.bends_amount, tps.bends_up, tps.bends_correction, tps.bends_scale, tps.bends_weight/(tps.Mlength), tps.bends_seed]
+        self.t_p = [scale_lf1, tps.flare_amount, scale_lf2, tps.branch_shift]
+        self.r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
+        self.e_p = [tps.interp, tps.poisson_type, tps.poisson_qual]
+        self.d_p = [tps.Ythreshold, max(tps.Tthreshold*tps.Mlength,3*l)]
+
 
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
@@ -19,6 +34,8 @@ def checkedit(context):
             if 'False' in i: return False
 def parametersgen():
     tps = bpy.data.window_managers["WinMan"].calmtree_props
+
+    
     
     # temporary parameters
     scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
