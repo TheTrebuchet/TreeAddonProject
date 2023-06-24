@@ -7,6 +7,9 @@ from .generative import *
 from .leafmat import *
 from .barkmat import *
 
+class param():
+    def __init__(self, **args):
+        pass
 
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
@@ -14,7 +17,7 @@ def checkedit(context):
         if 'edit' in i:
             if 'True' in i: return True 
             if 'False' in i: return False
-def parameters():
+def parametersgen():
     tps = bpy.data.window_managers["WinMan"].calmtree_props
     
     # temporary parameters
@@ -64,7 +67,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
     def execute(self, context):
         tps = context.window_manager.calmtree_props
 
-        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parameters()
+        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parametersgen()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
         #generates the trunk and lists of lists of branches
@@ -139,7 +142,7 @@ class CALMTREE_OT_update(bpy.types.Operator):
             return {'FINISHED'}
         
         branchlist = []
-        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parameters()
+        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parametersgen()
         seeds = [br_p[-1], bd_p[-1], r_p[-1]]
         
         if custom_child:
@@ -246,7 +249,7 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
             tps.Mlength = sum([(curve[i+1]-curve[i]).length for i in range(len(curve)-1)])
             tps.Mscale=1
             tps.Mvres = len(curve)
-            m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parameters()
+            m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parametersgen()
             seeds = [br_p[-1], bd_p[-1], r_p[-1]]
 
             #generates the trunk and lists of lists of stuff
