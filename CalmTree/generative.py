@@ -153,14 +153,14 @@ def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p):
     #creating the rest of levels
     for lev in range(br_p[0]):
         branchlist.append([])
-        for parent in branchlist[-2]:
-            parent.guidesgen(bn_p[lev], t_p, e_p[1], e_p[2])
-            children = parent.guidepacks
+        for parentbranch in branchlist[-2]:
+            parentbranch.guidesgen(bn_p[lev], t_p, e_p[1], e_p[2])
+            children = parentbranch.guidepacks
             for pack in children:
                 r_p[2] +=1
                 bd_p[-1] +=1
                 br_p[-1] +=1
-                branchlist[-1].append(branch(pack, parent.childmp, bd_p, br_p, r_p, False).generate())
+                branchlist[-1].append(branch(pack, parentbranch.childmp, bd_p, br_p, r_p, False).generate())
         br_p[3]=br_p[3]**2 #temporary workaround
     br_p[3]=br_p[3]**((0.5)**br_p[0]) 
     return branchlist

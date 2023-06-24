@@ -96,8 +96,9 @@ class CALMTREE_OT_new(bpy.types.Operator):
         
         elif tps.engine=='dynamic':
             lim = lambda x: 1/(x*bn_p[0]+(1-x)*bn_p[1])
-            branchlist = [branch(st_pack, m_p, bd_p, br_p, r_p, True)]
-            branchlist[0].generate_dynamic(lim, t_p, e_p[2], d_p[0], d_p[1], m_p[1]*br_p[3], m_p[2])
+            stbran = branch(st_pack, m_p, bd_p, br_p, r_p, True)
+            stbran.generate_dynamic(lim, t_p, e_p[2], d_p[0], d_p[1], m_p[1]*br_p[3], m_p[2])
+            branchlist = [stbran]
             branchlist = outgrow_dynamic(branchlist, lim, m_p, br_p, bd_p, r_p, t_p, e_p, d_p)
             verts, edges, faces, selection, info = toverts_dynamic(branchlist, tps.facebool, m_p, br_p, t_p, e_p, d_p)
 
