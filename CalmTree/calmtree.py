@@ -8,7 +8,7 @@ from .leafmat import *
 from .barkmat import *
 
 class param():
-    def __init__(self, **args):
+    def __init__(self, *args):
         pass
 
 def checkedit(context):
