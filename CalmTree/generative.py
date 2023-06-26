@@ -19,6 +19,10 @@ class guide():
         self.quat = None
 
     def prerequisits(self, total, h, l, p_length, progress, hstart, p_radius, tipradius, scale_f2):
+        print('hstart')
+        print(hstart)
+        print('p_radius')
+        print(p_radius)
         self.length = scale_f2(hstart)*(p_length-total-h*l)
         self.radius = max(min(self.length/p_length*p_radius, 0.9*p_radius), tipradius)
         self.ratio = self.radius/p_radius
@@ -26,7 +30,7 @@ class guide():
         
     def generate(self):
         #at this point surface isn't relevant anymore
-        return [self.origin,self.quat@self.direct*self.length, self.R, self.prog]
+        return [self.origin,self.quat@self.direct*self.length, self.radius, self.prog]
 
 
 class branch():
@@ -36,7 +40,7 @@ class branch():
         self.direction = pack[1]
         self.length = pack[1].length
         self.radius = pack[2]
-        self.progress=pack[3]
+        self.progress = pack[3]
         
         self.sides = m_p[0]
         self.l = min(m_p[5], self.length/2)
@@ -62,7 +66,7 @@ class branch():
         self.spine = spine_jiggle(self.spine, l, length, pars.r_p)
         self.spine = spine_weight(self.spine, self.n, l, radius, self.trunk, pars.bd_p)
 
-        self.spine = [vec+self.pack[0] for vec in self.spine]
+        self.spine = [vec+self.origin for vec in self.spine]
         return self
     
     def generate_dynamic(self, pars):
@@ -72,35 +76,35 @@ class branch():
         Ythr = pars.d_p[0]
         Tthr = pars.d_p[1]
 
-        pars_length = pars.mp[1]
+        pars_length = pars.m_p[1]
         parent_length = self.length
-        parent_progress = self.progression
+        parent_progress = self.progress
 
         pars_startlength = pars.m_p[1]*pars.br_p[3]
         parent_radius = pars.m_p[2]
-        tipradius = pars.mp[3]
+        tipradius = pars.m_p[3]
         l = self.l
         minang, maxang = pars.br_p[1:3]
-        scale_f1 = pars.scale_lf1
-        scale_f2 = pars.scale_lf2
-        
-        print('new branch')
+        scale_f1 = pars.scale_f1
+        scale_f2 = pars.scale_f2
+
         random.seed(pars.br_p[7])
         
         self.spine = [self.origin, self.direction.normalized()*l+self.origin]
         
         #build until startlength is reached
-        total = 0
+        total = self.progress
         while total<pars_startlength-l:
             total+=l
             self.spine.append(l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
-            self.spine = spine_bend(self.spine, self.n, pars.bd_p, l, self.pack[1])
+            self.spine = spine_bend(self.spine, self.n, pars.bd_p, l, self.direction)
+        total-=self.progress
         
         #adding an origin (0,0,0) so that the first split isn't always on the start
         guidelist = [guide(self.origin, self.origin)]
 
         #the build-guess-split begins
-        while total<parent_length+parent_progress-Tthr:
+        while total<parent_length-Tthr:
             
             parent_quat = None
             
@@ -109,10 +113,12 @@ class branch():
                 this_r = scale_f1(total/parent_length*(1-cutoff)+cutoff)*parent_radius
                 origin, surface, axis, h = guidetry(self.spine, this_r) #generating the guess
                 hstart = (total+h*l+parent_progress)/(parent_length + parent_progress)
+                print(total,h,l,parent_progress, parent_length)
+                print(total+h*l+parent_progress, parent_length + parent_progress)
                 
                 if (surface-guidelist[-1].surface).length>lim(hstart): #check for valid branches
                     guess = guide(origin, surface) #the successful guess
-                    guess.prerequisits(total, h, l, parent_length, hstart, this_r, tipradius, scale_f2)
+                    guess.prerequisits(total, h, l, parent_length, parent_progress, hstart, this_r, tipradius, scale_f2) #(total, h, l, p_length, progress, hstart, p_radius, tipradius, scale_f2)
                     ang = hstart*minang+(1-hstart)*maxang #angle between the new branches
                     
                     if guess.ratio>Ythr: #if split can happen
@@ -148,18 +154,21 @@ class branch():
     
     def regenerate(self):
         for i in range(2, self.n-1):
-            quat = spine_bend(self.spine[i-2:i+1], self.n, self.bdp, self.mp[5], self.pack[1], quatmode=True)
+            quat = spine_bend(self.spine[i-2:i+1], self.n, self.bdp, self.mp[5], self.direction, quatmode=True)
             self.spine[i:] = [quat@(self.spine[k]-self.spine[i-1])+self.spine[i-1] for k in range(i,len(self.spine))]
         self.spine = spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
         self.spine = spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
-    def guidesgen(self, density, t_p, typ, qual):
+    def guidesgen(self, pars, lev):
+        density = pars.bn_p[lev]
+        typ = pars.e_p[1]
+
         self.childmp = [int(max(self.mp[0]//2+1, 3)), self.mp[1], self.mp[2], self.mp[3], self.mp[4], self.mp[5]]
         if typ == 'fancy':
-            self.guidepacks = guides_gen(self.spine, 1/density, self.mp, self.brp, t_p, qual)
-        elif typ == 'fast':
-            num = lambda d, l: ceil((2.2*l+11)*d**(1.37*l**0.1))
-            self.guidepacks = fastguides_gen(self.spine, num(density, self.mp[1]), self.mp, self.brp, t_p)
+            self.guidepacks = guides_gen(self.spine, self.mp, pars, lev)
+        elif typ == 'fast': #this method should just be deprecated honestly
+            num = lambda d, l: ceil((2.2*l+11)*d**(1.37*l**0.1)) #empiric equation
+            self.guidepacks = fastguides_gen(self.spine, num(density, self.mp[1]), self.mp, pars.brp)
     
     def interpolate(self, lev):
         if len(self.spine)>3:
@@ -178,20 +187,20 @@ class branch():
 
 # THE MIGHTY TREE GENERATION
 
-def outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p):
+def outgrow(branchlist, pars):
     #creating the rest of levels
-    for lev in range(br_p[0]):
+    for lev in range(pars.br_p[0]):
         branchlist.append([])
         for parentbranch in branchlist[-2]:
-            parentbranch.guidesgen(bn_p[lev], t_p, e_p[1], e_p[2])
+            parentbranch.guidesgen(pars, lev)
             children = parentbranch.guidepacks
             for pack in children:
-                r_p[2] +=1
-                bd_p[-1] +=1
-                br_p[-1] +=1
-                branchlist[-1].append(branch(pack, parentbranch.childmp, bd_p, br_p, r_p, False).generate())
-        br_p[3]=br_p[3]**2 #temporary workaround
-    br_p[3]=br_p[3]**((0.5)**br_p[0]) 
+                pars.r_p[2] +=1
+                pars.bd_p[-1] +=1
+                pars.br_p[-1] +=1  
+                branchlist[-1].append(branch(pack, parentbranch.childmp,  False).generate())
+        pars.br_p[3]**=2 #temporary workaround, startlength factor is squared
+    pars.br_p[3]**=((0.5)**pars.br_p[0]) 
     return branchlist
 
 def outgrow_dynamic(ready, pars):
@@ -215,7 +224,7 @@ def outgrow_dynamic(ready, pars):
 
     return ready
 
-def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
+def toverts(branchlist, pars):
     #reorganising branchlist
     for lev in range(len(branchlist)-1):
         bran_i = 0
@@ -226,25 +235,25 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
 
 
     #IF NOT FACEBOOL
-    if not facebool:
+    if not pars.facebool:
         verts = []
         edges =[]
         for lev in branchlist:
             for bran in lev:
-                if e_p[0]!=0:bran.interpolate(e_p[0])
+                if pars.e_p[0]!=0:bran.interpolate(pars.e_p[0])
                 verts.extend(bran.spine)
                 if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
                 else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
-        verts = [vec*m_p[4] for vec in verts] #scale update
+        verts = [vec*pars.m_p[4] for vec in verts] #scale update
         return verts, edges, [], [], []
     
     #FACEBOOL
     faces=[]
     
     #generating faces
-    for lev in range(br_p[0]+1):
+    for lev in range(pars.br_p[0]+1):
         for bran in branchlist[lev]:
-            if e_p[0]!=0:bran.interpolate(e_p[0])
+            if pars.e_p[0]!=0:bran.interpolate(pars.e_p[0])
             faces.append(face_gen(bran.mp[0], bran.n))
             
     #combining faces
@@ -263,7 +272,7 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
             selection[0] = len(verts)
         for bran in branchlist[lev]:
             info.append([0,bran.mp[0]*bran.n-1, bran.mp[0]])
-            verts.extend(bark_gen(bran.spine, bran.mp, t_p))
+            verts.extend(bark_gen(bran.spine, bran.mp, pars.scale_f1))
     
     selection = list(range(selection[0], len(verts)))
     
@@ -272,11 +281,11 @@ def toverts(branchlist, facebool, m_p, br_p, t_p, e_p):
         info[i][1]+=info[i][0]
 
     #flattening the base, 
-    for lev in range(m_p[0]):
+    for lev in range(pars.m_p[0]):
         verts[lev][2] = 0
 
     #scaling the tree
-    verts = [vec*m_p[4] for vec in verts]
+    verts = [vec*pars.m_p[4] for vec in verts]
     
     return verts, [], faces, selection, info
 
@@ -323,11 +332,11 @@ def toverts_dynamic(branchlist, pars):
     # info should be [startingvert, lastvert, sides]
     # selection should be verts that should have leaves
     trunk = branchlist[0]
-    verts = [bark_gen(bran.spine, bran.mp, t_p, bran.H)]
+    verts = [bark_gen(bran.spine, bran.mp, pars.scale_f1, bran.H)]
     selection = list(range(round((trunk.n-1)*(1-d_p[1]))*trunk.mp[0],(trunk.n-1)*trunk.mp[0]))
     info = [0,bran.mp[0]*bran.n-1, bran.mp[0]]
     for bran in branchlist[1:]:
-        verts.append(bark_gen(bran.spine, bran.mp, t_p, bran.H))
+        verts.append(bark_gen(bran.spine, bran.mp, pars.scale_f1, bran.H))
         info.append([info[-1][0]+1,bran.mp[0]*bran.n-1+info[-1][0], bran.mp[0]])
         start = round((bran.n-1)*(1-d_p[1]))*bran.mp[0]+verts[-1]+1
         end = (bran.n-1)*bran.mp[0]+verts[-1]

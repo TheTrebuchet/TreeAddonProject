@@ -83,13 +83,13 @@ def bark_circle(n,r):
             circle.append(Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
-def bark_gen(spine, m_p, t_p, H=0):
+def bark_gen(spine, m_p, scale_f1, H=0):
     # parameters
     sides, radius, tipradius = m_p[0], m_p[2], m_p[3]
-    flare_f, flare_a = t_p[:2]
+    
     n = len(spine)
 
-    scale_list = [max(flare_f(i/n*(1-H)+H, flare_a)/flare_f(H,flare_a)*radius, tipradius) for i in range(n)]
+    scale_list = [max(scale_f1(i/n*(1-H)+H)/scale_f1(H)*radius, tipradius) for i in range(n)]
 
     # generating bark with scaling and rotation based on parameters and spine
     quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
@@ -120,10 +120,13 @@ def face_gen(s, n):
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
 
-def guides_gen(spine, lim, m_p, br_p, t_p, qual):
+def guides_gen(spine, m_p, pars, lev):
+    #uses check and ptgen in helper
+    lim = 1/pars.bn_p[lev]
     length, radius, tipradius = m_p[1:4]
-    minang, maxang, start_h, horizontal, var, scaling, sd = br_p[1:]
-    scale_f1, flare, scale_f2, shift = t_p
+    minang, maxang, start_h, horizontal, var, scaling, sd = pars.br_p[1:]
+    qual = pars.e_p[2]
+    scale_f1, scale_f2 = pars.scale_f1, pars.scale_f2
     
     if radius == tipradius:
         return []
@@ -139,7 +142,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p, qual):
     while idx>0:
         found = False
         for i in range(qual):
-            npt, origin, h = ptgen(spine, dist, idx, scale_f1, flare, horizontal)
+            npt, origin, h = ptgen(spine, dist, idx, scale_f1, horizontal)
             if check(npt, grid, lim, idx, ran):
                 grid[-1].append(npt)
                 orgs.append(origin)
@@ -149,8 +152,8 @@ def guides_gen(spine, lim, m_p, br_p, t_p, qual):
             idx-=1
             grid.append([])
     
-    radii = lambda h, guide_l: min(max(scale_f1(h*(1-start_h)+start_h, flare)*radius*0.8, tipradius), guide_l/length*radius)
-    lengthten = lambda h : length*scaling*scale_f2(h, shift)
+    radii = lambda h, guide_l: min(max(scale_f1(h*(1-start_h)+start_h)*radius*0.8, tipradius), guide_l/length*radius)
+    lengthten = lambda h : length*scaling*scale_f2(h)
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
     guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #creating local guides and adjusting length
     
@@ -163,6 +166,7 @@ def guides_gen(spine, lim, m_p, br_p, t_p, qual):
     return guidepacks
 
 def fastguides_gen(spine, number, m_p, br_p, t_p):
+    #uses pseudo_poisson_disc in helper
     n = len(spine)
     length, radius, tipradius = m_p[1:4]
     minang, maxang, start_h, horizontal, var, scaling, br_seed = br_p[1:]
@@ -185,12 +189,3 @@ def fastguides_gen(spine, number, m_p, br_p, t_p):
         guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius)
         guidepacks.append((trans_vec, guide_vec, guide_r))
     return guidepacks
-
-if __name__ == "__main__":
-    self.spine = [Vector((0.0, 0.0, 0.0)), Vector((-0.04053265228867531, 0.1525326669216156, 0.5666670203208923)), Vector((-0.05233679339289665, 0.2162090241909027, 1.1513268947601318)), Vector((0.08932508528232574, 0.07073953002691269, 1.7034058570861816)), Vector((0.3351735472679138, -0.1757250726222992, 2.1775729656219482)), Vector((0.603615939617157, -0.4416947364807129, 2.628371238708496)), Vector((0.9189794659614563, -0.7344887852668762, 3.0294179916381836)), Vector((1.2864696979522705, -1.0440350770950317, 3.3687584400177)), Vector((1.5507733821868896, -1.3234150409698486, 3.813856601715088)), Vector((1.4413506984710693, -1.4571164846420288, 4.376147747039795)), Vector((1.1136771440505981, -1.5123927593231201, 4.861530303955078)), Vector((0.7895124554634094, -1.5705634355545044, 5.3489251136779785)), Vector((0.40334513783454895, -1.6063776016235352, 5.791208267211914)), Vector((-0.05430370569229126, -1.612501621246338, 6.160719394683838)), Vector((-0.49577754735946655, -1.616670846939087, 6.549442768096924)), Vector((-0.767345666885376, -1.5683027505874634, 7.068993091583252)), Vector((-0.6747534275054932, -1.3740949630737305, 7.616468906402588)), Vector((-0.3822815418243408, -1.097188115119934, 8.04518985748291))]
-    mp = [0, 10, 0.44, 0.01*0.44, 1.0, 10/30]
-    brp = [2, math.pi*30/180, math.pi*60/180,0.3, 0.1, 0.3, 1]
-    scale_lf1 = lambda x, a : 1/((x+1)**a)-(x/2)**a #this one is for trunk flare
-    scale_lf2 = lambda x, a : ((1-(x-1)**2)/(a*(x-1)+1))**0.5  #this one is for branches scale
-    tp = [scale_lf1, 1.0, scale_lf2, 0.7]
-    print(guides_gen(self.spine, 1, mp, brp, tp))

@@ -35,16 +35,17 @@ class global_parameters:
         ]
         self.r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
         self.e_p = [tps.interp, tps.poisson_type, tps.poisson_qual]
-        self.d_p = [tps.Ythreshold, max(tps.Tthreshold * tps.Mlength, 3 * l)]
+        self.d_p = [tps.Ythreshold, max(tps.Tthreshold * tps.Mlength, 2 * l)]
+        self.facebool = tps.facebool
 
         self.lim = lambda x: 1 / (x * self.bn_p[0] + (1 - x) * self.bn_p[1])
         
         # this one is for trunk flare
         fa=tps.flare_amount
-        self.scale_lf1 = lambda x: 1-x+fa(1-x)**10
+        self.scale_f1 = lambda x: 1-x+fa*(1-x)**10
         # this one is for branches scale
         bs = tps.branch_shift
-        self.scale_lf2 = lambda x: (4*x*(1-x)*((1-bs**2)**0.5+1)/(2*(bs*(2*x-1)+1)))**(0.5+0.5*abs(bs))
+        self.scale_f2 = lambda x: (4*x*(1-x)*((1-bs**2)**0.5+1)/(2*(bs*(2*x-1)+1)))**(0.5+0.5*abs(bs))
 
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
@@ -95,7 +96,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
         seeds = [pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1]]
 
         # generates the trunk and lists of lists of branches
-        st_pack = (Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2])
+        st_pack = [Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2], 0]
 
         if tps.engine == "classic":
             stbran = branch(st_pack, pars.m_p, True)
@@ -133,7 +134,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
 
         # writing properties
         tps.treename = context.object.name
-        br_p[-1], bd_p[-1], r_p[-1] = seeds
+        pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1] = seeds
         context.object["CalmTreeConfig"] = saveconfig()
         context.object["CalmTreeLog"] = info
 
@@ -173,34 +174,38 @@ class CALMTREE_OT_update(bpy.types.Operator):
             )
             return {"FINISHED"}
 
-        branchlist = []
-        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parametersgen()
-        seeds = [br_p[-1], bd_p[-1], r_p[-1]]
-
+        
+        '''
         if custom_child:
+        branchlist = []
             pre_curve = [Vector(v.co) for v in custom_child[0].data.vertices]
             curve = pre_curve.copy()
             if curve[-1].length < curve[0].length:
                 curve.reverse()
             # m_p[3]*=m_p[2]
-            branchlist = branchinit(curve, m_p, bd_p, br_p, r_p)
+            branchlist = branchinit(curve, pars.m_p, pars.bd_p, pars.br_p, pars.r_p)
         else:
-            # m_p[3]*=m_p[2]
-            st_pack = (Vector((0, 0, 0)), Vector((0, 0, 1)) * m_p[1], m_p[2])
-            branchlist = [[branch(st_pack, m_p, bd_p, br_p, r_p, True).generate()]]
-
-        """
-        # now this is just a temporary trick until blender fixes something
-        if tps.treename != context.object.name:
-            bpy.ops.object.tree_sync()
-            tps.treename = context.object.name
-        """
+        '''
+        pars = global_parameters()
+        seeds = [pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1]]
 
         # generates the trunk and lists of lists of branches
-        branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p)
-        verts, edges, faces, selection, info = toverts(
-            branchlist, tps.facebool, m_p, br_p, t_p, e_p
-        )
+        st_pack = [Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2], 0]
+
+        if tps.engine == "classic":
+            stbran = branch(st_pack, pars.m_p, True)
+            stbran.generate(pars)
+            branchlist = [[stbran]]
+            branchlist = outgrow(branchlist, pars)
+            verts, edges, faces, selection, info = toverts(branchlist, pars)
+
+        elif tps.engine == "dynamic":
+            stbran = branch(st_pack, pars.m_p, True)
+            stbran.generate_dynamic(pars)
+            branchlist = [stbran]
+            branchlist = outgrow_dynamic(branchlist, pars)
+            verts, edges, faces, selection, info = toverts_dynamic(branchlist, pars)
+        
         # updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new("tree update")
         t_mesh.from_pydata(verts, edges, faces)
@@ -218,7 +223,7 @@ class CALMTREE_OT_update(bpy.types.Operator):
         v_group.remove([i for i in range(len(verts))])
         v_group.add(selection, 1.0, "REPLACE")
 
-        br_p[-1], bd_p[-1], r_p[-1] = seeds
+        pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1] = seeds
         context.object["CalmTreeConfig"] = saveconfig()
         context.object["CalmTreeLog"] = info
 
@@ -293,16 +298,13 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
         )
         tps.Mscale = 1
         tps.Mvres = len(curve)
-        m_p, br_p, bn_p, bd_p, r_p, t_p, e_p, d_p = parametersgen()
-        seeds = [br_p[-1], bd_p[-1], r_p[-1]]
+        pars = global_parameters()
+        seeds = [pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1]]
 
         # generates the trunk and lists of lists of stuff
-        m_p[3] *= m_p[2]
-        branchlist = branchinit(curve, m_p, bd_p, br_p, r_p)
-        branchlist = outgrow(branchlist, br_p, bn_p, bd_p, r_p, t_p, e_p)
-        verts, edges, faces, selection, info = toverts(
-            branchlist, tps.facebool, m_p, br_p, t_p, e_p
-        )
+        branchlist = branchinit(curve, pars.m_p, pars.bd_p, pars.br_p, pars.r_p)
+        branchlist = outgrow(branchlist, pars)
+        verts, edges, faces, selection, info =  toverts(branchlist, pars)
 
         # creating the tree
         mesh = bpy.data.meshes.new("tree")
@@ -327,7 +329,7 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
         curve_obj.data.name = "trunk curve" + ext
 
         # writing properties
-        br_p[-1], bd_p[-1], r_p[-1] = seeds
+        pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1] = seeds
 
         # adding vertex group for furthest branches
         if selection:
