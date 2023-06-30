@@ -214,72 +214,8 @@ def outgrow_dynamic(ready, pars):
 
     return ready
 
-def toverts(branchlist, pars):
-    #reorganising branchlist
-    for lev in range(len(branchlist)-1):
-        bran_i = 0
-        while bran_i<len(branchlist[lev]):
-            if branchlist[lev][bran_i].mp[2]==branchlist[lev][bran_i].mp[3]:
-                branchlist[-1].insert(0, branchlist[lev].pop(bran_i))
-            else:bran_i+=1
-
-
-    #IF NOT FACEBOOL
-    if not pars.facebool:
-        verts = []
-        edges =[]
-        for lev in branchlist:
-            for bran in lev:
-                if pars.e_p[0]!=0:bran.interpolate(pars.e_p[0])
-                verts.extend(bran.spine)
-                if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
-                else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
-        verts = [vec*pars.m_p[4] for vec in verts] #scale update
-        return verts, edges, [], [], []
-    
-    #FACEBOOL
-    faces=[]
-    
-    #generating faces
-    for lev in range(pars.br_p[0]+1):
-        for bran in branchlist[lev]:
-            if pars.e_p[0]!=0:bran.interpolate(pars.e_p[0])
-            faces.append(face_gen(bran.mp[0], bran.n))
-            
-    #combining faces
-    while True:
-        if len(faces) == 1:
-            faces = faces[0]
-            break
-        faces[0].extend([[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)])
-
-    #generating verts from spine and making selection
-    verts = []
-    selection=[0]
-    info=[]
-    for lev in range(len(branchlist)):
-        if lev == len(branchlist)-1:
-            selection[0] = len(verts)
-        for bran in branchlist[lev]:
-            info.append([0,bran.mp[0]*bran.n-1, bran.mp[0]])
-            verts.extend(bark_gen(bran.spine, bran.mp, pars.scale_f1))
-    
-    selection = list(range(selection[0], len(verts)))
-    
-    for i in range(1,len(info)):
-        info[i][0]=info[i-1][1]+1
-        info[i][1]+=info[i][0]
-
-    #flattening the base, 
-    for lev in range(pars.m_p[0]):
-        verts[lev][2] = 0
-
-    #scaling the tree
-    verts = [vec*pars.m_p[4] for vec in verts]
-    
-    return verts, [], faces, selection, info
-
-def toverts_dynamic(branchlist, pars):
+def toverts_complete(branchlist, pars):
+    if type(branchlist[0])==list: branchlist = [a for b in branchlist for a in b]
     m_p = pars.m_p
     e_p = pars.e_p
     d_p = pars.d_p
@@ -296,7 +232,7 @@ def toverts_dynamic(branchlist, pars):
     
     #FACEBOOL
     faces=[]
-    
+
     #generating faces
     for bran in branchlist:
         if e_p[0]:bran.interpolate(e_p[0])
@@ -309,21 +245,10 @@ def toverts_dynamic(branchlist, pars):
             break
         faces[0].extend([[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)])
 
-    # generating verts from spine and making info, selection
-    # info should be [startingvert, lastvert, sides]
-    # selection should be verts that should have leaves
-    trunk = branchlist[0]
-    verts = [bark_gen(bran.spine, bran.mp, pars.scale_f1, bran.H)]
-    #selection = list(range(round((trunk.n-1)*(1-d_p[1]))*trunk.mp[0],(trunk.n-1)*trunk.mp[0]))
-    #info = [0,bran.mp[0]*bran.n-1, bran.mp[0]]
-    for bran in branchlist[1:]:
-        verts.append(bark_gen(bran.spine, bran.mp, pars.scale_f1, bran.H))
-        #info.append([info[-1][0]+1,bran.mp[0]*bran.n-1+info[-1][0], bran.mp[0]])
-        #start = round((bran.n-1)*(1-d_p[1]))*bran.mp[0]+verts[-1]+1
-        #end = (bran.n-1)*bran.mp[0]+verts[-1]
-        #selection.extend(list(range(start,end)))
-
+    verts, selection, info = bark_gen(branchlist, pars)
+        
     #flattening the base
+    trunk = branchlist[0]
     quat = (trunk.spine[1]-trunk.spine[0]).rotation_difference(Vector((0,0,1)))
     for i in range(trunk.mp[0]):verts[i]=quat@verts[i]
 
@@ -331,37 +256,6 @@ def toverts_dynamic(branchlist, pars):
     verts = [vec*m_p[4] for vec in verts]
     
     return verts, [], faces, selection, info
-
-def toverts_complete(branchlist, pars):
-    m_p = pars.m_p
-    e_p = pars.e_p
-    d_p = pars.d_p
-    if not pars.facebool:
-        verts = []
-        edges = []
-        for bran in branchlist:
-            if e_p[0]:bran.interpolate(e_p[0])
-            verts.extend(bran.spine)
-            if edges: edges += [[n+edges[-1][1]+1,n+2+edges[-1][1]] for n in range(len(bran.spine))][:-1]
-            else: edges += [(n,n+1) for n in range(len(bran.spine))][:-1]
-        verts = [vec*m_p[4] for vec in verts] #scale update
-        return verts, edges, [], [], []
-    
-    #FACEBOOL
-    faces=[]
-    flatlist = [a for b in branchlist for a in b]
-    #generating faces
-    for bran in branchlist:
-        if e_p[0]:bran.interpolate(e_p[0])
-        faces.append(face_gen(bran.mp[0], bran.n))
-            
-    #combining faces
-    while True:
-        if len(faces) == 1:
-            faces = faces[0]
-            break
-        faces[0].extend([[i+max(faces[0][-1])+1 for i in tup] for tup in faces.pop(1)])
-
 
 
 def branchinit(verts, m_p, bd_p, br_p, r_p):

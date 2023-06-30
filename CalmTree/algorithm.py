@@ -83,27 +83,38 @@ def bark_circle(n,r):
             circle.append(Vector((r*math.cos(2*math.pi*i/n), r*math.sin(2*math.pi*i/n), 0)))
     return circle
 
-def bark_gen(spine, m_p, scale_f1, H=0):
-    # parameters
-    sides, radius, tipradius = m_p[0], m_p[2], m_p[3]
-    
-    n = len(spine)
+def bark_gen(branchlist, pars):
+    # generating verts from spine and making info, selection
+    # info should be [startingvert, lastvert, sides]
+    # selection should be verts that should have leaves
+    leaffactor = pars.e_p[3]
+    verts = []
+    info = []
+    selection = []
+    additive = 0
+    f1 = pars.scale_f1
+    for bran in branchlist:
+        cutoff = bran.progress/(bran.length+bran.progress)
+        leafpoints = floor(bran.n*max(1, leaffactor*(bran.length+bran.progress)/bran.length)) #number of points to generate leaves from
+        selection.extend(list(range(leafpoints*bran.sides+additive, bran.n*bran.sides)))
+        info.append([additive, bran.n*bran.sides+additive, bran.sides])
+        additive+=bran.n*bran.sides+1
+        print('new bran')
+        print(bran.n)
+        print(len(bran.spine))
+        print(selection, info)
 
-    scale_list = [max(scale_f1(i/n*(1-H)+H)/scale_f1(H)*radius, tipradius) for i in range(n)]
+        quat = Vector((0,0,1)).rotation_difference(bran.direction)
+        verts.extend([(quat@i)+bran.spine[0] for i in bark_circle(bran.sides, bran.radius)])
+        for k in range(1,bran.n-1):
+            print(quat)
+            quat = (bran.spine[k]-bran.spine[k-1]).rotation_difference(bran.spine[k+1]-bran.spine[k])@quat
+            circle = bark_circle(bran.sides,f1(k/bran.n*(1-cutoff)+cutoff)/f1(cutoff)*bran.radius)
+            verts.extend([(quat@i)+bran.spine[k] for i in circle])
+        circle = bark_circle(bran.sides,pars.m_p[3])
+        verts.extend([(quat@i)+bran.spine[-1] for i in circle])
 
-    # generating bark with scaling and rotation based on parameters and spine
-    quat = Vector((0,0,1)).rotation_difference(spine[1]-spine[0])
-    bark = [(quat@i)+spine[0] for i in bark_circle(sides,scale_list[0])]
-    
-    for x in range(1, n-1):
-        vec = spine[x+1] - spine[x-1]
-        quat = Vector((0,0,1)).rotation_difference(vec)
-        new_circle = [quat @ i for i in bark_circle(sides,scale_list[x])]
-        for y in new_circle:
-            bark.append((Vector(spine[x]) + Vector(y)))
-    
-    bark += [(quat@i + Vector(spine[-1])) for i in bark_circle(sides,scale_list[-1])]
-    return bark
+    return verts, selection, info
 
 #number of sides, number of vertices, generates faces
 def face_gen(s, n):

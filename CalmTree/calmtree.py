@@ -34,7 +34,7 @@ class global_parameters:
             tps.bends_seed,
         ]
         self.r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
-        self.e_p = [tps.interp, tps.poisson_type, tps.poisson_qual]
+        self.e_p = [tps.interp, tps.poisson_type, tps.poisson_qual, tps.leaffactor]
         self.d_p = [tps.Ythreshold, max(tps.Tthreshold * tps.Mlength, 2 * l)]
         self.facebool = tps.facebool
 
@@ -93,8 +93,18 @@ class CALMTREE_OT_new(bpy.types.Operator):
         tps = context.window_manager.calmtree_props
 
         pars = global_parameters()
+        '''print(pars.m_p)
+        print(pars.br_p)
+        print(pars.bn_p)
+        print(pars.bd_p)
+        print(pars.r_p)
+        print(pars.e_p)
+        print(pars.d_p)
+        print(pars.lim)
+        print(pars.scale_f1)
+        print(pars.scale_f2)'''
+
         seeds = [pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1]]
-        print('okay')
         # generates the trunk and lists of lists of branches
         st_pack = [Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2], 0]
 
@@ -103,14 +113,14 @@ class CALMTREE_OT_new(bpy.types.Operator):
             stbran.generate(pars)
             branchlist = [[stbran]]
             branchlist = outgrow(branchlist, pars)
-            verts, edges, faces, selection, info = toverts(branchlist, pars)
+            verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
 
         elif tps.engine == "dynamic":
             stbran = branch(st_pack, pars.m_p, True)
             stbran.generate_dynamic(pars)
             branchlist = [stbran]
             branchlist = outgrow_dynamic(branchlist, pars)
-            verts, edges, faces, selection, info = toverts_dynamic(branchlist, pars)
+            verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
 
         # creating the tree
         mesh = bpy.data.meshes.new("tree")
@@ -197,14 +207,14 @@ class CALMTREE_OT_update(bpy.types.Operator):
             stbran.generate(pars)
             branchlist = [[stbran]]
             branchlist = outgrow(branchlist, pars)
-            verts, edges, faces, selection, info = toverts(branchlist, pars)
+            verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
 
         elif tps.engine == "dynamic":
             stbran = branch(st_pack, pars.m_p, True)
             stbran.generate_dynamic(pars)
             branchlist = [stbran]
             branchlist = outgrow_dynamic(branchlist, pars)
-            verts, edges, faces, selection, info = toverts_dynamic(branchlist, pars)
+            verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
         
         # updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new("tree update")
@@ -304,7 +314,7 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
         # generates the trunk and lists of lists of stuff
         branchlist = branchinit(curve, pars.m_p, pars.bd_p, pars.br_p, pars.r_p)
         branchlist = outgrow(branchlist, pars)
-        verts, edges, faces, selection, info =  toverts(branchlist, pars)
+        verts, edges, faces, selection, info =  toverts_complete(branchlist, pars)
 
         # creating the tree
         mesh = bpy.data.meshes.new("tree")

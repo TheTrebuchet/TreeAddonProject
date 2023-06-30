@@ -97,6 +97,14 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         max=20,
         update=tree_update
     )
+    leaffactor: bpy.props.FloatProperty(
+        name='Foliage',
+        description='Distance from the peak to the bottom of branch that has foliage (for each branch individually)',
+        default=0.7,
+        min=0.0,
+        max=1,
+        update=tree_update
+    )
     Ythreshold: bpy.props.FloatProperty(
         name='Split limit',
         description='Ratio of radii on branch split that permits geometry change',
