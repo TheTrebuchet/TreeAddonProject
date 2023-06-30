@@ -94,7 +94,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
 
         pars = global_parameters()
         seeds = [pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1]]
-
+        print('okay')
         # generates the trunk and lists of lists of branches
         st_pack = [Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2], 0]
 

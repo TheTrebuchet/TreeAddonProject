@@ -38,13 +38,13 @@ def spine_weight(spine, n, l, r, trunk, bd_p):
         vec = spine[i] - spine[i-1] #get previous vector
         angle = (Vector((0,0,1)).angle(vec))
         CM_lis = [spine[v]*(1-(v)/n) for v in range(i+1,n)]
-        CM = Vector((0,0,0))
+        cm_point = Vector((0,0,0))
         for v in CM_lis:
-            CM += v
-        CM = CM/((n-i-1)*(n-i)/(2*n))-spine[i]
-        w_angle = CM[0]**2+CM[1]**2-(r*math.cos(angle))**2
+            cm_point += v
+        cm_point = cm_point/((n-i-1)*(n-i)/(2*n))-spine[i]
+        w_angle = cm_point[0]**2+cm_point[1]**2-(r*math.cos(angle))**2
         if w_angle<0: w_angle = 0
-        w_angle = weight(i/n, math.atan(w_angle**0.5/(CM[2]+r*math.sin(angle))))
+        w_angle = weight(i/n, math.atan(w_angle**0.5/(cm_point[2]+r*math.sin(angle))))
         
         trans1 = Matrix.Translation(-1*spine[i])
         trans2 = Matrix.Translation(spine[i])
@@ -52,8 +52,8 @@ def spine_weight(spine, n, l, r, trunk, bd_p):
         spine[i:] = [trans2@(quat@(trans1@vec)) for vec in spine[i:]]
 
     if trunk:
-        CM = Vector([sum([i[0] for i in spine])/n, sum([i[1] for i in spine])/n, sum([i[2] for i in spine])/n])
-        quat = Quaternion(Vector((CM[1],-CM[0],0)), Vector((0,0,1)).angle(CM)*b_c)
+        cm_point = Vector([sum([i[0] for i in spine])/n, sum([i[1] for i in spine])/n, sum([i[2] for i in spine])/n])
+        quat = Quaternion(Vector((cm_point[1],-cm_point[0],0)), Vector((0,0,1)).angle(cm_point)*b_c)
         spine[:] = [quat@i for i in spine]
     
     return spine
@@ -120,7 +120,7 @@ def face_gen(s, n):
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
 
-def guides_gen(spine, m_p, pars, lev):
+def guides_gen(spine, m_p, pars, lev, p_prog):
     #uses check and ptgen in helper
     lim = 1/pars.bn_p[lev]
     length, radius, tipradius = m_p[1:4]
@@ -153,16 +153,18 @@ def guides_gen(spine, m_p, pars, lev):
             grid.append([])
     
     radii = lambda h, guide_l: min(max(scale_f1(h*(1-start_h)+start_h)*radius*0.8, tipradius), guide_l/length*radius)
+    progress = lambda h: h*(1-start_h)*length+length*start_h+p_prog
     lengthten = lambda h : length*scaling*scale_f2(h)
+
     sol = [v for seg in [lis for lis in grid if lis] for v in seg]
     guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #creating local guides and adjusting length
     
     for i in range(len(guides)):
         h = heights[i]
         ang = (math.pi/2-(h*minang+(1-h)*maxang))*random.uniform(1-var,1+var)
-        guides[i] = Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i]
-    
-    guidepacks = [[orgs[i],guides[i]*random.uniform(1-var, 1+var), radii(heights[i]/(1-start_h)-start_h, guides[i].length)] for i in range(len(orgs))] #creating guidepacks and radii
+        guides[i] = (Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i])*random.uniform(1-var, 1+var)
+        
+    guidepacks = [[orgs[i],guides[i], radii(heights[i]/(1-start_h)-start_h, guides[i].length), progress(heights[i])] for i in range(len(orgs))] #creating guidepacks and radii
     return guidepacks
 
 def fastguides_gen(spine, number, m_p, br_p, t_p):
