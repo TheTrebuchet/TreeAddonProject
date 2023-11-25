@@ -93,30 +93,19 @@ class CALMTREE_OT_new(bpy.types.Operator):
         tps = context.window_manager.calmtree_props
 
         pars = global_parameters()
-        '''print(pars.m_p)
-        print(pars.br_p)
-        print(pars.bn_p)
-        print(pars.bd_p)
-        print(pars.r_p)
-        print(pars.e_p)
-        print(pars.d_p)
-        print(pars.lim)
-        print(pars.scale_f1)
-        print(pars.scale_f2)'''
-
         seeds = [pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1]]
         # generates the trunk and lists of lists of branches
         st_pack = [Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2], 0]
 
         if tps.engine == "classic":
-            stbran = branch(st_pack, pars.m_p, True)
+            stbran = branch(st_pack, pars, True)
             stbran.generate(pars)
             branchlist = [[stbran]]
             branchlist = outgrow(branchlist, pars)
             verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
 
         elif tps.engine == "dynamic":
-            stbran = branch(st_pack, pars.m_p, True)
+            stbran = branch(st_pack, pars, True)
             stbran.generate_dynamic(pars)
             branchlist = [stbran]
             branchlist = outgrow_dynamic(branchlist, pars)
@@ -203,14 +192,14 @@ class CALMTREE_OT_update(bpy.types.Operator):
         st_pack = [Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2], 0]
 
         if tps.engine == "classic":
-            stbran = branch(st_pack, pars.m_p, True)
+            stbran = branch(st_pack, pars, True)
             stbran.generate(pars)
             branchlist = [[stbran]]
             branchlist = outgrow(branchlist, pars)
             verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
 
         elif tps.engine == "dynamic":
-            stbran = branch(st_pack, pars.m_p, True)
+            stbran = branch(st_pack, pars, True)
             stbran.generate_dynamic(pars)
             branchlist = [stbran]
             branchlist = outgrow_dynamic(branchlist, pars)

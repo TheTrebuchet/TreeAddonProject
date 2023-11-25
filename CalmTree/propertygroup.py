@@ -100,7 +100,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     leaffactor: bpy.props.FloatProperty(
         name='Foliage',
         description='Distance from the peak to the bottom of branch that has foliage (for each branch individually)',
-        default=0.7,
+        default=0.1,
         min=0.0,
         max=1,
         update=tree_update

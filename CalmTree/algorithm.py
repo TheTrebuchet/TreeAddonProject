@@ -92,28 +92,26 @@ def bark_gen(branchlist, pars):
     info = []
     selection = []
     additive = 0
-    f1 = pars.scale_f1
     for bran in branchlist:
-        cutoff = bran.progress/(bran.length+bran.progress)
-        leafpoints = floor(bran.n*max(1, leaffactor*(bran.length+bran.progress)/bran.length)) #number of points to generate leaves from
-        selection.extend(list(range(leafpoints*bran.sides+additive, bran.n*bran.sides)))
-        info.append([additive, bran.n*bran.sides+additive, bran.sides])
-        additive+=bran.n*bran.sides+1
-        print('new bran')
-        print(bran.n)
-        print(len(bran.spine))
-        print(selection, info)
-
-        quat = Vector((0,0,1)).rotation_difference(bran.direction)
-        verts.extend([(quat@i)+bran.spine[0] for i in bark_circle(bran.sides, bran.radius)])
-        for k in range(1,bran.n-1):
-            print(quat)
-            quat = (bran.spine[k]-bran.spine[k-1]).rotation_difference(bran.spine[k+1]-bran.spine[k])@quat
-            circle = bark_circle(bran.sides,f1(k/bran.n*(1-cutoff)+cutoff)/f1(cutoff)*bran.radius)
+        leafpoints = floor(bran.n*min(1, leaffactor*pars.m_p[1]/bran.length)) #number of points to generate leaves from
+        selection.extend(range(bran.n*bran.sides-1-leafpoints*bran.sides+additive, additive+bran.n*bran.sides-1))
+        print(((bran.n-leafpoints)*bran.sides+additive, bran.n*bran.sides-1+additive))
+        info.append([additive, additive+bran.n*bran.sides-1, bran.sides])
+        
+        quat = Vector((0,0,1)).rotation_difference(bran.direction) #initial quat
+        circle = bark_circle(bran.sides, bran.radius)
+        verts.extend([(quat@i)+bran.spine[0] for i in circle]) #first vert
+        quat = Vector((0,0,1)).rotation_difference(bran.spine[2]-bran.spine[0])
+        circle = bark_circle(bran.sides, bran.scalelist[1])
+        verts.extend([(quat@i)+bran.spine[1] for i in circle]) #second vert
+        for k in range(2,bran.n-1):
+            quat = (bran.spine[k]-bran.spine[k-2]).rotation_difference(bran.spine[k+1]-bran.spine[k-1])@quat
+            circle = bark_circle(bran.sides,bran.scalelist[k])
             verts.extend([(quat@i)+bran.spine[k] for i in circle])
-        circle = bark_circle(bran.sides,pars.m_p[3])
+        circle = bark_circle(bran.sides,bran.scalelist[-1])
         verts.extend([(quat@i)+bran.spine[-1] for i in circle])
 
+        additive+=bran.n*bran.sides #for info and selection in next bran
     return verts, selection, info
 
 #number of sides, number of vertices, generates faces

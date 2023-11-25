@@ -18,10 +18,10 @@ class guide():
         self.direct = (self.surface-self.origin).normalized()
         self.quat = None
 
-    def prerequisits(self, total, h, l, p_length, progress, hstart, p_radius, tipradius, scale_f2):
+    def prerequisits(self, total, h, l, p_length, progress, hstart, this_r, tipradius, scale_f2):
         self.length = scale_f2(hstart)*(p_length-total-h*l)
-        self.radius = max(min(self.length/p_length*p_radius, 0.9*p_radius), tipradius)
-        self.ratio = self.radius/p_radius
+        self.radius = max(min((self.length+total+progress)/p_length*this_r, this_r), tipradius)
+        self.ratio = self.radius/this_r
         self.prog = progress+total+h*l
         
     def generate(self):
@@ -30,35 +30,41 @@ class guide():
 
 
 class branch():
-    def __init__(self, pack, m_p, trunk):
+    def __init__(self, pack, pars, trunk):
         self.origin = pack[0]
         self.direction = pack[1]
         self.length = pack[1].length
         self.radius = pack[2]
         self.progress = pack[3]
-        self.sides = max(4,round(m_p[0]*pack[2]/m_p[2])) #adjusting sides
-        self.l = min(m_p[5], self.length/2)
+        self.sides = max(4,round(pars.m_p[0]*pack[2]/pars.m_p[2])) #adjusting sides
+        self.l = min(pars.m_p[5], self.length/2)
         self.trunk = trunk
+        #determined while generation happens
         self.guidepacks=[]
-        self.n = 0
+        self.n = 0 
         self.spine=[]
+        #for scalelist
+        cutoff = self.progress/(self.length+self.progress)
+        self.f12 = lambda total: max(pars.scale_f1(total/self.length*(1-cutoff)+cutoff)/pars.scale_f1(cutoff)*self.radius, pars.m_p[3])
+        self.scalelist = []
         #so each branch has its local mp upon initiation, that has modified sides length radius and l, just for clarity really
-        self.mp = [self.sides, self.length, self.radius, m_p[3], m_p[4], self.l]
+        self.mp = [self.sides, self.length, self.radius, pars.m_p[3], pars.m_p[4], self.l]
 
     def generate(self, pars):
         self.n = round(self.length/self.l)+1
+        
         self.spine = [Vector((0,0,0)), self.direction.normalized()*self.l]
-        length = self.length
-        l = self.l
-        radius = self.radius
-        direction = self.direction
-
+        self.scalelist.extend([self.f12(0), self.f12(self.l)])
+        
+        total=0
         while len(self.spine)<self.n:
-            self.spine.append(l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
-            self.spine = spine_bend(self.spine, self.n, pars.bd_p, l, direction)
+            total+=self.l
+            self.spine.append(self.l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
+            self.spine = spine_bend(self.spine, self.n, pars.bd_p, self.l, self.direction)
+            self.scalelist.append(self.f12(total))
 
-        self.spine = spine_jiggle(self.spine, l, length, pars.r_p)
-        self.spine = spine_weight(self.spine, self.n, l, radius, self.trunk, pars.bd_p)
+        self.spine = spine_jiggle(self.spine, self.l, self.length, pars.r_p)
+        self.spine = spine_weight(self.spine, self.n, self.l, self.radius, self.trunk, pars.bd_p)
 
         self.spine = [vec+self.origin for vec in self.spine]
     
@@ -69,29 +75,32 @@ class branch():
         Ythr = pars.d_p[0]
         Tthr = pars.d_p[1]
 
-        pars_length = pars.m_p[1]
         parent_length = self.length
         parent_progress = self.progress
 
         pars_startlength = pars.m_p[1]*pars.br_p[3]
-        parent_radius = pars.m_p[2]
+        parent_radius = self.radius
         tipradius = pars.m_p[3]
         l = self.l
         minang, maxang = pars.br_p[1:3]
-        scale_f1 = pars.scale_f1
+        f1 = pars.scale_f1
         scale_f2 = pars.scale_f2
+
+        
         
         random.seed(pars.br_p[-1])
         
         self.spine = [self.origin, self.direction.normalized()*l+self.origin]
+        total = l
+        self.scalelist = [self.f12(0), self.f12(l)]
         
         #build until startlength is reached
-        total = self.progress
-        while total<pars_startlength-l:
+        while total<pars_startlength-l-self.progress:
             total+=l
             self.spine.append(l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
             self.spine = spine_bend(self.spine, self.n, pars.bd_p, l, self.direction)
-        total-=self.progress
+            self.scalelist.append(self.f12(total))
+        
         
         #adding an origin (0,0,0) so that the first split isn't always on the start
         guidelist = [guide(self.origin, self.origin)]
@@ -100,18 +109,17 @@ class branch():
         while total<parent_length-Tthr:
             
             parent_quat = None
-            
+            this_r = self.f12(total)
+            self.scalelist.append(this_r)
             for i in range(qual): #number of tries
-                cutoff = parent_progress/pars_length
-                this_r = scale_f1(total/parent_length*(1-cutoff)+cutoff)*parent_radius
-                origin, surface, axis, h = guidetry(self.spine, this_r) #generating the guess
+                origin, surface, axis, h = guidetry(self.spine, 3*this_r) #generating the guess
                 hstart = (total+h*l)/(parent_length)
                 hglob = (total+h*l+self.progress)/(parent_length+self.progress)
                 
                 if (surface-guidelist[-1].surface).length>lim(hglob): #check for valid branches
                     
                     guess = guide(origin, surface) #the successful guess
-                    guess.prerequisits(total, h, l, parent_length, parent_progress, hstart, this_r, tipradius, scale_f2) #(total, h, l, p_length, progress, hstart, p_radius, tipradius, scale_f2)
+                    guess.prerequisits(total, h, l, parent_length, parent_progress, hstart, this_r, tipradius, scale_f2)
                     ang = hstart*minang+(1-hstart)*maxang #angle between the new branches
                     
                     if guess.ratio>Ythr: #if split can happen
@@ -124,7 +132,6 @@ class branch():
                         guess.quat = Quaternion(axis,(math.pi/2-ang))
                     guidelist.append(guess)
                     break
-            
             extension = l*(self.spine[-1]-self.spine[-2]).normalized()
             
             if parent_quat: #rotate new point
@@ -139,6 +146,7 @@ class branch():
             total+=l
             self.spine.append(l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
             self.spine = spine_bend(self.spine, len(self.spine), pars.bd_p, l, self.direction, nfactor=True)
+            self.scalelist.append(self.f12(total))
         
         #weight, jiggle and finish everything
         #self.spine = spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
@@ -190,7 +198,7 @@ def outgrow(branchlist, pars):
                 pars.r_p[2] +=1
                 pars.bd_p[-1] +=1
                 pars.br_p[-1] +=1 
-                bran = branch(pack, pars.m_p,  False)
+                bran = branch(pack, pars,  False)
                 bran.generate(pars)
                 branchlist[-1].append(bran)
         pars.br_p[3]**=2 #temporary workaround, startlength factor is squared
@@ -202,7 +210,7 @@ def outgrow_dynamic(ready, pars):
     d_p = pars.d_p
     while tobuild:
         pack = tobuild.pop(0)
-        bran = branch(pack, pars.m_p, False)
+        bran = branch(pack, pars, False)
         pars.br_p[-1]+=1
         if bran.mp[1]>d_p[1]: #if length of the branch is longer then threshold, generate with branches
             bran.generate_dynamic(pars)

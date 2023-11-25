@@ -75,6 +75,7 @@ class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
             col.prop(wm.calmtree_props, "branch_height")
             col.prop(wm.calmtree_props, "Ythreshold")
             col.prop(wm.calmtree_props, "Tthreshold")
+            col.prop(wm.calmtree_props, "leaffactor")
         col.label(text="Seeds and Variety")
         col.prop(wm.calmtree_props, "Rperlin_seed")
         col.prop(wm.calmtree_props, "bends_seed")
