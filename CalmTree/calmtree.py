@@ -1,6 +1,7 @@
 import bpy
 import bmesh
 import os
+import time
 from .geogroup import *
 from .algorithm import *
 from .generative import *
@@ -46,6 +47,11 @@ class global_parameters:
         # this one is for branches scale
         bs = tps.branch_shift
         self.scale_f2 = lambda x: (4*x*(1-x)*((1-bs**2)**0.5+1)/(2*(bs*(2*x-1)+1)))**(0.5+0.5*abs(bs))
+    
+    def extract(self):
+        pars = [self.m_p, self.br_p, self.bn_p, self.bd_p, self.r_p, self.e_p, self.d_p, self.facebool, self.facebool]
+        for i in pars:
+            print(i)
 
 def checkedit(context):
     config = context.object["CalmTreeConfig"]
@@ -93,6 +99,7 @@ class CALMTREE_OT_new(bpy.types.Operator):
         tps = context.window_manager.calmtree_props
 
         pars = global_parameters()
+        pars.extract()
         seeds = [pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1]]
         # generates the trunk and lists of lists of branches
         st_pack = [Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2], 0]
@@ -102,14 +109,14 @@ class CALMTREE_OT_new(bpy.types.Operator):
             stbran.generate(pars)
             branchlist = [[stbran]]
             branchlist = outgrow(branchlist, pars)
-            verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
+            verts, edges, faces, selection, info = toverts(branchlist, pars)
 
         elif tps.engine == "dynamic":
             stbran = branch(st_pack, pars, True)
             stbran.generate_dynamic(pars)
             branchlist = [stbran]
             branchlist = outgrow_dynamic(branchlist, pars)
-            verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
+            verts, edges, faces, selection, info = toverts(branchlist, pars)
 
         # creating the tree
         mesh = bpy.data.meshes.new("tree")
@@ -156,13 +163,15 @@ class CALMTREE_OT_update(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
+        time_process=time.time()
+
         tps = context.window_manager.calmtree_props
         try:
             bpy.context.object["CalmTreeConfig"]
         except:
             self.report({"INFO"}, "I can't update an object that isn't a tree")
             return {"FINISHED"}
-
+        
         tree_obj = bpy.context.object
         custom_child = [o for o in tree_obj.children if "custom trunk" in o.name]
 
@@ -173,38 +182,33 @@ class CALMTREE_OT_update(bpy.types.Operator):
             )
             return {"FINISHED"}
 
-        
-        '''
-        if custom_child:
-        branchlist = []
-            pre_curve = [Vector(v.co) for v in custom_child[0].data.vertices]
-            curve = pre_curve.copy()
-            if curve[-1].length < curve[0].length:
-                curve.reverse()
-            # m_p[3]*=m_p[2]
-            branchlist = branchinit(curve, pars.m_p, pars.bd_p, pars.br_p, pars.r_p)
-        else:
-        '''
         pars = global_parameters()
         seeds = [pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1]]
 
         # generates the trunk and lists of lists of branches
         st_pack = [Vector((0, 0, 0)), Vector((0, 0, pars.m_p[1])), pars.m_p[2], 0]
 
+        time_engine = time.time()
+
         if tps.engine == "classic":
             stbran = branch(st_pack, pars, True)
             stbran.generate(pars)
             branchlist = [[stbran]]
             branchlist = outgrow(branchlist, pars)
-            verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
-
+            print('classic grow took ' + str(time.time()-time_engine))
+            verts, edges, faces, selection, info = toverts(branchlist, pars)
+        
         elif tps.engine == "dynamic":
             stbran = branch(st_pack, pars, True)
             stbran.generate_dynamic(pars)
             branchlist = [stbran]
             branchlist = outgrow_dynamic(branchlist, pars)
-            verts, edges, faces, selection, info = toverts_complete(branchlist, pars)
+            print('dynamic grow took ' + str(time.time()-time_engine))
+            verts, edges, faces, selection, info = toverts(branchlist, pars)
         
+        print('engine took ' + str(time.time()-time_engine))
+        time_create=time.time()
+
         # updating mesh, tree update is a temporary object
         t_mesh = bpy.data.meshes.new("tree update")
         t_mesh.from_pydata(verts, edges, faces)
@@ -225,7 +229,8 @@ class CALMTREE_OT_update(bpy.types.Operator):
         pars.br_p[-1], pars.bd_p[-1], pars.r_p[-1] = seeds
         context.object["CalmTreeConfig"] = saveconfig()
         context.object["CalmTreeLog"] = info
-
+        print('placing object took ' + str(time.time()-time_create))
+        print('whole algorithm took ' + str(time.time()-time_process))
         return {"FINISHED"}
 
 
@@ -303,7 +308,7 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
         # generates the trunk and lists of lists of stuff
         branchlist = branchinit(curve, pars.m_p, pars.bd_p, pars.br_p, pars.r_p)
         branchlist = outgrow(branchlist, pars)
-        verts, edges, faces, selection, info =  toverts_complete(branchlist, pars)
+        verts, edges, faces, selection, info =  toverts(branchlist, pars)
 
         # creating the tree
         mesh = bpy.data.meshes.new("tree")

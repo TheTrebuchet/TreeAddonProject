@@ -1,9 +1,11 @@
 import math
 from math import floor, ceil
 import random
-from mathutils import Vector, noise ,Matrix, Quaternion
-import bl_math
+from mathutils import Vector, noise, Matrix, Quaternion
 from .helper import *
+
+def clamper(x):
+    return max(0,min(x,1))
 
 # bends the spine in a more meaningful way
 def spine_bend(spine, n, bd_p, l, guide, quatmode=False, nfactor=False):
@@ -19,7 +21,7 @@ def spine_bend(spine, n, bd_p, l, guide, quatmode=False, nfactor=False):
     
     bend_vec = Vector((f_noise(len(spine)-2, b_seed), f_noise(len(spine)-2, b_seed+10), 1)).normalized() #generate random vector        
     bend_vec = (Vector((0,0,1)).rotation_difference(new_vec))@bend_vec #rotating bend_vec to local direction
-    x = bl_math.clamp(guide.angle(bend_vec,0.0)/math.radians(90))**2 #apply dampening, to be improved
+    x = clamper(guide.angle(bend_vec,0.0)/math.radians(90))**2 #apply dampening, to be improved
     new_vec = bend_vec*(1-x) + new_vec.normalized()*x #mixing between random (bend_vec) and ideal (new_vec) vectors
 
     # transformation itself, rotating the remaining branch towards the new vector
@@ -95,7 +97,6 @@ def bark_gen(branchlist, pars):
     for bran in branchlist:
         leafpoints = floor(bran.n*min(1, leaffactor*pars.m_p[1]/bran.length)) #number of points to generate leaves from
         selection.extend(range(bran.n*bran.sides-1-leafpoints*bran.sides+additive, additive+bran.n*bran.sides-1))
-        print(((bran.n-leafpoints)*bran.sides+additive, bran.n*bran.sides-1+additive))
         info.append([additive, additive+bran.n*bran.sides-1, bran.sides])
         
         quat = Vector((0,0,1)).rotation_difference(bran.direction) #initial quat
@@ -197,6 +198,6 @@ def fastguides_gen(spine, number, m_p, br_p, t_p):
         dir_vec = Vector((math.sin(ang)*math.cos(a),math.sin(ang)*math.sin(a), math.cos(ang))).normalized()
         guide_vec = quat @ dir_vec
         guide_vec *= length*scaling*scale_f2(x, shift)*random.uniform(1-var, 1+var)
-        guide_r = bl_math.clamp(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius)
+        guide_r = clamper(scale_f1(height, flare)*radius*0.8, tipradius, guide_vec.length/length*radius)
         guidepacks.append((trans_vec, guide_vec, guide_r))
     return guidepacks

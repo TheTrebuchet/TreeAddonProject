@@ -85,8 +85,6 @@ class branch():
         minang, maxang = pars.br_p[1:3]
         f1 = pars.scale_f1
         scale_f2 = pars.scale_f2
-
-        
         
         random.seed(pars.br_p[-1])
         
@@ -222,7 +220,7 @@ def outgrow_dynamic(ready, pars):
 
     return ready
 
-def toverts_complete(branchlist, pars):
+def toverts(branchlist, pars):
     if type(branchlist[0])==list: branchlist = [a for b in branchlist for a in b]
     m_p = pars.m_p
     e_p = pars.e_p
