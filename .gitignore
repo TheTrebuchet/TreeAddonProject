@@ -7,3 +7,4 @@ Text.py
 /assets_temporary
 *help.md
 *.src*
+testing/treegen/target/*
