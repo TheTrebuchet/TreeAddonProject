@@ -2,6 +2,7 @@ import bpy
 import bmesh
 import os
 import time
+import subprocess
 from .geogroup import *
 from .algorithm import *
 from .generative import *
@@ -175,6 +176,14 @@ class CALMTREE_OT_new(bpy.types.Operator):
         debug.stop('post stuff') #STOPPER
         debug.stop('whole') #STOPPER
         debug.display()
+
+        print()
+        directory = os.path.dirname(os.path.realpath(__file__))
+        enginepath=directory + "/engine"
+        popen = subprocess.Popen(enginepath, stdout=subprocess.PIPE)
+        popen.wait()
+        output = popen.stdout.read()
+        print(output)
         
         return {"FINISHED"}
 
