@@ -224,7 +224,6 @@ def toverts(branchlist, pars):
     if type(branchlist[0])==list: branchlist = [a for b in branchlist for a in b]
     m_p = pars.m_p
     e_p = pars.e_p
-    d_p = pars.d_p
     if not pars.facebool:
         verts = []
         edges = []
