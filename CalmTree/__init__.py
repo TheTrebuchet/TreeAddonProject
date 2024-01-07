@@ -57,7 +57,7 @@ def register():
         bpy.utils.register_class(cls)
 
     bpy.types.WindowManager.calmtree_props = bpy.props.PointerProperty(type=propertygroup.CALMTREE_PG_props)
-
+    subprocess.Popen('chmod a+x '+ os.path.dirname(os.path.realpath(__file__)) + '/engine', shell=True)
 def unregister():
     del bpy.types.WindowManager.calmtree_props
 

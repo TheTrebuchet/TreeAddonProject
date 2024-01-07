@@ -54,7 +54,7 @@ class global_parameters:
         for i in pars:
             print(i)
 
-class stopper():
+class timer():
     def __init__(self):
         self.times = {}
     def start(self, name):
@@ -109,8 +109,8 @@ class CALMTREE_OT_new(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        debug = stopper() #STOPPER
-        debug.start('whole') #STOPPER
+        debug = timer() #TIMER
+        debug.start('whole') #TIMER
         tps = context.window_manager.calmtree_props
 
         pars = global_parameters()
@@ -121,25 +121,25 @@ class CALMTREE_OT_new(bpy.types.Operator):
 
 
         if tps.engine == "classic":
-            debug.start('classic') #STOPPER
+            debug.start('classic') #TIMER
             stbran = branch(st_pack, pars, True)
             stbran.generate(pars)
             branchlist = [[stbran]]
             branchlist = outgrow(branchlist, pars)
             verts, edges, faces, selection, info = toverts(branchlist, pars)
-            debug.stop('classic') #STOPPER
+            debug.stop('classic') #TIMER
 
         elif tps.engine == "dynamic":
-            debug.start('dynamic') #STOPPER
+            debug.start('dynamic') #TIMER
             stbran = branch(st_pack, pars, True)
             stbran.generate_dynamic(pars)
             branchlist = [stbran]
             branchlist = outgrow_dynamic(branchlist, pars)
             verts, edges, faces, selection, info = toverts(branchlist, pars)
-            debug.stop('dynamic') #STOPPER
+            debug.stop('dynamic') #TIMER
 
         # creating the tree
-        debug.start('object placement') #STOPPER
+        debug.start('object placement') #TIMER
         mesh = bpy.data.meshes.new("tree")
         object = bpy.data.objects.new("tree", mesh)
         bpy.context.collection.objects.link(object)
@@ -151,9 +151,9 @@ class CALMTREE_OT_new(bpy.types.Operator):
         bpy.context.view_layer.objects.active = object
         bpy.ops.object.shade_smooth()
         object.matrix_world.translation = context.scene.cursor.location
-        debug.stop('object placement') #STOPPER
+        debug.stop('object placement') #TIMER
 
-        debug.start('post stuff') #STOPPER
+        debug.start('post stuff') #TIMER
         # adding vertex group for furthest branches
         if selection:
             v_group = object.vertex_groups.new(name="leaves")
@@ -173,11 +173,11 @@ class CALMTREE_OT_new(bpy.types.Operator):
         if tps.matbool:
             bpy.ops.object.tree_mat()
         
-        debug.stop('post stuff') #STOPPER
-        debug.stop('whole') #STOPPER
+        debug.stop('post stuff') #TIMER
+        debug.stop('whole') #TIMER
         debug.display()
 
-        print()
+        #testing implementation of binary to speed things up
         directory = os.path.dirname(os.path.realpath(__file__))
         enginepath=directory + "/engine"
         popen = subprocess.Popen(enginepath, stdout=subprocess.PIPE)
