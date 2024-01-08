@@ -11,19 +11,23 @@ def pseudo_poisson_disc(n, length, radius):
         result.append((a,h))
     return result
 
-def ptgen(spine, radius, idx, scale_f1, hor):
-        pt = spine[idx]
-        pt2 = spine[idx+1]
-        x = random.random()
-        origin = x*pt+(1-x)*pt2
-        h = (idx+x)/len(spine)
-        radius += scale_f1(h)
-        phi = random.uniform(-math.pi,math.pi)
-        npt = Vector((0,0,1)).rotation_difference(pt2-pt)@Vector((radius*sin(phi), radius*cos(phi),0))
-        if hor > 0.01:
-            npt = (Matrix.Scale(0.0,4,(pt2-pt))@(npt*Vector((1,1,1-hor)))).normalized()
-        
-        return npt+origin, origin, h
+def ptgen(spine, radius, idx, hor):
+    """
+    chooses a point between idx and idx+1 that becoms branch origin
+    generates a point that branch should point to, length = radius
+    it also outputs x, which is the factor of mixing between pt1 and pt2
+    """
+    pt1 = spine[idx]
+    pt2 = spine[idx+1]
+    x = random.random()
+    origin = x*pt1+(1-x)*pt2
+    phi = random.uniform(-math.pi,math.pi) #angle around the spine
+    npt = Vector((0,0,1)).rotation_difference(pt2-pt1)@Vector((sin(phi), cos(phi),0))
+    if hor > 0.01:
+        npt = (Matrix.Scale(0.0,4,(pt2-pt1))@(npt*Vector((1,1,1-hor)))).normalized()
+    
+    npt_global = radius*npt+origin #with length relevant to steric hinderence
+    return npt_global, npt, origin, x
     
 def check(npt, grid, lim, idx, ran):
     current = [v for lis in grid[max(-ran, -len(grid)):] for v in lis]

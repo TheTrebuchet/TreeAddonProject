@@ -8,3 +8,5 @@ Text.py
 *help.md
 *.src*
 testing/treegen/target/
+CalmTree/out.gv
+CalmTree/out.png

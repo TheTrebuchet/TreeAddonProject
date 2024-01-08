@@ -99,12 +99,12 @@ def bark_gen(branchlist, pars):
         selection.extend(range(bran.n*bran.sides-1-leafpoints*bran.sides+additive, additive+bran.n*bran.sides-1))
         info.append([additive, additive+bran.n*bran.sides-1, bran.sides])
         
-        quat = Vector((0,0,1)).rotation_difference(bran.direction) #initial quat
+        quat = Vector((0,0,1)).rotation_difference(bran.direction) #first quat
         circle = bark_circle(bran.sides, bran.radius)
-        verts.extend([(quat@i)+bran.spine[0] for i in circle]) #first vert
-        quat = Vector((0,0,1)).rotation_difference(bran.spine[2]-bran.spine[0])
+        verts.extend([(quat@i)+bran.spine[0] for i in circle]) #first circle
+        quat = Vector((0,0,1)).rotation_difference(bran.spine[2]-bran.spine[0]) #second quat
         circle = bark_circle(bran.sides, bran.scalelist[1])
-        verts.extend([(quat@i)+bran.spine[1] for i in circle]) #second vert
+        verts.extend([(quat@i)+bran.spine[1] for i in circle]) #second circle
         for k in range(2,bran.n-1):
             quat = (bran.spine[k]-bran.spine[k-2]).rotation_difference(bran.spine[k+1]-bran.spine[k-1])@quat
             circle = bark_circle(bran.sides,bran.scalelist[k])
@@ -130,54 +130,71 @@ def face_gen(s, n):
 # BRANCHES AND TREE GENERATION
 # outputs [place of the branch, vector that gives branch angle and size, radius of the branch]
 
-def guides_gen(spine, m_p, pars, lev, p_prog):
-    #uses check and ptgen in helper
+def guides_fancy(spine, m_p, pars, lev, p_prog, scalelist):
+    """
+    uses functions from helper file
+    check for checking if the point is valid
+    ptgen for generating new point
+    goes top to bottom
+    total fucking mess
+    """
     lim = 1/pars.bn_p[lev]
-    length, radius, tipradius = m_p[1:4]
-    minang, maxang, start_h, horizontal, var, scaling, sd = pars.br_p[1:]
+    p_length, p_radius, p_tipradius = m_p[1:4]
+    minang, maxang, start_h, hor_factor, var, scaling, sd = pars.br_p[1:]
     qual = pars.e_p[2]
-    scale_f1, scale_f2 = pars.scale_f1, pars.scale_f2
+    scale_f2 = pars.scale_f2
     
-    if radius == tipradius:
+    if p_radius == p_tipradius: #see if there is any point to this, should be outside of this function
         return []
     
-    spine = spine[floor(start_h*len(spine)):]
-    random.seed(sd)
-    grid = [[]]
-    orgs = []
-    heights = []
+    #no need for the base and the tip, should speed up iteration
+    total_idx = len(spine)-1
+    cutoff_idx = floor(start_h*len(spine))
+    spine = spine[cutoff_idx:]
     idx = len(spine)-2
-    dist = 1/3*length*scaling
-    ran = ceil(len(spine)/4)
-    while idx>0:
+    
+    random.seed(sd) #seems to be necessary
+    
+    grid = [[]] #guides with global coordinates, for the algorithm
+    guides = [] #guides with local coordinates
+    orgs = [] #origins of the branches
+    h_glob = [] #height factor, from bottom to the top
+    h_loc = [] #height factor, from startlength to the top
+    steric_dist = 1/3*p_length*scaling #distance at which branches get too close
+    ran = ceil(len(spine)/4) #range to verify the generated branches
+    
+    #this generates the new branches
+    while idx>=0:
         found = False
         for i in range(qual):
-            npt, origin, h = ptgen(spine, dist, idx, scale_f1, horizontal)
-            if check(npt, grid, lim, idx, ran):
-                grid[-1].append(npt)
-                orgs.append(origin)
-                heights.append(h)
+            npt_global, npt_local, origin, x = ptgen(spine, steric_dist+scalelist[idx], idx, hor_factor)
+            if check(npt_global, grid, lim, idx, ran):
+                grid[-1].append(npt_global) #for the algorithm
+                guides.append(npt_local) #for the result
+                orgs.append(origin) #for the result
+                h_glob.append((cutoff_idx+idx+x)/total_idx) #for the result, represents the factor of height on the total spine
+                h_loc.append((idx+x)/(total_idx-cutoff_idx))
                 found = True
         if not found:
             idx-=1
             grid.append([])
-    
-    radii = lambda h, guide_l: min(max(scale_f1(h*(1-start_h)+start_h)*radius*0.8, tipradius), guide_l/length*radius)
-    progress = lambda h: h*(1-start_h)*length+length*start_h+p_prog
-    lengthten = lambda h : length*scaling*scale_f2(h)
 
-    sol = [v for seg in [lis for lis in grid if lis] for v in seg]
-    guides = [(sol[i] - orgs[i]).normalized()*lengthten(heights[i]) for i in range(len(sol))] #creating local guides and adjusting length
-    
+    set_length = lambda hloc : p_length*scaling*scale_f2(hloc)
+    guides = [guides[i]*set_length(h_loc[i]) for i in range(len(guides))] #making local guides, adjusting length
+    scalemix = lambda x: ((x%1)*scalelist[floor(x*total_idx)]+(1-x%1)*scalelist[ceil(x*total_idx)])
+    radii = lambda hglob, guide_l: min(max(scalemix(hglob), p_tipradius), guide_l/p_length*p_radius)
+
+    #further adjusting angles to match the set gradient from top to bottom, with randomization
     for i in range(len(guides)):
-        h = heights[i]
-        ang = (math.pi/2-(h*minang+(1-h)*maxang))*random.uniform(1-var,1+var)
-        guides[i] = (Quaternion((spine[floor(h)]-spine[ceil(h)]).cross(guides[i]), ang)@guides[i])*random.uniform(1-var, 1+var)
-        
-    guidepacks = [[orgs[i],guides[i], radii(heights[i]/(1-start_h)-start_h, guides[i].length), progress(heights[i])] for i in range(len(orgs))] #creating guidepacks and radii
+        hl = h_loc[i]
+        ang = (math.pi/2-(hl*minang+(1-hl)*maxang))*random.uniform(1-var,1+var)
+        guides[i] = (Quaternion((spine[floor(hl)]-spine[ceil(hl)]).cross(guides[i]), ang)@guides[i])*random.uniform(1-var, 1+var)
+    
+    #putting in the [origin point, local guide point, radius, length, progress] in separate guidepacks
+    guidepacks = [[orgs[i], guides[i], radii(h_glob[i], guides[i].length), h_glob[i]*p_length+p_prog] for i in range(len(guides))] #creating guidepacks and radii
     return guidepacks
 
-def fastguides_gen(spine, number, m_p, br_p, t_p):
+def guides_fast(spine, number, m_p, br_p, t_p):
     #uses pseudo_poisson_disc in helper
     n = len(spine)
     length, radius, tipradius = m_p[1:4]

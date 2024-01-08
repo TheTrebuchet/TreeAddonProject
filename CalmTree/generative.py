@@ -43,18 +43,23 @@ class branch():
         self.guidepacks=[]
         self.n = 0 
         self.spine=[]
-        #for scalelist
         cutoff = self.progress/(self.length+self.progress)
+        #total is the total absolute value length
         self.f12 = lambda total: max(pars.scale_f1(total/self.length*(1-cutoff)+cutoff)/pars.scale_f1(cutoff)*self.radius, pars.m_p[3])
         self.scalelist = []
-        #so each branch has its local mp upon initiation, that has modified sides length radius and l, just for clarity really
+        #so each branch has its local mp upon initiation, that has modified sides, length, radius and l, just for clarity really
         self.mp = [self.sides, self.length, self.radius, pars.m_p[3], pars.m_p[4], self.l]
 
-    def generate(self, pars):
-        self.n = round(self.length/self.l)+1
+    def generate_classic(self, pars):
+        """
+        This will generate the whole tree spine from its guide.
+        It basically creates a new point, bends it, jiggles it and weighs it down based on predictions.
+        Additionally the scalelist is created, so that each vert has a specified, relative radius.
+        """
+        self.n = round(self.length/self.l)+1 #number of verts on a spine is introduced
         
-        self.spine = [Vector((0,0,0)), self.direction.normalized()*self.l]
-        self.scalelist.extend([self.f12(0), self.f12(self.l)])
+        self.spine = [Vector((0,0,0)), self.direction.normalized()*self.l] #spine two starting points
+        self.scalelist.extend([self.f12(0), self.f12(self.l)]) #
         
         total=0
         while len(self.spine)<self.n:
@@ -163,10 +168,10 @@ class branch():
         typ = pars.e_p[1]
 
         if typ == 'fancy':
-            self.guidepacks = guides_gen(self.spine, self.mp, pars, lev, self.progress)
+            self.guidepacks = guides_fancy(self.spine, self.mp, pars, lev, self.progress, self.scalelist)
         elif typ == 'fast': #this method should just be deprecated honestly
             num = lambda d, l: ceil((2.2*l+11)*d**(1.37*l**0.1)) #empiric equation
-            self.guidepacks = fastguides_gen(self.spine, num(density, self.mp[1]), self.mp, pars.brp)
+            self.guidepacks = guides_fast(self.spine, num(density, self.mp[1]), self.mp, pars.brp)
     
     def interpolate(self, lev):
         if len(self.spine)>3:
@@ -183,10 +188,7 @@ class branch():
             self.spine = sp
             self.n = len(sp)
 
-# THE MIGHTY TREE GENERATION
-
-def outgrow(branchlist, pars):
-    #creating the rest of levels
+def outgrow_classic(branchlist, pars):
     for lev in range(pars.br_p[0]):
         branchlist.append([])
         for parentbranch in branchlist[-2]:
@@ -196,11 +198,11 @@ def outgrow(branchlist, pars):
                 pars.r_p[2] +=1
                 pars.bd_p[-1] +=1
                 pars.br_p[-1] +=1 
-                bran = branch(pack, pars,  False)
-                bran.generate(pars)
+                bran = branch(pack, pars, False)
+                bran.generate_classic(pars)
                 branchlist[-1].append(bran)
-        pars.br_p[3]**=2 #temporary workaround, startlength factor is squared
-    pars.br_p[3]**=((0.5)**pars.br_p[0]) 
+        pars.br_p[3]**=2 #temporary workaround, startlength factor is squared so it lowers for each level
+    pars.br_p[3]**=((0.5)**pars.br_p[0]) #reverting the startlength
     return branchlist
 
 def outgrow_dynamic(ready, pars):
@@ -214,7 +216,7 @@ def outgrow_dynamic(ready, pars):
             bran.generate_dynamic(pars)
             tobuild.extend(bran.guidepacks)
         else: #else generate like always
-            bran.generate(pars)
+            bran.generate_classic(pars)
         
         ready.append(bran)
 
@@ -224,9 +226,9 @@ def toverts(branchlist, pars):
     if type(branchlist[0])==list: branchlist = [a for b in branchlist for a in b]
     m_p = pars.m_p
     e_p = pars.e_p
+    verts = []
+    edges = []
     if not pars.facebool:
-        verts = []
-        edges = []
         for bran in branchlist:
             if e_p[0]:bran.interpolate(e_p[0])
             verts.extend(bran.spine)

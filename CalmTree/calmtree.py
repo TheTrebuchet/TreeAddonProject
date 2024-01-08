@@ -45,7 +45,7 @@ class global_parameters:
         # this one is for trunk flare
         fa=tps.flare_amount
         self.scale_f1 = lambda x: 1-x+fa*(1-x)**10
-        # this one is for branches scale
+        # this one is for branches scale depending on their placement on a tree
         bs = tps.branch_shift
         self.scale_f2 = lambda x: (4*x*(1-x)*((1-bs**2)**0.5+1)/(2*(bs*(2*x-1)+1)))**(0.5+0.5*abs(bs))
     
@@ -123,9 +123,9 @@ class CALMTREE_OT_new(bpy.types.Operator):
         if tps.engine == "classic":
             debug.start('classic') #TIMER
             stbran = branch(st_pack, pars, True)
-            stbran.generate(pars)
+            stbran.generate_classic(pars)
             branchlist = [[stbran]]
-            branchlist = outgrow(branchlist, pars)
+            branchlist = outgrow_classic(branchlist, pars)
             verts, edges, faces, selection, info = toverts(branchlist, pars)
             debug.stop('classic') #TIMER
 
@@ -222,9 +222,9 @@ class CALMTREE_OT_update(bpy.types.Operator):
 
         if tps.engine == "classic":
             stbran = branch(st_pack, pars, True)
-            stbran.generate(pars)
+            stbran.generate_classic(pars)
             branchlist = [[stbran]]
-            branchlist = outgrow(branchlist, pars)
+            branchlist = outgrow_classic(branchlist, pars)
             verts, edges, faces, selection, info = toverts(branchlist, pars)
         
         elif tps.engine == "dynamic":
@@ -330,7 +330,7 @@ class CALMTREE_OT_regrow(bpy.types.Operator):
 
         # generates the trunk and lists of lists of stuff
         branchlist = branchinit(curve, pars.m_p, pars.bd_p, pars.br_p, pars.r_p)
-        branchlist = outgrow(branchlist, pars)
+        branchlist = outgrow_classic(branchlist, pars)
         verts, edges, faces, selection, info =  toverts(branchlist, pars)
 
         # creating the tree
