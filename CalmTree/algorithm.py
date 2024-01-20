@@ -133,9 +133,9 @@ def face_gen(s, n):
 def guides_fancy(spine, m_p, pars, lev, p_prog, scalelist):
     """
     uses functions from helper file
-    check for checking if the point is valid
+    check function for checking if the point is valid
     ptgen for generating new point
-    goes top to bottom
+    goes top to bottom to omit always generating a branch on the bottom
     total fucking mess
     """
     lim = 1/pars.bn_p[lev]
@@ -155,11 +155,8 @@ def guides_fancy(spine, m_p, pars, lev, p_prog, scalelist):
     
     random.seed(sd) #seems to be necessary
     
+    temp_pack = []
     grid = [[]] #guides with global coordinates, for the algorithm
-    guides = [] #guides with local coordinates
-    orgs = [] #origins of the branches
-    h_glob = [] #height factor, from bottom to the top
-    h_loc = [] #height factor, from startlength to the top
     steric_dist = 1/3*p_length*scaling #distance at which branches get too close
     ran = ceil(len(spine)/4) #range to verify the generated branches
     
@@ -170,28 +167,35 @@ def guides_fancy(spine, m_p, pars, lev, p_prog, scalelist):
             npt_global, npt_local, origin, x = ptgen(spine, steric_dist+scalelist[idx], idx, hor_factor)
             if check(npt_global, grid, lim, idx, ran):
                 grid[-1].append(npt_global) #for the algorithm
-                guides.append(npt_local) #for the result
-                orgs.append(origin) #for the result
-                h_glob.append((cutoff_idx+idx+x)/total_idx) #for the result, represents the factor of height on the total spine
-                h_loc.append((idx+x)/(total_idx-cutoff_idx))
+                temp_pack.append({'guide':npt_local, #global guide
+                             'org':origin, #global origin
+                             'h_glob':(cutoff_idx+idx+x)/total_idx, #height factor, from 0
+                             'h_loc':(idx+x)/(total_idx-cutoff_idx),
+                             'radius':0,
+                             'progress':0
+                             }) #height factor, from startlength
                 found = True
         if not found:
             idx-=1
             grid.append([])
 
-    set_length = lambda hloc : p_length*scaling*scale_f2(hloc)
-    guides = [guides[i]*set_length(h_loc[i]) for i in range(len(guides))] #making local guides, adjusting length
+    set_length = lambda h : p_length*scaling*scale_f2(h) #length relative to h_loc
     scalemix = lambda x: ((x%1)*scalelist[floor(x*total_idx)]+(1-x%1)*scalelist[ceil(x*total_idx)])
-    radii = lambda hglob, guide_l: min(max(scalemix(hglob), p_tipradius), guide_l/p_length*p_radius)
+    radii = lambda hglob, guide_l: min(max(0.9*scalemix(hglob), p_tipradius), guide_l/p_length*p_radius)
 
-    #further adjusting angles to match the set gradient from top to bottom, with randomization
-    for i in range(len(guides)):
-        hl = h_loc[i]
+    #adjust angles to match gradient, add randomization
+    for t in temp_pack:
+        t['guide'] = t['guide']*set_length(t['h_loc']) #making local guides, adjusting length
+        hl = t['h_loc']
         ang = (math.pi/2-(hl*minang+(1-hl)*maxang))*random.uniform(1-var,1+var)
-        guides[i] = (Quaternion((spine[floor(hl)]-spine[ceil(hl)]).cross(guides[i]), ang)@guides[i])*random.uniform(1-var, 1+var)
-    
-    #putting in the [origin point, local guide point, radius, length, progress] in separate guidepacks
-    guidepacks = [[orgs[i], guides[i], radii(h_glob[i], guides[i].length), h_glob[i]*p_length+p_prog] for i in range(len(guides))] #creating guidepacks and radii
+        t['guide'] = (Quaternion((spine[floor(hl)]-spine[ceil(hl)]).cross(t['guide']), ang)@t['guide'])*random.uniform(1-var, 1+var)
+        t['radius'] = radii(t['h_glob'], t['guide'].length)
+        t['progress'] = t['h_glob']*p_length+p_prog
+        t['org'] = t['guide'].normalized()*(scalemix(t['h_glob'])-t['radius'])+t['org'] #push the origin to the surface
+        
+    #putting in the [origin point, guide point (containing length), radius, progress] in separate guidepacks
+    guidepacks = [[t['org'], t['guide'], t['radius'], t['progress']] for t in temp_pack] #creating guidepacks and radii
+
     return guidepacks
 
 def guides_fast(spine, number, m_p, br_p, t_p):
