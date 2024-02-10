@@ -74,6 +74,13 @@ class branch():
         self.spine = [vec+self.origin for vec in self.spine]
     
     def generate_dynamic(self, pars):
+        """
+        conceptually its like generate_classic, but with integrated guidesgen that influences the generation
+        first the tree is built up to the point of startlength
+        then the generation happens with branches
+        it is finished with the tip
+        total is very important, l is added before a point is built
+        """
         #defining all parameters
         lim = pars.lim
         qual = pars.e_p[2]
@@ -164,6 +171,9 @@ class branch():
         self.spine = spine_weight(self.spine, self.n, self.mp[5], self.mp[2], self.trunk,self.bdp)
     
     def guidesgen(self, pars, lev):
+        """
+        chooses between two guidesgen modes, fast could be deprecated
+        """
         density = pars.bn_p[lev]
         typ = pars.e_p[1]
 
@@ -215,7 +225,7 @@ def outgrow_dynamic(ready, pars):
         if bran.mp[1]>d_p[1]: #if length of the branch is longer then threshold, generate with branches
             bran.generate_dynamic(pars)
             tobuild.extend(bran.guidepacks)
-        else: #else generate like always
+        else: #else generate the classic way
             bran.generate_classic(pars)
         
         ready.append(bran)

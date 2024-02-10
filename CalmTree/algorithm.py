@@ -168,12 +168,12 @@ def guides_fancy(spine, m_p, pars, lev, p_prog, scalelist):
             if check(npt_global, grid, lim, idx, ran):
                 grid[-1].append(npt_global) #for the algorithm
                 temp_pack.append({'guide':npt_local, #global guide
-                             'org':origin, #global origin
-                             'h_glob':(cutoff_idx+idx+x)/total_idx, #height factor, from 0
-                             'h_loc':(idx+x)/(total_idx-cutoff_idx),
-                             'radius':0,
-                             'progress':0
-                             }) #height factor, from startlength
+                                  'org':origin, #global origin
+                                  'h_glob':(cutoff_idx+idx+x)/total_idx, #height factor, from 0
+                                  'h_loc':(idx+x)/(total_idx-cutoff_idx),
+                                  'radius':0,
+                                  'progress':0
+                                  }) #height factor, from startlength
                 found = True
         if not found:
             idx-=1
