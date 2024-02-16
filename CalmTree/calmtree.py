@@ -2,7 +2,7 @@ import bpy
 import bmesh
 import os
 import time
-import subprocess
+import numpy as np
 from .geogroup import *
 from .algorithm import *
 from .generative import *
@@ -42,12 +42,14 @@ class global_parameters:
 
         self.lim = lambda x: 1 / (x * self.bn_p[0] + (1 - x) * self.bn_p[1])
         
-        # this one is for trunk flare
-        fa=tps.flare_amount
+        
+        fa=tps.flare_amount #for trunk flare
         self.scale_f1 = lambda x: 1-x+fa*(1-x)**10
-        # this one is for branches scale depending on their placement on a tree
-        bs = tps.branch_shift
+        bs = tps.branch_shift#for branches scale depending on their placement on a tree
         self.scale_f2 = lambda x: (4*x*(1-x)*((1-bs**2)**0.5+1)/(2*(bs*(2*x-1)+1)))**(0.5+0.5*abs(bs))
+        rd = tps.RatioDristribution
+        self.ratio_f1 = lambda x: 
+
     
     def extract(self):
         pars = [self.m_p, self.br_p, self.bn_p, self.bd_p, self.r_p, self.e_p, self.d_p, self.facebool, self.facebool]
@@ -88,7 +90,7 @@ def geonode():
     """
     inserts geometry nodes
     """
-    
+
     if "CalmTree_nodegroup" not in bpy.data.node_groups:
         CalmTree_nodegroup_exec()
     ng = bpy.data.node_groups["CalmTree_nodegroup"]

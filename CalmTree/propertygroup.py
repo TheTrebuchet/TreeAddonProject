@@ -121,6 +121,14 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         max=1,
         update=tree_update
     )
+    RatioDistribution: bpy.props.FloatProperty(
+        name='Ratio distribution',
+        description='Increases amount of splits compared to small branches',
+        default=0.5,
+        min=0.0,
+        max=1,
+        update=tree_update
+    )
     Msides: bpy.props.IntProperty(
         name='Trunk segments',
         description='Number of segments in the circle of the main trunk',
