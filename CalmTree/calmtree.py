@@ -55,6 +55,10 @@ class global_parameters:
             print(i)
 
 class timer():
+    """
+    helps measuring time of the algorithm
+    """
+
     def __init__(self):
         self.times = {}
     def start(self, name):
@@ -66,17 +70,11 @@ class timer():
         for i in self.times.keys():
             print(str(i)+ ' took: ' + str(self.times[i]) + ' ' + str(100*self.times[i]/total)+'%')
 
-def checkedit(context):
-    config = context.object["CalmTreeConfig"]
-    for i in config.split(","):
-        if "edit" in i:
-            if "True" in i:
-                return True
-            if "False" in i:
-                return False
-
-
 def saveconfig():
+    """
+    saves parameters as string
+    """
+
     tps = bpy.data.window_managers["WinMan"].calmtree_props
     config = ""
     excluded = ["__", "rna", "sync"]
@@ -87,6 +85,10 @@ def saveconfig():
 
 
 def geonode():
+    """
+    inserts geometry nodes
+    """
+    
     if "CalmTree_nodegroup" not in bpy.data.node_groups:
         CalmTree_nodegroup_exec()
     ng = bpy.data.node_groups["CalmTree_nodegroup"]
