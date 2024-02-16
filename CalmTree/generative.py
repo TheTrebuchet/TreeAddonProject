@@ -37,6 +37,7 @@ class branch():
         self.radius = pack[2]
         self.progress = pack[3]
         self.sides = max(4,round(pars.m_p[0]*pack[2]/pars.m_p[2])) #adjusting sides
+        print(pars.m_p[0]*pack[2]/pars.m_p[2])
         self.l = min(pars.m_p[5], self.length/2)
         self.trunk = trunk
         #determined while generation happens
@@ -47,7 +48,7 @@ class branch():
         #total is the total absolute value length
         self.f12 = lambda total: max(pars.scale_f1(total/self.length*(1-cutoff)+cutoff)/pars.scale_f1(cutoff)*self.radius, pars.m_p[3])
         self.scalelist = []
-        #so each branch has its local mp upon initiation, that has modified sides, length, radius and l, just for clarity really
+        #each branch has its local mp upon initiation, that has modified sides, length, radius and l, just for clarity really
         self.mp = [self.sides, self.length, self.radius, pars.m_p[3], pars.m_p[4], self.l]
 
     def generate_classic(self, pars):

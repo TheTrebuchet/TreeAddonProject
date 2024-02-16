@@ -176,14 +176,6 @@ class CALMTREE_OT_new(bpy.types.Operator):
         debug.stop('post stuff') #TIMER
         debug.stop('whole') #TIMER
         debug.display()
-
-        #testing implementation of binary to speed things up
-        directory = os.path.dirname(os.path.realpath(__file__))
-        enginepath=directory + "/engine"
-        popen = subprocess.Popen(enginepath, stdout=subprocess.PIPE)
-        popen.wait()
-        output = popen.stdout.read()
-        print(output)
         
         return {"FINISHED"}
 
