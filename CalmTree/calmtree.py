@@ -37,7 +37,7 @@ class global_parameters:
         ]
         self.r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
         self.e_p = [tps.interp, tps.poisson_type, tps.poisson_qual, tps.leaffactor]
-        self.d_p = [tps.Ythreshold, max(tps.Tthreshold * tps.Mlength, 2 * l)]
+        self.d_p = [tps.Ythreshold, max(tps.Tthreshold * tps.Mlength, 2 * l), tps.RatioDistribution]
         self.facebool = tps.facebool
 
         self.lim = lambda x: 1 / (x * self.bn_p[0] + (1 - x) * self.bn_p[1])
@@ -47,9 +47,6 @@ class global_parameters:
         self.scale_f1 = lambda x: 1-x+fa*(1-x)**10
         bs = tps.branch_shift#for branches scale depending on their placement on a tree
         self.scale_f2 = lambda x: (4*x*(1-x)*((1-bs**2)**0.5+1)/(2*(bs*(2*x-1)+1)))**(0.5+0.5*abs(bs))
-        rd = tps.RatioDristribution
-        self.ratio_f1 = lambda x: 
-
     
     def extract(self):
         pars = [self.m_p, self.br_p, self.bn_p, self.bd_p, self.r_p, self.e_p, self.d_p, self.facebool, self.facebool]

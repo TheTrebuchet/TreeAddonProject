@@ -18,9 +18,11 @@ class guide():
         self.direct = (self.surface-self.origin).normalized()
         self.quat = None
 
-    def prerequisits(self, total, h, l, p_length, progress, hstart, this_r, tipradius, scale_f2):
+    def prerequisits(self, total, h, l, p_length, progress, hstart, this_r, tipradius, scale_f2, RDfac):
         self.length = scale_f2(hstart)*(p_length-total-h*l)
-        self.radius = max(min((self.length+total+progress)/p_length*this_r, this_r), tipradius)
+        x = RDfac*0.6+0.2
+        beta_factor = random.betavariate(7*x, 7-7*x)
+        self.radius = max(min((self.length+total+progress)/p_length*this_r, beta_factor*this_r), tipradius)
         self.ratio = self.radius/this_r
         self.prog = progress+total+h*l
         
@@ -44,9 +46,9 @@ class branch():
         self.guidepacks=[]
         self.n = 0 
         self.spine=[]
-        cutoff = self.progress/(self.length+self.progress)
+        cutoff = self.progress/(self.length+self.progress) #factor of progress
         #total is the total absolute value length
-        self.f12 = lambda total: max(pars.scale_f1(total/self.length*(1-cutoff)+cutoff)/pars.scale_f1(cutoff)*self.radius, pars.m_p[3])
+        self.f12 = lambda abs_len: max(pars.scale_f1(abs_len/self.length*(1-cutoff)+cutoff)/pars.scale_f1(cutoff)*self.radius, pars.m_p[3])
         self.scalelist = []
         #each branch has its local mp upon initiation, that has modified sides, length, radius and l, just for clarity really
         self.mp = [self.sides, self.length, self.radius, pars.m_p[3], pars.m_p[4], self.l]
@@ -87,17 +89,13 @@ class branch():
         qual = pars.e_p[2]
         Ythr = pars.d_p[0]
         Tthr = pars.d_p[1]
-
-        parent_length = self.length
-        parent_progress = self.progress
+        RDfac = pars.d_p[2]
 
         pars_startlength = pars.m_p[1]*pars.br_p[3]
-        parent_radius = self.radius
         tipradius = pars.m_p[3]
         l = self.l
         minang, maxang = pars.br_p[1:3]
-        f1 = pars.scale_f1
-        scale_f2 = pars.scale_f2
+
         
         random.seed(pars.br_p[-1])
         
@@ -117,31 +115,31 @@ class branch():
         guidelist = [guide(self.origin, self.origin)]
 
         #the build-guess-split begins
-        while total<parent_length-Tthr:
+        while total<self.length-Tthr:
             
             parent_quat = None
-            this_r = self.f12(total)
-            self.scalelist.append(this_r)
+            parent_r = self.f12(total)
+            self.scalelist.append(parent_r)
             for i in range(qual): #number of tries
-                origin, surface, axis, h = guidetry(self.spine, 3*this_r) #generating the guess
-                hstart = (total+h*l)/(parent_length)
-                hglob = (total+h*l+self.progress)/(parent_length+self.progress)
+                origin, surface, axis, h = guidetry(self.spine, 3*parent_r) #generating the guess
+                hstart = (total+h*l)/(self.length)
+                hglob = (total+h*l+self.progress)/(self.length+self.progress)
                 
-                if (surface-guidelist[-1].surface).length>lim(hglob): #check for valid branches
-                    
-                    guess = guide(origin, surface) #the successful guess
-                    guess.prerequisits(total, h, l, parent_length, parent_progress, hstart, this_r, tipradius, scale_f2)
+                if (surface-guidelist[-1].surface).length>lim(hglob): #if branch is valid
+                    good_guess = guide(origin, surface)
+
+                    good_guess.prerequisits(total, h, l, self.length, self.progress, hstart, parent_r, tipradius, pars.scale_f2, RDfac)
                     ang = hstart*minang+(1-hstart)*maxang #angle between the new branches
                     
-                    if guess.ratio>Ythr: #if split can happen
+                    if good_guess.ratio>Ythr: #if split can happen
                         self.spine[-1] = origin
                         total-=(1-h)*l
-                        parent_quat = Quaternion(axis,ang*guess.ratio/2)
-                        guess.quat = Quaternion(axis,(math.pi/2-ang)+guess.ratio*ang/2)
+                        parent_quat = Quaternion(axis,ang*good_guess.ratio/2)
+                        good_guess.quat = Quaternion(axis,(math.pi/2-ang)+good_guess.ratio*ang/2)
                     
                     else:
-                        guess.quat = Quaternion(axis,(math.pi/2-ang))
-                    guidelist.append(guess)
+                        good_guess.quat = Quaternion(axis,(math.pi/2-ang))
+                    guidelist.append(good_guess)
                     break
             extension = l*(self.spine[-1]-self.spine[-2]).normalized()
             
@@ -153,7 +151,7 @@ class branch():
             total+=l
         
         #the rest to the tip
-        while total<parent_length-l:
+        while total<self.length-l:
             total+=l
             self.spine.append(l*((self.spine[-1] - self.spine[-2]).normalized())+self.spine[-1])
             self.spine = spine_bend(self.spine, len(self.spine), pars.bd_p, l, self.direction, nfactor=True)
