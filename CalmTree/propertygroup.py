@@ -31,7 +31,7 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
         description='Main tree generation Engine',
         items=((('classic', 'Classic', 'Good for simple trees'),
                ('dynamic', 'Dynamic', 'Good for complex trees with splits, like bonsai'))),
-        default='classic',
+        default='dynamic',
         update=leaf_update
     )
     facebool: bpy.props.BoolProperty(
@@ -124,6 +124,22 @@ class CALMTREE_PG_props(bpy.types.PropertyGroup):
     RatioDistribution: bpy.props.FloatProperty(
         name='Ratio distribution',
         description='Increases amount of splits compared to small branches',
+        default=0.5,
+        min=0.0,
+        max=1,
+        update=tree_update
+    )
+    RatioLengthDepend: bpy.props.FloatProperty(
+        name='Ratio-Lenght dependence',
+        description='Influence of ratio on branch length, 1 means complete dependence',
+        default=0.5,
+        min=0.0,
+        max=1,
+        update=tree_update
+    )
+    RatioAngleDepend: bpy.props.FloatProperty(
+        name='Ratio-Angle dependence',
+        description='Influence of ratio on branch length, 1 means complete dependence',
         default=0.5,
         min=0.0,
         max=1,

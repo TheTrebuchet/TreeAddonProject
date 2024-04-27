@@ -37,7 +37,7 @@ class global_parameters:
         ]
         self.r_p = [tps.Rperlin_amount, tps.Rperlin_scale, tps.Rperlin_seed]
         self.e_p = [tps.interp, tps.poisson_type, tps.poisson_qual, tps.leaffactor]
-        self.d_p = [tps.Ythreshold, max(tps.Tthreshold * tps.Mlength, 2 * l), tps.RatioDistribution]
+        self.d_p = [tps.Ythreshold, max(tps.Tthreshold * tps.Mlength, 2 * l), tps.RatioDistribution, tps.RatioLengthDepend, tps.RatioAngleDepend]
         self.facebool = tps.facebool
 
         self.lim = lambda x: 1 / (x * self.bn_p[0] + (1 - x) * self.bn_p[1])

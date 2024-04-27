@@ -76,6 +76,8 @@ class CALMTREE_PT_createmain(CALMTREE_PT_createparent, bpy.types.Panel):
             col.prop(wm.calmtree_props, "Ythreshold")
             col.prop(wm.calmtree_props, "Tthreshold")
             col.prop(wm.calmtree_props, "RatioDistribution")
+            col.prop(wm.calmtree_props, "RatioLengthDepend")
+            col.prop(wm.calmtree_props, "RatioAngleDepend")
             col.prop(wm.calmtree_props, "leaffactor")
         col.label(text="Seeds and Variety")
         col.prop(wm.calmtree_props, "Rperlin_seed")

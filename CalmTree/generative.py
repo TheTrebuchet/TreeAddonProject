@@ -12,24 +12,25 @@ def guidetry(spine, R):
     return origin, surface, axis, h
 
 class guide():
-    def __init__(self, origin, surface):
+    def __init__(self, origin, surface, n,h):
         self.origin = origin
         self.surface = surface
         self.direct = (self.surface-self.origin).normalized()
         self.quat = None
+        self.h = h
+        self.n = n
 
-    def prerequisits(self, total, h, l, p_length, progress, hstart, this_r, tipradius, scale_f2, RDfac):
-        self.length = scale_f2(hstart)*(p_length-total-h*l)
+    def prerequisits(self, total, l, p_length, progress, hstart, this_r, tipradius, scale_f2, RDfac):
+        self.length = scale_f2(hstart)*(p_length-total-self.h*l)
         x = RDfac*0.6+0.2
         beta_factor = random.betavariate(7*x, 7-7*x)
         self.radius = max(min((self.length+total+progress)/p_length*this_r, beta_factor*this_r), tipradius)
         self.ratio = self.radius/this_r
-        self.prog = progress+total+h*l
+        self.prog = progress+total+self.h*l
         
-    def generate(self):
+    def generate(self, pars):
         #at this point surface isn't relevant anymore
-        return [self.origin,self.quat@self.direct*self.length, self.radius, self.prog]
-
+        return [self.origin,self.quat@self.direct*self.length*self.ratio**pars.d_p[3], self.radius, self.prog]
 
 class branch():
     def __init__(self, pack, pars, trunk):
@@ -39,7 +40,6 @@ class branch():
         self.radius = pack[2]
         self.progress = pack[3]
         self.sides = max(4,round(pars.m_p[0]*pack[2]/pars.m_p[2])) #adjusting sides
-        print(pars.m_p[0]*pack[2]/pars.m_p[2])
         self.l = min(pars.m_p[5], self.length/2)
         self.trunk = trunk
         #determined while generation happens
@@ -112,7 +112,7 @@ class branch():
         
         
         #adding an origin (0,0,0) so that the first split isn't always on the start
-        guidelist = [guide(self.origin, self.origin)]
+        guidelist = [guide(self.origin, self.origin, len(self.spine), 0)]
 
         #the build-guess-split begins
         while total<self.length-Tthr:
@@ -126,16 +126,18 @@ class branch():
                 hglob = (total+h*l+self.progress)/(self.length+self.progress)
                 
                 if (surface-guidelist[-1].surface).length>lim(hglob): #if branch is valid
-                    good_guess = guide(origin, surface)
+                    good_guess = guide(origin, surface, len(self.spine), h)
 
-                    good_guess.prerequisits(total, h, l, self.length, self.progress, hstart, parent_r, tipradius, pars.scale_f2, RDfac)
+                    good_guess.prerequisits(total, l, self.length, self.progress, hstart, parent_r, tipradius, pars.scale_f2, RDfac)
                     ang = hstart*minang+(1-hstart)*maxang #angle between the new branches
                     
                     if good_guess.ratio>Ythr: #if split can happen
                         self.spine[-1] = origin
                         total-=(1-h)*l
-                        parent_quat = Quaternion(axis,ang*good_guess.ratio/2)
-                        good_guess.quat = Quaternion(axis,(math.pi/2-ang)+good_guess.ratio*ang/2)
+                        parent_quat = Quaternion(axis,ang*good_guess.ratio*0.5*pars.d_p[4])
+                        good_guess.quat = Quaternion(axis,(math.pi/2-ang)+good_guess.ratio*ang*0.5*(1-pars.d_p[4]))
+                        # the reasoning is, the split angle can be more or less influenced by the ratio
+                        # but there is a limit to it, where it doesn't make sense to change the angle of parent branch
                     
                     else:
                         good_guess.quat = Quaternion(axis,(math.pi/2-ang))
@@ -160,7 +162,17 @@ class branch():
         #weight, jiggle and finish everything
         #self.spine = spine_jiggle(self.spine, self.mp[5], self.mp[1], self.rp)
         self.n = len(self.spine)
-        self.guidepacks = [g.generate() for g in guidelist[1:]]
+        prespine = self.spine.copy()
+        #jiggle
+        #weight
+        self.realign_guides(guidelist, prespine) #testing realignment
+        self.guidepacks = [g.generate(pars) for g in guidelist[1:]]
+
+    def realign_guides(self, guidelist, prespine):
+        for g in guidelist:
+            quat = (prespine[g.n]-prespine[g.n-1]).rotation_difference(self.spine[g.n]-self.spine[g.n-1])
+            g.origin = self.spine[g.n]*(1-g.h)+self.spine[g.n-1]*g.h
+            g.direct = quat@g.direct
     
     def regenerate(self):
         for i in range(2, self.n-1):
